@@ -4,6 +4,7 @@ import SwiftUI
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: NSWindow!
+    let barHeight: CGFloat = 32 // バーの高さは共通で使うので外に出す
 
     static func main() {
         let app = NSApplication.shared
@@ -15,25 +16,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         let contentView = StatusBarView()
 
-        guard let screen = NSScreen.main else { return }
-        let screenRect = screen.frame
-        let barHeight: CGFloat = 32
-
-        let windowRect = NSRect(
-            x: screenRect.minX,
-            y: screenRect.maxY - barHeight,
-            width: screenRect.width,
-            height: barHeight
-        )
-
+        // 最初のウィンドウ作成
         statusBarWindow = NSWindow(
-            contentRect: windowRect,
+            contentRect: .zero, // あとで updateWindowPosition で計算するため最初はzero
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
         )
 
-        // NSWindow.Level.mainMenu + 1 is usually enough to cover the top bar
         statusBarWindow.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
         statusBarWindow.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         statusBarWindow.backgroundColor = .clear
@@ -43,8 +33,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingController = NSHostingController(rootView: contentView)
         statusBarWindow.contentView = hostingController.view
 
+        // ウィンドウの初期位置を計算
+        updateWindowPosition()
+
         statusBarWindow.makeKeyAndOrderFront(nil)
         statusBarWindow.orderFrontRegardless()
+
+        // 【追加】ディスプレイの設定変更（抜き差しや解像度変更）を監視
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateWindowPosition),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+        
+        // 【追加】スリープからの復帰を監視
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(updateWindowPosition),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
+    }
+
+    // 【追加】画面の一番上に強制的に再配置する関数
+    @objc func updateWindowPosition() {
+        guard let screen = NSScreen.main else { return }
+        let screenRect = screen.frame
+        
+        let windowRect = NSRect(
+            x: screenRect.minX,
+            y: screenRect.maxY - barHeight,
+            width: screenRect.width,
+            height: barHeight
+        )
+        
+        // アニメーションなしで即座に正しい位置・サイズにスナップさせる
+        statusBarWindow.setFrame(windowRect, display: true)
     }
 }
 
