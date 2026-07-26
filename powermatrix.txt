@@ -1,0 +1,989 @@
+Machine model: Mac15,12
+OS version: 25F84
+Boot arguments: 
+Boot time: Sat Jul 11 11:33:49 2026
+
+
+
+*** Sampled system activity (Sun Jul 26 12:57:09 2026 +0900) (5009.24ms elapsed) ***
+
+*** Running tasks ***
+
+Name                               ID     CPU ms/s  User%  Deadlines (<2 ms, 2-5 ms)  Wakeups (Intr, Pkg idle)
+DEAD_TASKS                         -1     78.79     40.01  3.99    0.00               3.99    0.00              
+Brave Browser Helper (Renderer)    72164  47.05     96.39  0.00    0.00               2.79    0.00              
+WindowServer                       406    79.51     46.10  2.79    0.20               46.08   3.59              
+ghostty                            2371   22.44     64.02  29.52   0.00               96.55   2.39              
+backgroundtaskmanagementd          38501  7.03      59.29  0.00    0.00               0.00    0.00              
+mediaanalysisd                     26755  102.01    94.74  0.00    0.00               0.40    0.00              
+powermetrics                       72609  4.31      5.01   0.00    0.00               0.20    0.00              
+Stats                              35937  54.15     59.66  0.00    0.00               11.57   0.00              
+trustd                             38142  4.57      90.88  0.00    0.00               0.40    0.00              
+smd                                38408  4.99      58.84  0.00    0.00               0.00    0.00              
+coreaudiod                         419    20.43     51.15  0.00    0.00               0.00    0.00              
+mdworker_shared                    72646  26.95     63.96  0.00    0.00               0.00    0.00              
+launchd                            1      45.99     3.57   0.00    0.00               0.20    0.00              
+nvim                               25570  9.85      64.50  182.53  4.79               248.36  22.74             
+kernel_task                        0      62.23     0.00   164.17  1.40               483.55  83.98             
+tmux                               99933  2.32      56.79  0.00    0.00               0.80    0.00              
+pylyzer                            5354   27.66     13.21  0.00    0.00               1338.14 14.96             
+pylyzer                            65107  31.71     13.34  0.00    0.00               1506.50 13.76             
+pylyzer                            55165  31.81     13.25  0.00    0.00               1507.10 14.96             
+pylyzer                            50418  31.75     13.44  0.00    0.00               1507.70 14.76             
+Discord Helper (Renderer)          36946  8.90      49.36  0.00    0.00               5.98    0.40              
+Brave Browser                      929    10.75     75.72  0.00    0.00               7.78    0.40              
+Brave Browser Helper               1025   4.30      36.92  0.00    0.00               7.78    0.00              
+Karabiner-Core-Service             542    14.12     26.60  26.73   4.39               45.08   0.40              
+launchservicesd                    376    5.87      48.69  0.00    0.00               0.20    0.00              
+Brave Browser Helper               1028   7.26      67.97  0.00    0.00               2.99    0.00              
+Notion                             88675  5.72      47.63  1.00    0.00               3.19    0.00              
+Spotify                            824    5.28      88.82  0.00    0.00               16.16   0.00              
+logioptionsplus_agent              6124   6.42      56.46  0.00    0.00               27.33   0.80              
+ControlCenter                      645    4.36      52.53  0.00    0.00               1.99    0.00              
+nvim                               25569  0.13      77.46  0.00    0.00               0.00    0.00              
+com.apple.AppleUserHIDDrivers      585    8.08      21.30  0.00    0.00               0.00    0.00              
+xprotectd                          373    1.33      84.52  0.00    0.00               1.40    0.00              
+karabiner_console_user_server      754    1.96      24.21  6.58    0.00               8.38    0.00              
+configd                            345    5.83      9.64   0.00    0.00               0.20    0.00              
+notifyd                            399    1.11      42.07  0.00    0.00               0.00    0.00              
+airportd                           442    4.26      51.38  0.00    0.00               2.99    0.00              
+pylyzer                            98931  4.45      10.99  0.00    0.00               170.16  1.60              
+Karabiner-VirtualHIDDevice-Daemo   541    8.45      4.35   3.19    0.00               5.59    0.20              
+bluetoothd                         398    4.61      70.87  0.00    0.00               0.00    0.00              
+pylyzer                            50685  3.65      12.21  0.00    0.00               169.96  1.40              
+ContinuityCaptureAgent             675    2.46      79.13  0.00    0.00               1.99    0.00              
+mds_stores                         46143  3.58      71.55  0.00    0.00               0.00    0.00              
+Microsoft Teams WebView Helper (   48038  3.78      82.21  0.00    0.00               3.19    0.20              
+logd                               333    2.86      37.89  0.00    0.00               0.00    0.00              
+Python                             26358  0.15      84.94  1.20    0.00               1.20    0.00              
+spotlightknowledged                4782   3.20      42.16  0.00    0.00               0.00    0.00              
+Notion Helper (Renderer)           88687  1.97      81.07  0.00    0.00               1.40    0.00              
+mds                                362    2.76      36.53  0.00    0.00               1.60    0.20              
+usbaudiod                          69054  0.91      49.68  0.00    0.00               0.00    0.00              
+runningboardd                      412    3.05      71.85  0.00    0.00               1.00    0.00              
+rapportd                           639    1.52      86.71  0.00    0.00               0.20    0.00              
+searchpartyd                       597    2.59      69.85  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    1040   2.01      73.62  0.00    0.00               1.99    0.20              
+com.apple.audio.Core-Audio-Drive   493    0.87      51.34  0.00    0.00               1.00    0.00              
+LogiPluginService                  6201   2.07      43.81  0.00    0.00               4.59    0.00              
+Microsoft Teams WebView Helper     78991  2.12      49.74  0.00    0.00               14.56   0.00              
+com.apple.DriverKit-AppleBCMWLAN   580    2.17      52.04  0.00    0.00               8.58    1.00              
+corebrightnessd                    401    2.28      50.74  0.00    0.00               0.00    0.00              
+com.apple.cmio.registerassistant   403    1.00      83.70  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    1034   1.10      66.61  0.00    0.00               0.60    0.20              
+Notion Helper                      88686  2.39      50.99  9.97    0.00               20.15   2.39              
+cfprefsd                           613    0.68      44.00  0.00    0.00               0.00    0.00              
+Karabiner-NotificationWindow       753    1.82      51.61  6.38    0.00               8.78    0.20              
+com.docker.backend                 72933  1.51      47.65  19.75   0.40               30.52   0.60              
+Notion Helper (Renderer)           6204   1.18      75.81  0.00    0.00               1.00    0.00              
+syspolicyd                         483    0.65      35.58  0.00    0.00               0.00    0.00              
+SidecarRelay                       69560  0.80      92.97  0.00    0.00               0.00    0.00              
+Karabiner-Core-Service             756    1.69      45.35  2.39    0.00               5.59    0.40              
+fseventsd                          337    1.76      49.83  0.20    0.00               2.79    0.80              
+Discord                            36857  2.08      49.38  0.00    0.00               0.80    0.00              
+diskarbitrationd                   365    1.12      41.74  0.00    0.00               0.00    0.00              
+Notion Helper (Renderer)           81170  1.15      86.04  0.00    0.00               1.40    0.00              
+Brave Browser Helper (Renderer)    1039   0.89      76.25  0.00    0.00               0.60    0.00              
+Spotify Helper (Renderer)          933    1.57      92.22  0.00    0.00               6.78    0.40              
+opendirectoryd                     374    0.80      35.09  0.00    0.00               0.00    0.00              
+locationd                          381    1.01      56.53  0.00    0.00               1.20    0.00              
+cfprefsd                           409    0.50      45.09  0.00    0.00               0.00    0.00              
+sharingd                           714    0.73      74.67  0.00    0.00               0.20    0.00              
+Microsoft Excel                    66768  1.15      65.95  0.00    0.00               0.80    0.00              
+apsd                               375    0.53      35.27  0.00    0.00               0.20    0.00              
+mDNSResponder                      462    0.53      39.23  1.20    0.00               1.99    0.00              
+nearbyd                            784    0.61      62.49  0.00    0.00               0.40    0.00              
+PerfPowerServices                  43152  0.73      71.30  0.00    0.00               0.20    0.00              
+mdworker_shared                    72302  0.37      37.33  0.00    0.00               0.00    0.00              
+symptomsd                          482    0.65      58.07  0.00    0.00               0.20    0.00              
+audioclocksyncd                    512    0.93      48.09  0.00    0.00               0.00    0.00              
+mdworker_shared                    72303  0.35      32.92  0.00    0.00               0.00    0.00              
+Microsoft Teams WebView Helper     78992  0.65      32.47  0.00    0.00               0.40    0.00              
+karabiner_session_monitor          746    0.45      35.11  1.99    0.00               2.39    0.00              
+milod                              37854  0.36      72.57  0.00    0.00               0.00    0.00              
+MonitorControl                     793    0.59      72.78  0.00    0.00               1.00    0.00              
+Docker Desktop                     73099  0.19      72.73  0.20    0.00               1.00    0.00              
+fileproviderd                      665    0.52      51.14  0.00    0.00               4.19    0.20              
+gamepolicyd                        38296  0.43      52.89  0.00    0.00               0.60    0.00              
+snyk-macos-arm64                   26363  0.23      41.02  2.39    0.00               3.99    0.00              
+Finder                             647    0.39      52.31  0.00    0.00               0.20    0.00              
+filecoordinationd                  663    0.36      63.96  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    67794  0.28      80.41  0.00    0.00               0.40    0.00              
+duetexpertd                        96948  0.37      52.52  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    51969  0.28      61.96  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1331   0.23      64.75  0.00    0.00               0.00    0.00              
+snyk-macos-arm64                   28600  0.26      32.90  5.39    0.00               6.98    0.00              
+Microsoft Teams ModuleHost         78998  0.29      48.69  0.00    0.00               1.80    0.00              
+Microsoft Teams WebView            78975  0.27      67.15  0.00    0.00               1.00    0.00              
+accountsd                          38607  0.32      39.43  0.00    0.00               0.40    0.00              
+contextstored                      372    0.25      33.87  0.00    0.00               0.00    0.00              
+Karabiner-Menu                     773    0.32      51.34  0.00    0.00               1.00    0.00              
+Brave Browser Helper (Renderer)    67795  0.30      67.71  0.00    0.00               3.99    0.00              
+org.pqrs.Karabiner-DriverKit-Vir   586    0.28      25.14  0.00    0.00               0.00    0.00              
+Gemini                             90611  0.16      44.40  0.00    0.00               1.60    0.00              
+Spotify Helper                     918    0.09      59.79  0.00    0.00               0.80    0.00              
+lockoutagent                       847    0.21      28.68  0.00    0.00               1.00    0.00              
+AeroSpace                          91873  0.14      31.06  0.00    0.00               1.00    0.00              
+lsd                                635    0.17      41.78  0.00    0.00               0.00    0.00              
+MSTeams                            78958  0.19      64.57  0.00    0.00               0.60    0.00              
+thermalmonitord                    371    0.20      38.96  0.00    0.00               1.00    0.00              
+Brave Browser Helper               1109   0.09      79.23  0.00    0.00               0.20    0.00              
+WirelessRadioManagerd              37988  0.07      48.97  0.00    0.00               0.00    0.00              
+LogiPluginServiceNative            6219   0.19      34.02  0.00    0.00               0.00    0.00              
+Discord Helper (GPU)               36906  0.14      63.75  0.00    0.00               0.80    0.00              
+WeatherMenu                        767    0.11      25.64  0.00    0.00               0.60    0.00              
+Brave Browser Helper               1108   0.11      90.86  0.00    0.00               0.40    0.00              
+systemstats                        341    0.11      12.51  0.00    0.00               0.20    0.00              
+nsurlsessiond                      686    0.13      22.80  0.00    0.00               0.60    0.00              
+Maps                               22304  0.10      46.27  0.00    0.00               0.40    0.00              
+bird                               94626  0.11      19.85  0.00    0.00               0.20    0.00              
+Notion Helper                      88684  0.07      61.83  0.00    0.00               0.60    0.00              
+appleh13camerad                    533    0.07      24.71  0.00    0.00               1.00    0.00              
+wifip2pd                           39570  0.04      34.95  0.00    0.00               0.00    0.00              
+gitstatusd-darwin-arm64            1603   0.05      14.37  0.00    0.00               1.00    0.00              
+Docker Desktop Helper              73115  0.08      52.01  0.00    0.00               0.60    0.00              
+Spotlight                          780    0.05      33.03  0.00    0.00               0.40    0.00              
+parsecd                            97239  0.06      25.23  0.00    0.00               0.20    0.00              
+audioanalyticsd                    91391  0.06      23.73  0.00    0.00               0.20    0.00              
+MIDIServer                         6221   0.08      40.18  0.00    0.00               2.99    0.00              
+WallpaperImageExtension            697    0.04      14.06  0.00    0.00               0.40    0.00              
+mobiletimerd                       94613  0.06      22.41  0.00    0.00               0.40    0.00              
+Discord Helper                     36908  0.08      83.96  0.00    0.00               0.60    0.00              
+Discord Helper                     36985  0.05      81.25  0.00    0.00               0.40    0.00              
+JapaneseIM-RomajiTyping            5240   0.02      22.36  0.00    0.00               0.40    0.00              
+Spotify Helper                     921    0.04      88.22  0.00    0.00               0.40    0.00              
+appstoreagent                      63899  0.05      29.84  0.00    0.00               0.20    0.00              
+amsaccountsd                       88020  0.04      31.48  0.00    0.00               0.20    0.00              
+analyticsd                         425    0.05      21.94  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    1184   0.05      90.87  0.00    0.00               0.40    0.00              
+universalaccessd                   626    0.04      44.28  0.00    0.00               0.20    0.00              
+sudo                               72607  0.02      17.55  0.00    0.00               0.00    0.00              
+amsengagementd                     94616  0.03      33.14  0.00    0.00               0.20    0.00              
+remindd                            94615  0.03      28.51  0.00    0.00               0.40    0.00              
+avconferenced                      1027   0.03      15.03  0.00    0.00               0.40    0.00              
+gitstatusd-darwin-arm64            56747  0.03      22.23  0.00    0.00               1.00    0.00              
+itunescloudd                       11703  0.03      48.19  0.00    0.00               0.20    0.00              
+powerd                             347    0.02      16.53  0.00    0.00               0.20    0.00              
+sourcekit-lsp                      26381  0.04      59.66  0.00    0.00               0.20    0.00              
+gitstatusd-darwin-arm64            35564  0.03      24.36  0.00    0.00               1.00    0.00              
+Discord Helper (Plugin)            36986  0.04      78.37  0.00    0.00               0.20    0.00              
+com.apple.hiservices-xpcservice    62599  0.02      19.15  0.00    0.00               0.20    0.00              
+gitstatusd-darwin-arm64            2477   0.04      17.00  0.00    0.00               1.00    0.00              
+node                               40331  0.03      65.10  0.20    0.00               0.40    0.20              
+Dock                               644    0.03      15.45  0.00    0.00               0.40    0.00              
+LogiPluginServiceExt               6230   0.03      40.42  0.00    0.00               1.00    0.00              
+mDNSResponderHelper                484    0.04      40.66  0.00    0.00               1.00    0.00              
+appstorecomponentsd                72529  0.02      14.86  0.00    0.00               0.20    0.00              
+NotificationCenter                 705    0.03      23.76  0.00    0.00               0.40    0.00              
+com.microsoft.teams2.teamsswitch   48193  0.01      55.69  0.00    0.00               0.20    0.00              
+com.apple.dock.extra               821    0.03      20.54  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    1182   0.04      88.59  0.00    0.00               0.20    0.00              
+weatherd                           1287   0.03      27.47  0.00    0.00               0.40    0.00              
+Spotify Helper                     919    0.03      83.02  0.00    0.00               0.40    0.00              
+amsondevicestoraged                931    0.01      15.17  0.00    0.00               0.20    0.00              
+SiriNCService                      94725  0.03      20.33  0.00    0.00               0.40    0.00              
+iconservicesagent                  94936  0.02      26.27  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    1038   0.03      65.85  0.00    0.00               0.60    0.00              
+replayd                            91153  0.02      25.82  0.00    0.00               0.40    0.00              
+trustd                             37794  0.02      61.84  0.00    0.00               0.20    0.00              
+systemsoundserverd                 11561  0.02      10.72  0.00    0.00               0.20    0.00              
+Notion Helper                      88685  0.03      91.65  0.00    0.00               0.20    0.00              
+nsurlsessiond                      421    0.03      16.14  0.00    0.00               0.20    0.00              
+Brave Browser Helper               1029   0.02      66.33  0.00    0.00               0.20    0.00              
+photoanalysisd                     26756  0.02      19.67  0.00    0.00               0.20    0.00              
+Spotify Helper                     1103   0.02      87.21  0.00    0.00               0.20    0.00              
+Docker Desktop Helper              73117  0.02      86.41  0.00    0.00               0.20    0.00              
+node                               73787  0.01      74.17  0.20    0.00               0.40    0.20              
+searchpartyuseragent               96115  0.02      18.41  0.00    0.00               0.20    0.00              
+zsh                                2469   0.02      50.54  0.00    0.00               0.20    0.00              
+loginwindow                        408    0.01      20.32  0.00    0.00               0.20    0.00              
+Calendar                           31298  0.01      19.61  0.00    0.00               0.20    0.00              
+zsh                                1601   0.02      64.52  0.00    0.00               0.20    0.00              
+automountd                         1857   0.01      22.61  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1244   0.01      58.88  0.00    0.00               0.20    0.00              
+logioptionsplus_updater            6120   0.01      35.63  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    72165  0.01      49.79  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    11243  0.01      64.52  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1253   0.01      62.40  0.00    0.00               0.20    0.00              
+ALL_TASKS                          -2     886.99    46.77  472.33  11.18              7428.87 183.66            
+
+
+**** Battery and backlight usage ****
+
+Battery: percent_charge: 100
+
+
+**** Network activity ****
+
+out: 5.19 packets/s, 1047.86 bytes/s
+in:  8.98 packets/s, 1672.31 bytes/s
+
+
+**** Disk activity ****
+
+read: 23.76 ops/s 364.69 KBytes/s
+write: 113.39 ops/s 1527.44 KBytes/s
+
+****  Interrupt distribution ****
+
+CPU 0:
+	Total IRQ: 2946.36 interrupts/sec
+	|-> IPI: 2135.45 interrupts/sec
+	|-> TIMER: 673.95 interrupts/sec
+CPU 1:
+	Total IRQ: 2513.95 interrupts/sec
+	|-> IPI: 1842.20 interrupts/sec
+	|-> TIMER: 598.49 interrupts/sec
+CPU 2:
+	Total IRQ: 2041.03 interrupts/sec
+	|-> IPI: 1469.48 interrupts/sec
+	|-> TIMER: 540.20 interrupts/sec
+CPU 3:
+	Total IRQ: 1796.08 interrupts/sec
+	|-> IPI: 1249.49 interrupts/sec
+	|-> TIMER: 541.00 interrupts/sec
+CPU 4:
+	Total IRQ: 215.60 interrupts/sec
+	|-> IPI: 147.93 interrupts/sec
+	|-> TIMER: 55.70 interrupts/sec
+CPU 5:
+	Total IRQ: 198.43 interrupts/sec
+	|-> IPI: 145.13 interrupts/sec
+	|-> TIMER: 51.90 interrupts/sec
+CPU 6:
+	Total IRQ: 92.83 interrupts/sec
+	|-> IPI: 50.31 interrupts/sec
+	|-> TIMER: 42.32 interrupts/sec
+CPU 7:
+	Total IRQ: 78.85 interrupts/sec
+	|-> IPI: 38.13 interrupts/sec
+	|-> TIMER: 40.72 interrupts/sec
+
+
+
+**** Processor usage ****
+
+E-Cluster HW active frequency: 1386 MHz
+E-Cluster HW active residency:   3.74% (744 MHz: 3.4% 1044 MHz:  63% 1476 MHz: 6.3% 2004 MHz:  14% 2268 MHz: 4.6% 2556 MHz: 2.7% 2748 MHz: 5.2%)
+E-Cluster idle residency:  96.26%
+CPU 0 frequency: 1426 MHz
+CPU 0 active residency:  26.43% (744 MHz: .86% 1044 MHz:  15% 1476 MHz: 2.2% 2004 MHz: 4.3% 2268 MHz: 1.6% 2556 MHz: .88% 2748 MHz: 1.2%)
+CPU 0 idle residency:  73.57%
+CPU 1 frequency: 1435 MHz
+CPU 1 active residency:  24.72% (744 MHz: .68% 1044 MHz:  15% 1476 MHz: 1.8% 2004 MHz: 4.2% 2268 MHz: 1.4% 2556 MHz: .78% 2748 MHz: 1.2%)
+CPU 1 idle residency:  75.28%
+CPU 2 frequency: 1421 MHz
+CPU 2 active residency:  22.27% (744 MHz: .62% 1044 MHz:  13% 1476 MHz: 1.6% 2004 MHz: 3.7% 2268 MHz: 1.4% 2556 MHz: .58% 2748 MHz: 1.0%)
+CPU 2 idle residency:  77.73%
+CPU 3 frequency: 1401 MHz
+CPU 3 active residency:  16.29% (744 MHz: .57% 1044 MHz: 9.8% 1476 MHz: 1.3% 2004 MHz: 2.5% 2268 MHz: .84% 2556 MHz: .49% 2748 MHz: .74%)
+CPU 3 idle residency:  83.71%
+
+P-Cluster HW active frequency: 0 MHz
+P-Cluster HW active residency:   0.00% (816 MHz:  75% 1092 MHz:   0% 1356 MHz: 3.5% 1596 MHz: 3.6% 1884 MHz: 2.7% 2172 MHz: 2.6% 2424 MHz: 1.8% 2616 MHz: 2.0% 2808 MHz: 3.2% 2988 MHz: 1.5% 3144 MHz: .58% 3288 MHz: .97% 3420 MHz: .88% 3540 MHz: .61% 3636 MHz: .28% 3720 MHz: .54% 3780 MHz:   0% 3864 MHz:   0% 3960 MHz:   0% 4056 MHz:   0%)
+P-Cluster idle residency: 100.00%
+CPU 4 frequency: 2354 MHz
+CPU 4 active residency:   4.47% (816 MHz: .17% 1092 MHz:   0% 1356 MHz: .62% 1596 MHz: .57% 1884 MHz: .47% 2172 MHz: .41% 2424 MHz: .18% 2616 MHz: .25% 2808 MHz: .61% 2988 MHz: .25% 3144 MHz: .14% 3288 MHz: .16% 3420 MHz: .19% 3540 MHz: .13% 3636 MHz: .00% 3720 MHz: .09% 3780 MHz: .00% 3864 MHz: .08% 3960 MHz: .09% 4056 MHz: .06%)
+CPU 4 idle residency:  95.53%
+CPU 5 frequency: 2544 MHz
+CPU 5 active residency:   3.42% (816 MHz: .13% 1092 MHz:   0% 1356 MHz: .22% 1596 MHz: .23% 1884 MHz: .35% 2172 MHz: .29% 2424 MHz: .29% 2616 MHz: .28% 2808 MHz: .63% 2988 MHz: .19% 3144 MHz: .14% 3288 MHz: .18% 3420 MHz: .05% 3540 MHz: .10% 3636 MHz: .00% 3720 MHz: .10% 3780 MHz: .00% 3864 MHz: .08% 3960 MHz: .08% 4056 MHz: .07%)
+CPU 5 idle residency:  96.58%
+CPU 6 frequency: 2489 MHz
+CPU 6 active residency:   1.00% (816 MHz: .11% 1092 MHz:   0% 1356 MHz: .01% 1596 MHz: .05% 1884 MHz: .10% 2172 MHz: .11% 2424 MHz: .02% 2616 MHz: .01% 2808 MHz: .37% 2988 MHz: .02% 3144 MHz: .01% 3288 MHz: .02% 3420 MHz: .05% 3540 MHz: .04% 3636 MHz: .00% 3720 MHz: .01% 3780 MHz: .00% 3864 MHz: .00% 3960 MHz: .03% 4056 MHz: .04%)
+CPU 6 idle residency:  99.00%
+CPU 7 frequency: 2375 MHz
+CPU 7 active residency:   0.79% (816 MHz: .10% 1092 MHz:   0% 1356 MHz: .01% 1596 MHz: .05% 1884 MHz: .07% 2172 MHz: .05% 2424 MHz: .02% 2616 MHz: .02% 2808 MHz: .43% 2988 MHz: .02% 3144 MHz: .00% 3288 MHz: .03% 3420 MHz: .01% 3540 MHz: .00% 3636 MHz: .00% 3720 MHz: .00% 3780 MHz: .00% 3864 MHz:   0% 3960 MHz: .00% 4056 MHz: .00%)
+CPU 7 idle residency:  99.21%
+
+CPU Power: 293 mW
+GPU Power: 37 mW
+ANE Power: 0 mW
+Combined Power (CPU + GPU + ANE): 330 mW
+
+**** GPU usage ****
+
+GPU HW active frequency: 522 MHz
+GPU HW active residency:   3.86% (338 MHz: 2.4% 618 MHz:   0% 796 MHz: 1.3% 836 MHz:   0% 928 MHz: .22% 952 MHz:   0% 1056 MHz:   0% 1053 MHz:   0% 1170 MHz:   0% 1152 MHz:   0% 1278 MHz:   0% 1204 MHz:   0% 1338 MHz:   0%)
+GPU SW requested state: (P1 :  60% P2 :   0% P3 :  39% P4 : 1.2% P5 :   0% P6 :   0% P7 :   0% P8 :   0% P9 :   0% P10 :   0% P11 :   0% P12 :   0% P13 :   0%)
+GPU SW state: (SW_P1 : 2.4% SW_P2 :   0% SW_P3 : 1.3% SW_P4 : .22% SW_P5 :   0% SW_P6 :   0% SW_P7 :   0% SW_P8 :   0% SW_P9 :   0% SW_P10 :   0% SW_P11 :   0% SW_P12 :   0% SW_P13 :   0%)
+GPU idle residency:  96.14%
+GPU Power: 37 mW
+
+
+
+*** Sampled system activity (Sun Jul 26 12:57:14 2026 +0900) (5026.92ms elapsed) ***
+
+*** Running tasks ***
+
+Name                               ID     CPU ms/s  User%  Deadlines (<2 ms, 2-5 ms)  Wakeups (Intr, Pkg idle)
+DEAD_TASKS                         -1     80.24     34.95  4.38    0.00               4.38    0.00              
+WindowServer                       406    79.89     45.34  2.98    0.00               56.49   1.99              
+backgroundtaskmanagementd          38501  7.23      60.06  0.00    0.00               0.00    0.00              
+ghostty                            2371   21.83     63.89  18.90   0.00               85.52   3.58              
+Stats                              35937  58.92     54.51  0.00    0.00               10.34   0.20              
+trustd                             38142  4.52      91.55  0.00    0.00               0.00    0.00              
+coreaudiod                         419    21.65     48.54  0.00    0.00               0.00    0.00              
+smd                                38408  4.93      60.78  0.00    0.00               0.00    0.00              
+kernel_task                        0      64.84     0.00   148.57  1.39               443.93  111.38            
+tmux                               99933  5.05      56.27  0.00    0.20               0.99    0.00              
+pylyzer                            5354   28.26     12.46  0.00    0.00               1338.96 14.72             
+pylyzer                            50418  32.45     12.62  0.00    0.00               1510.61 24.86             
+pylyzer                            65107  32.69     12.59  0.00    0.00               1510.21 17.10             
+pylyzer                            55165  32.71     12.44  0.00    0.00               1510.81 22.48             
+nvim                               25570  10.22     64.93  183.78  2.78               247.82  22.67             
+Discord Helper (Renderer)          36946  9.63      47.89  0.20    0.00               6.17    0.40              
+powermetrics                       72609  4.77      9.24   0.00    0.00               0.20    0.00              
+launchd                            1      2.37      54.20  0.00    0.00               0.00    0.00              
+launchservicesd                    376    7.07      52.30  0.00    0.00               0.00    0.00              
+Notion                             88675  6.11      46.80  1.19    0.20               3.38    0.60              
+logioptionsplus_agent              6124   7.18      58.99  0.00    0.00               26.85   0.00              
+Brave Browser Helper               1028   5.39      66.55  0.00    0.00               2.59    0.20              
+Karabiner-Core-Service             542    11.43     25.69  23.47   2.98               39.58   0.80              
+routined                           60579  3.66      75.58  0.00    0.00               0.00    0.00              
+ControlCenter                      645    6.26      57.25  0.00    0.00               2.19    0.00              
+Brave Browser                      929    6.37      64.73  0.00    0.00               6.36    0.20              
+Brave Browser Helper               1025   4.31      47.96  0.00    0.00               8.55    0.00              
+bluetoothd                         398    7.98      63.17  0.00    0.00               0.99    0.00              
+configd                            345    6.27      8.94   0.00    0.00               0.00    0.00              
+xprotectd                          373    1.42      82.38  0.00    0.00               1.19    0.00              
+ContinuityCaptureAgent             675    2.35      78.10  0.00    0.00               1.99    0.00              
+airportd                           442    4.06      49.72  0.00    0.00               2.59    0.00              
+com.apple.AppleUserHIDDrivers      585    7.83      17.46  0.00    0.00               0.00    0.00              
+karabiner_console_user_server      754    1.55      20.26  4.77    0.00               6.36    0.00              
+duetexpertd                        96948  4.23      75.02  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    72164  1.99      69.35  0.00    0.00               1.99    0.20              
+pylyzer                            98931  4.33      10.38  0.00    0.00               170.06  2.98              
+notifyd                            399    0.59      37.28  0.00    0.00               0.00    0.00              
+Karabiner-VirtualHIDDevice-Daemo   541    7.11      4.14   2.59    0.00               4.57    0.20              
+pylyzer                            50685  3.64      11.19  0.00    0.00               170.06  2.19              
+corebrightnessd                    401    4.01      48.42  0.00    0.00               0.00    0.00              
+searchpartyd                       597    2.04      75.34  0.00    0.00               0.20    0.00              
+mds_stores                         46143  3.29      76.06  0.00    0.00               0.00    0.00              
+rapportd                           639    1.54      87.25  0.00    0.00               0.00    0.00              
+nvim                               25569  0.21      80.30  0.00    0.00               0.00    0.00              
+logd                               333    2.20      31.60  0.00    0.00               0.00    0.00              
+Microsoft Teams WebView Helper (   48038  3.36      80.68  0.00    0.00               2.39    0.00              
+com.apple.cmio.registerassistant   403    0.82      79.31  0.00    0.00               0.40    0.00              
+usbaudiod                          69054  1.08      37.38  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    1040   2.35      77.59  0.00    0.00               1.39    0.00              
+mds                                362    3.50      41.86  0.00    0.00               1.59    0.40              
+runningboardd                      412    2.54      66.48  0.00    0.00               0.60    0.00              
+Notion Helper (Renderer)           81170  1.28      81.35  0.00    0.00               0.99    0.00              
+com.apple.audio.Core-Audio-Drive   493    0.81      51.69  0.00    0.00               0.99    0.00              
+Spotify                            824    2.62      53.33  0.00    0.00               16.91   0.20              
+PerfPowerServices                  43152  1.44      58.40  0.00    0.00               0.00    0.00              
+calaccessd                         30878  1.15      51.70  0.00    0.00               0.00    0.00              
+com.apple.DriverKit-AppleBCMWLAN   580    2.39      50.23  0.00    0.00               8.95    1.79              
+mdworker_shared                    72302  2.08      58.41  0.00    0.00               0.00    0.00              
+SidecarRelay                       69560  0.80      92.23  0.00    0.00               0.00    0.00              
+cfprefsd                           409    1.39      19.00  0.00    0.00               0.00    0.00              
+MSTeams                            78958  1.24      71.33  0.00    0.00               0.40    0.00              
+Notion Helper                      88686  2.26      49.25  9.94    0.20               20.09   2.39              
+Microsoft Teams WebView Helper     78991  1.88      46.85  0.00    0.00               11.34   0.20              
+mapssyncd                          20539  1.01      67.22  0.00    0.00               0.00    0.00              
+syspolicyd                         483    0.66      36.32  0.00    0.00               0.00    0.00              
+Discord                            36857  2.38      41.53  0.00    0.00               0.99    0.00              
+powerd                             347    1.50      27.41  0.00    0.00               0.60    0.00              
+com.docker.backend                 72933  1.46      49.13  17.70   0.40               28.04   0.99              
+UserEventAgent                     335    0.96      33.39  0.00    0.00               0.00    0.00              
+suggestd                           6308   0.56      48.94  0.00    0.00               0.00    0.00              
+Karabiner-NotificationWindow       753    1.84      49.88  6.36    0.00               8.75    0.40              
+sharingd                           714    1.70      69.45  0.00    0.00               0.40    0.00              
+LogiPluginService                  6201   1.75      39.08  0.00    0.00               4.18    0.00              
+Notion Helper (Renderer)           88687  1.02      84.62  0.00    0.00               0.99    0.00              
+Karabiner-Core-Service             756    1.66      40.21  2.39    0.00               5.37    0.00              
+Python                             26358  0.33      84.52  1.19    0.00               1.19    0.00              
+destinationd                       62601  0.53      45.16  0.00    0.00               0.20    0.00              
+analyticsd                         425    0.95      26.90  0.00    0.00               0.00    0.00              
+Notion Helper (Renderer)           6204   0.86      80.25  0.00    0.00               0.99    0.00              
+contextstored                      372    0.77      38.95  0.00    0.00               0.40    0.00              
+Spotify Helper (Renderer)          933    1.59      89.69  0.00    0.00               6.56    0.20              
+Brave Browser Helper (Renderer)    1244   0.93      69.06  0.00    0.00               0.60    0.00              
+diskarbitrationd                   365    1.06      39.77  0.00    0.00               0.00    0.00              
+Microsoft Teams WebView            78975  0.92      44.80  0.00    0.00               1.39    0.00              
+Microsoft Excel                    66768  0.78      50.52  0.00    0.00               1.19    0.00              
+coreduetd                          9910   0.69      65.22  0.00    0.00               0.00    0.00              
+fseventsd                          337    1.26      28.43  0.00    0.00               3.38    0.60              
+distnoted                          612    0.55      88.40  0.00    0.00               0.00    0.00              
+locationd                          381    1.00      59.92  0.00    0.00               1.19    0.00              
+Docker Desktop                     73099  0.60      47.66  0.20    0.00               0.99    0.00              
+Microsoft Teams WebView Helper (   78997  0.87      81.78  0.00    0.00               0.40    0.00              
+nearbyd                            784    0.77      61.40  0.00    0.00               0.60    0.00              
+distnoted                          388    0.57      37.32  0.00    0.00               0.00    0.00              
+mdworker_shared                    71018  0.73      60.49  0.00    0.00               0.00    0.00              
+audioclocksyncd                    512    0.93      44.22  0.00    0.00               0.00    0.00              
+mdworker_shared                    72303  0.60      52.44  0.00    0.00               0.00    0.00              
+filecoordinationd                  663    0.38      53.47  0.00    0.00               0.60    0.00              
+milod                              37854  0.46      71.26  0.00    0.00               0.00    0.00              
+mDNSResponder                      462    0.33      50.98  0.80    0.00               1.79    0.00              
+gamepolicyd                        38296  0.44      46.43  0.00    0.00               0.60    0.00              
+symptomsd                          482    0.34      40.89  0.00    0.00               0.20    0.00              
+identityservicesd                  659    0.55      51.39  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    67794  0.17      68.87  0.00    0.00               0.40    0.00              
+WeatherMenu                        767    0.44      50.54  0.00    0.00               0.80    0.00              
+biomed                             81374  0.18      56.55  0.00    0.00               0.00    0.00              
+com.microsoft.teams2.teamsswitch   48193  0.26      30.76  0.00    0.00               0.00    0.00              
+fileproviderd                      665    0.54      48.83  0.00    0.00               4.38    0.00              
+Microsoft Teams ModuleHost         78998  0.46      51.65  0.00    0.00               2.39    0.00              
+snyk-macos-arm64                   26363  0.22      37.17  1.59    0.00               2.78    0.00              
+useractivityd                      819    0.40      61.22  0.00    0.00               0.00    0.00              
+MonitorControl                     793    0.51      69.82  0.00    0.00               0.80    0.00              
+apsd                               375    0.46      53.21  0.00    0.00               0.60    0.00              
+snyk-macos-arm64                   28600  0.24      35.59  1.39    0.00               2.39    0.20              
+Maps                               22304  0.24      41.85  0.00    0.00               0.40    0.00              
+Finder                             647    0.35      43.93  0.00    0.00               0.40    0.00              
+Spotify Helper                     918    0.23      48.94  0.00    0.00               0.80    0.00              
+karabiner_session_monitor          746    0.21      32.61  0.99    0.00               1.19    0.00              
+Karabiner-Menu                     773    0.31      48.44  0.00    0.00               0.99    0.00              
+Spotify Helper                     919    0.22      57.37  0.00    0.00               0.40    0.00              
+org.pqrs.Karabiner-DriverKit-Vir   586    0.25      26.36  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    1331   0.23      77.01  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    67795  0.30      67.95  0.00    0.00               4.18    0.00              
+lockoutagent                       847    0.24      26.61  0.00    0.00               0.99    0.00              
+Brave Browser Helper (Renderer)    1034   0.14      65.97  0.00    0.00               0.20    0.00              
+thermalmonitord                    371    0.19      39.01  0.00    0.00               0.99    0.00              
+Docker Desktop Helper              73115  0.12      80.76  0.00    0.00               0.40    0.00              
+mediaanalysisd                     26755  0.18      35.57  0.00    0.00               0.99    0.00              
+AeroSpace                          91873  0.15      31.89  0.00    0.00               0.99    0.00              
+WirelessRadioManagerd              37988  0.07      49.31  0.00    0.00               0.00    0.00              
+Gemini                             90611  0.12      55.04  0.00    0.00               1.59    0.00              
+Brave Browser Helper               1109   0.07      61.00  0.00    0.00               0.60    0.00              
+Brave Browser Helper (Renderer)    51969  0.17      58.32  0.00    0.00               0.40    0.00              
+watchdogd                          358    0.12      27.47  0.00    0.00               0.20    0.00              
+distnoted                          570    0.08      17.78  0.00    0.00               0.00    0.00              
+nsurlsessiond                      686    0.14      19.40  0.00    0.00               0.40    0.00              
+distnoted                          451    0.07      28.38  0.00    0.00               0.00    0.00              
+opendirectoryd                     374    0.14      13.25  0.00    0.00               0.20    0.00              
+distnoted                          565    0.07      22.22  0.00    0.00               0.00    0.00              
+distnoted                          443    0.08      20.37  0.00    0.00               0.00    0.00              
+distnoted                          439    0.08      18.53  0.00    0.00               0.00    0.00              
+Spotify Helper                     921    0.09      67.42  0.00    0.00               0.40    0.00              
+distnoted                          649    0.07      19.88  0.00    0.00               0.00    0.00              
+distnoted                          43674  0.06      22.72  0.00    0.00               0.00    0.00              
+distnoted                          514    0.07      21.28  0.00    0.00               0.00    0.00              
+distnoted                          1014   0.06      23.33  0.00    0.00               0.00    0.00              
+Notion Helper                      88684  0.08      48.81  0.00    0.00               0.60    0.00              
+distnoted                          595    0.06      21.73  0.00    0.00               0.00    0.00              
+distnoted                          966    0.06      22.60  0.00    0.00               0.00    0.00              
+distnoted                          894    0.06      21.86  0.00    0.00               0.00    0.00              
+distnoted                          982    0.06      22.95  0.00    0.00               0.00    0.00              
+distnoted                          4104   0.06      23.34  0.00    0.00               0.00    0.00              
+distnoted                          971    0.06      22.89  0.00    0.00               0.00    0.00              
+distnoted                          545    0.06      21.45  0.00    0.00               0.00    0.00              
+distnoted                          64191  0.06      23.33  0.00    0.00               0.00    0.00              
+distnoted                          50336  0.05      24.19  0.00    0.00               0.00    0.00              
+mobileassetd                       91390  0.04      22.37  0.00    0.00               0.20    0.00              
+distnoted                          562    0.06      23.22  0.00    0.00               0.00    0.00              
+callservicesd                      11205  0.08      57.14  0.00    0.00               0.20    0.00              
+wifip2pd                           39570  0.04      36.50  0.00    0.00               0.00    0.00              
+Discord Helper (GPU)               36906  0.09      48.86  0.00    0.00               0.60    0.00              
+appleh13camerad                    533    0.06      22.24  0.00    0.00               0.99    0.00              
+Spotify Helper                     1103   0.07      63.59  0.00    0.00               0.40    0.00              
+sudo                               72607  0.01      25.74  0.00    0.00               0.00    0.00              
+MIDIServer                         6221   0.09      38.86  0.00    0.00               2.98    0.40              
+Spotlight                          780    0.06      28.66  0.00    0.00               0.60    0.00              
+com.apple.Safari.SafeBrowsing.Se   92204  0.06      51.87  0.00    0.00               0.20    0.00              
+backupd                            38574  0.02      25.72  0.00    0.00               0.20    0.00              
+accountsd                          38607  0.05      22.43  0.00    0.00               0.40    0.00              
+Docker Desktop Helper              73117  0.04      94.13  0.00    0.00               0.20    0.00              
+amsaccountsd                       88020  0.07      37.46  0.00    0.00               0.20    0.00              
+replicatord                        94645  0.03      40.03  0.00    0.00               0.20    0.00              
+node                               40331  0.06      65.66  0.40    0.00               0.80    0.20              
+Brave Browser Helper (Renderer)    1253   0.05      91.71  0.00    0.00               0.20    0.00              
+spotlightknowledged                4782   0.05      26.34  0.00    0.00               0.40    0.00              
+remindd                            94615  0.05      27.28  0.00    0.00               0.60    0.00              
+sourcekit-lsp                      26381  0.04      24.32  0.00    0.00               0.40    0.00              
+imagent                            695    0.06      34.09  0.00    0.00               0.20    0.00              
+mDNSResponderHelper                484    0.03      39.30  0.00    0.00               0.99    0.00              
+mediaremoted                       338    0.04      18.38  0.00    0.00               0.00    0.00              
+Dock                               644    0.04      14.24  0.00    0.00               0.40    0.00              
+photoanalysisd                     26756  0.05      22.80  0.00    0.00               0.20    0.00              
+mdworker_shared                    72646  0.04      24.66  0.00    0.00               0.40    0.00              
+avconferenced                      1027   0.03      13.75  0.00    0.00               0.40    0.00              
+JapaneseIM-RomajiTyping            5240   0.02      23.18  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    1372   0.04      84.07  0.00    0.00               0.40    0.00              
+iconservicesagent                  94936  0.03      14.70  0.00    0.00               0.40    0.00              
+universalaccessd                   626    0.04      44.21  0.00    0.00               0.20    0.00              
+dataaccessd                        22565  0.01      17.05  0.00    0.00               0.00    0.00              
+dasd                               385    0.05      7.12   0.00    0.00               0.20    0.00              
+appstoreagent                      63899  0.04      37.28  0.00    0.00               0.20    0.00              
+LogiPluginServiceExt               6230   0.04      36.66  0.00    0.00               1.19    0.00              
+weatherd                           1287   0.04      30.97  0.00    0.00               0.20    0.00              
+syslogd                            369    0.01      14.56  0.00    0.00               0.20    0.00              
+Brave Browser Helper               1108   0.03      78.85  0.00    0.00               0.40    0.00              
+Discord Helper (Plugin)            36986  0.04      75.99  0.00    0.00               0.20    0.00              
+amsondevicestoraged                931    0.04      33.14  0.00    0.00               0.20    0.00              
+audioanalyticsd                    91391  0.04      16.78  0.00    0.00               0.20    0.00              
+searchpartyuseragent               96115  0.04      13.56  0.00    0.00               0.20    0.00              
+nsurlsessiond                      421    0.03      20.20  0.00    0.00               0.20    0.00              
+gitstatusd-darwin-arm64            56747  0.04      21.52  0.00    0.00               0.99    0.00              
+WallpaperImageExtension            697    0.03      15.21  0.00    0.00               0.40    0.00              
+loginwindow                        408    0.03      18.44  0.00    0.00               0.40    0.00              
+Calendar                           31298  0.03      18.54  0.00    0.00               0.40    0.00              
+gitstatusd-darwin-arm64            35564  0.04      19.66  0.00    0.00               0.99    0.00              
+Microsoft Teams WebView Helper     78992  0.01      72.06  0.00    0.00               0.20    0.00              
+gitstatusd-darwin-arm64            2477   0.03      19.85  0.00    0.00               0.99    0.00              
+bird                               94626  0.02      21.21  0.00    0.00               0.20    0.00              
+gitstatusd-darwin-arm64            1603   0.03      21.61  0.00    0.00               0.99    0.20              
+replayd                            91153  0.02      19.16  0.00    0.00               0.40    0.00              
+Discord Helper                     36985  0.03      80.72  0.00    0.00               0.20    0.00              
+Brave Browser Helper               1029   0.03      65.14  0.00    0.00               0.40    0.00              
+Discord Helper                     36908  0.03      89.56  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1032   0.03      84.20  0.00    0.00               0.40    0.00              
+Notion Helper                      88685  0.02      86.83  0.00    0.00               0.20    0.00              
+systemstats                        341    0.02      19.59  0.00    0.00               0.20    0.00              
+cfprefsd                           613    0.02      22.01  0.00    0.00               0.20    0.00              
+LogiPluginServiceNative            6219   0.02      21.29  0.00    0.00               0.20    0.00              
+node                               79502  0.02      66.24  0.20    0.00               0.40    0.20              
+systemsoundserverd                 11561  0.02      11.88  0.00    0.00               0.20    0.00              
+mobiletimerd                       94613  0.02      15.65  0.00    0.00               0.20    0.00              
+assistantd                         39553  0.02      49.58  0.00    0.00               0.20    0.00              
+node                               73787  0.02      74.35  0.20    0.00               0.40    0.00              
+node                               45996  0.02      75.08  0.20    0.00               0.40    0.20              
+amsengagementd                     94616  0.02      20.50  0.00    0.00               0.20    0.00              
+zsh                                35562  0.02      59.63  0.00    0.00               0.20    0.00              
+SiriNCService                      94725  0.02      16.98  0.00    0.00               0.20    0.00              
+zsh                                56745  0.02      61.20  0.00    0.00               0.20    0.00              
+com.apple.dock.extra               821    0.01      19.93  0.00    0.00               0.20    0.00              
+NotificationCenter                 705    0.01      18.79  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1439   0.01      27.31  0.00    0.00               0.20    0.00              
+lsd                                635    0.01      32.08  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    36111  0.01      31.76  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1038   0.01      62.36  0.00    0.00               0.20    0.20              
+logioptionsplus_updater            6120   0.01      36.32  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    1182   0.01      44.27  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1110   0.01      64.52  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1401   0.01      62.67  0.00    0.00               0.20    0.00              
+ALL_TASKS                          -2     708.13    37.29  434.46  8.16               7377.08 235.53            
+
+
+**** Battery and backlight usage ****
+
+Battery: percent_charge: 100
+
+
+**** Network activity ****
+
+out: 2.79 packets/s, 289.24 bytes/s
+in:  5.57 packets/s, 402.23 bytes/s
+
+
+**** Disk activity ****
+
+read: 16.71 ops/s 273.78 KBytes/s
+write: 25.86 ops/s 161.33 KBytes/s
+
+****  Interrupt distribution ****
+
+CPU 0:
+	Total IRQ: 2909.14 interrupts/sec
+	|-> IPI: 2060.90 interrupts/sec
+	|-> TIMER: 681.13 interrupts/sec
+CPU 1:
+	Total IRQ: 2456.77 interrupts/sec
+	|-> IPI: 1830.15 interrupts/sec
+	|-> TIMER: 598.38 interrupts/sec
+CPU 2:
+	Total IRQ: 2010.57 interrupts/sec
+	|-> IPI: 1423.93 interrupts/sec
+	|-> TIMER: 578.68 interrupts/sec
+CPU 3:
+	Total IRQ: 1733.47 interrupts/sec
+	|-> IPI: 1175.07 interrupts/sec
+	|-> TIMER: 553.02 interrupts/sec
+CPU 4:
+	Total IRQ: 213.05 interrupts/sec
+	|-> IPI: 147.61 interrupts/sec
+	|-> TIMER: 53.11 interrupts/sec
+CPU 5:
+	Total IRQ: 181.82 interrupts/sec
+	|-> IPI: 133.28 interrupts/sec
+	|-> TIMER: 46.15 interrupts/sec
+CPU 6:
+	Total IRQ: 128.71 interrupts/sec
+	|-> IPI: 82.75 interrupts/sec
+	|-> TIMER: 43.37 interrupts/sec
+CPU 7:
+	Total IRQ: 83.15 interrupts/sec
+	|-> IPI: 38.19 interrupts/sec
+	|-> TIMER: 44.96 interrupts/sec
+
+
+
+**** Processor usage ****
+
+E-Cluster HW active frequency: 0 MHz
+E-Cluster HW active residency:   0.00% (744 MHz: 4.2% 1044 MHz:  63% 1476 MHz: 6.7% 2004 MHz:  13% 2268 MHz: 5.9% 2556 MHz: 2.5% 2748 MHz: 3.9%)
+E-Cluster idle residency: 100.00%
+CPU 0 frequency: 1386 MHz
+CPU 0 active residency:  23.42% (744 MHz: .99% 1044 MHz:  14% 1476 MHz: 1.8% 2004 MHz: 3.4% 2268 MHz: 1.7% 2556 MHz: .59% 2748 MHz: .73%)
+CPU 0 idle residency:  76.58%
+CPU 1 frequency: 1397 MHz
+CPU 1 active residency:  21.32% (744 MHz: .87% 1044 MHz:  13% 1476 MHz: 1.6% 2004 MHz: 3.2% 2268 MHz: 1.4% 2556 MHz: .80% 2748 MHz: .62%)
+CPU 1 idle residency:  78.68%
+CPU 2 frequency: 1384 MHz
+CPU 2 active residency:  15.17% (744 MHz: .79% 1044 MHz: 9.1% 1476 MHz: 1.1% 2004 MHz: 2.1% 2268 MHz: 1.2% 2556 MHz: .41% 2748 MHz: .47%)
+CPU 2 idle residency:  84.83%
+CPU 3 frequency: 1378 MHz
+CPU 3 active residency:  13.06% (744 MHz: .69% 1044 MHz: 7.9% 1476 MHz: .78% 2004 MHz: 2.1% 2268 MHz: .83% 2556 MHz: .41% 2748 MHz: .37%)
+CPU 3 idle residency:  86.94%
+
+P-Cluster HW active frequency: 0 MHz
+P-Cluster HW active residency:   0.00% (816 MHz:  80% 1092 MHz:   0% 1356 MHz: 3.7% 1596 MHz: 3.5% 1884 MHz: 2.6% 2172 MHz: 2.9% 2424 MHz: 1.9% 2616 MHz: .97% 2808 MHz: .77% 2988 MHz: 1.1% 3144 MHz: .84% 3288 MHz: .59% 3420 MHz: .34% 3540 MHz: .30% 3636 MHz: .69% 3720 MHz: .16% 3780 MHz:   0% 3864 MHz:   0% 3960 MHz:   0% 4056 MHz:   0%)
+P-Cluster idle residency: 100.00%
+CPU 4 frequency: 2387 MHz
+CPU 4 active residency:   3.16% (816 MHz: .14% 1092 MHz:   0% 1356 MHz: .44% 1596 MHz: .38% 1884 MHz: .28% 2172 MHz: .28% 2424 MHz: .27% 2616 MHz: .17% 2808 MHz: .12% 2988 MHz: .27% 3144 MHz: .21% 3288 MHz: .12% 3420 MHz: .08% 3540 MHz: .04% 3636 MHz: .11% 3720 MHz:   0% 3780 MHz: .09% 3864 MHz: .04% 3960 MHz: .08% 4056 MHz: .04%)
+CPU 4 idle residency:  96.84%
+CPU 5 frequency: 2384 MHz
+CPU 5 active residency:   3.02% (816 MHz: .10% 1092 MHz:   0% 1356 MHz: .29% 1596 MHz: .40% 1884 MHz: .44% 2172 MHz: .29% 2424 MHz: .30% 2616 MHz: .12% 2808 MHz: .11% 2988 MHz: .25% 3144 MHz: .20% 3288 MHz: .11% 3420 MHz: .05% 3540 MHz: .07% 3636 MHz: .12% 3720 MHz:   0% 3780 MHz: .11% 3864 MHz: .04% 3960 MHz: .00% 4056 MHz: .03%)
+CPU 5 idle residency:  96.98%
+CPU 6 frequency: 2359 MHz
+CPU 6 active residency:   2.01% (816 MHz: .08% 1092 MHz:   0% 1356 MHz: .13% 1596 MHz: .16% 1884 MHz: .23% 2172 MHz: .37% 2424 MHz: .26% 2616 MHz: .08% 2808 MHz: .12% 2988 MHz: .24% 3144 MHz: .15% 3288 MHz: .06% 3420 MHz: .02% 3540 MHz: .01% 3636 MHz: .06% 3720 MHz:   0% 3780 MHz: .02% 3864 MHz: .00% 3960 MHz: .00% 4056 MHz: .00%)
+CPU 6 idle residency:  97.99%
+CPU 7 frequency: 2339 MHz
+CPU 7 active residency:   0.88% (816 MHz: .08% 1092 MHz:   0% 1356 MHz: .01% 1596 MHz: .02% 1884 MHz: .09% 2172 MHz: .26% 2424 MHz: .09% 2616 MHz: .08% 2808 MHz: .02% 2988 MHz: .10% 3144 MHz: .05% 3288 MHz: .03% 3420 MHz: .01% 3540 MHz: .01% 3636 MHz: .01% 3720 MHz:   0% 3780 MHz: .02% 3864 MHz: .00% 3960 MHz: .00% 4056 MHz: .00%)
+CPU 7 idle residency:  99.12%
+
+CPU Power: 212 mW
+GPU Power: 38 mW
+ANE Power: 0 mW
+Combined Power (CPU + GPU + ANE): 250 mW
+
+**** GPU usage ****
+
+GPU HW active frequency: 535 MHz
+GPU HW active residency:   3.69% (338 MHz: 2.2% 618 MHz:   0% 796 MHz: 1.3% 836 MHz:   0% 928 MHz: .19% 952 MHz:   0% 1056 MHz:   0% 1053 MHz:   0% 1170 MHz:   0% 1152 MHz:   0% 1278 MHz:   0% 1204 MHz:   0% 1338 MHz:   0%)
+GPU SW requested state: (P1 :  57% P2 : 1.2% P3 :  40% P4 : 1.7% P5 :   0% P6 :   0% P7 :   0% P8 :   0% P9 :   0% P10 :   0% P11 :   0% P12 :   0% P13 :   0%)
+GPU SW state: (SW_P1 : 2.2% SW_P2 :   0% SW_P3 : 1.3% SW_P4 : .19% SW_P5 :   0% SW_P6 :   0% SW_P7 :   0% SW_P8 :   0% SW_P9 :   0% SW_P10 :   0% SW_P11 :   0% SW_P12 :   0% SW_P13 :   0%)
+GPU idle residency:  96.31%
+GPU Power: 38 mW
+
+
+
+*** Sampled system activity (Sun Jul 26 12:57:19 2026 +0900) (5023.97ms elapsed) ***
+
+*** Running tasks ***
+
+Name                               ID     CPU ms/s  User%  Deadlines (<2 ms, 2-5 ms)  Wakeups (Intr, Pkg idle)
+DEAD_TASKS                         -1     40.64     37.71  1.19    0.00               1.19    0.00              
+WindowServer                       406    77.05     44.23  2.39    0.20               59.33   2.39              
+ghostty                            2371   30.99     63.58  24.29   0.00               92.18   2.59              
+talagentd                          62895  61.03     95.59  0.00    0.00               0.00    0.00              
+coreaudiod                         419    23.11     47.86  0.00    0.00               0.00    0.00              
+Stats                              35937  51.15     59.03  0.00    0.00               9.36    0.00              
+backgroundtaskmanagementd          38501  3.58      60.08  0.00    0.00               0.00    0.00              
+kernel_task                        0      59.98     0.00   140.36  1.00               386.63  96.36             
+pylyzer                            65107  32.71     12.34  0.00    0.00               1507.70 14.73             
+pylyzer                            55165  33.04     12.27  0.00    0.00               1505.91 13.14             
+pylyzer                            50418  32.72     12.55  0.00    0.00               1507.50 11.35             
+pylyzer                            5354   28.68     12.39  0.00    0.00               1336.69 12.14             
+trustd                             38142  2.27      91.75  0.00    0.00               0.00    0.00              
+tmux                               99933  4.20      59.28  0.20    0.20               0.80    0.00              
+nvim                               25570  10.59     63.34  185.15  6.57               252.45  25.88             
+Brave Browser Helper               1028   7.12      73.13  0.00    0.00               4.18    0.00              
+smd                                38408  2.26      60.80  0.00    0.00               0.00    0.00              
+powermetrics                       72609  4.68      8.51   0.00    0.00               0.20    0.00              
+Brave Browser                      929    9.48      69.65  0.00    0.00               4.18    0.20              
+Discord Helper (Renderer)          36946  9.90      46.19  0.00    0.00               5.97    0.00              
+Brave Browser Helper (Renderer)    72164  1.19      81.74  0.00    0.00               0.60    0.00              
+Notion                             88675  6.43      45.64  1.19    0.00               3.58    0.60              
+Brave Browser Helper (Renderer)    1034   3.64      85.95  0.00    0.00               0.80    0.00              
+launchservicesd                    376    6.09      48.10  0.00    0.00               0.00    0.00              
+Karabiner-Core-Service             542    14.25     23.49  28.47   4.18               45.19   0.40              
+logioptionsplus_agent              6124   7.79      61.35  0.00    0.00               27.28   0.40              
+ControlCenter                      645    5.34      63.61  0.00    0.00               1.39    0.00              
+airportd                           442    4.09      48.95  0.00    0.00               2.99    0.00              
+launchd                            1      2.07      54.72  0.00    0.00               0.00    0.00              
+ContinuityCaptureAgent             675    1.81      74.15  0.00    0.00               1.99    0.00              
+com.apple.AppleUserHIDDrivers      585    8.21      16.27  0.00    0.00               0.00    0.00              
+bluetoothd                         398    5.92      64.08  0.00    0.00               0.20    0.00              
+configd                            345    5.15      10.82  0.00    0.00               0.00    0.00              
+Karabiner-VirtualHIDDevice-Daemo   541    7.71      4.58   3.19    0.00               5.38    0.20              
+pylyzer                            98931  4.61      9.93   0.00    0.00               169.23  2.99              
+Notion Helper (Renderer)           88687  1.91      82.24  0.00    0.00               1.00    0.00              
+pylyzer                            50685  3.75      10.91  0.00    0.00               169.23  1.59              
+corebrightnessd                    401    4.08      47.94  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    1040   1.45      80.96  0.00    0.20               1.79    0.00              
+Microsoft Teams WebView Helper (   48038  4.50      79.30  0.00    0.00               3.98    0.20              
+Brave Browser Helper (Renderer)    1331   1.31      76.04  0.00    0.00               0.60    0.00              
+Notion Helper (Renderer)           81170  2.33      80.14  0.00    0.00               1.00    0.00              
+rapportd                           639    0.83      87.31  0.00    0.00               0.00    0.00              
+nvim                               25569  0.18      81.20  0.00    0.00               0.00    0.00              
+karabiner_console_user_server      754    1.33      27.64  5.97    0.00               7.37    0.00              
+xprotectd                          373    0.78      76.35  0.00    0.00               1.00    0.00              
+runningboardd                      412    3.43      64.67  0.00    0.00               0.80    0.00              
+usbaudiod                          69054  1.02      44.21  0.00    0.00               0.00    0.00              
+Notion Helper (Renderer)           6204   1.16      76.59  0.00    0.00               1.00    0.00              
+com.apple.cmio.registerassistant   403    0.73      78.60  0.00    0.00               0.20    0.00              
+com.apple.audio.Core-Audio-Drive   493    0.89      51.57  0.00    0.00               0.80    0.00              
+com.apple.DriverKit-AppleBCMWLAN   580    2.56      47.23  0.00    0.00               8.36    1.99              
+notifyd                            399    0.38      37.19  0.00    0.00               0.00    0.00              
+logd                               333    1.74      39.80  0.00    0.00               0.00    0.00              
+Microsoft Teams WebView Helper     78991  2.32      46.12  0.00    0.00               12.34   0.00              
+SidecarRelay                       69560  0.52      91.74  0.00    0.00               0.00    0.00              
+Notion Helper                      88686  2.41      47.97  9.95    0.00               20.31   1.99              
+Brave Browser Helper (Renderer)    1244   0.58      82.65  0.00    0.00               0.80    0.00              
+mds_stores                         46143  1.45      77.74  0.00    0.00               0.20    0.00              
+sharingd                           714    1.02      68.65  0.00    0.00               0.60    0.00              
+com.docker.backend                 72933  1.57      50.15  24.69   0.00               35.44   1.39              
+LogiPluginService                  6201   1.66      40.14  0.00    0.00               3.78    0.00              
+Brave Browser Helper (Renderer)    1372   0.21      73.13  0.00    0.00               0.20    0.00              
+Karabiner-NotificationWindow       753    1.70      51.76  4.58    0.00               6.57    0.20              
+Python                             26358  0.45      80.45  1.19    0.00               1.19    0.40              
+Karabiner-Core-Service             756    1.65      46.40  1.19    0.00               4.38    0.00              
+Discord                            36857  1.98      42.42  0.00    0.00               0.20    0.00              
+mds                                362    1.15      47.62  0.00    0.00               0.80    0.00              
+Spotify                            824    1.53      51.29  0.00    0.00               16.92   0.40              
+syspolicyd                         483    0.51      26.95  0.00    0.00               0.20    0.00              
+diskarbitrationd                   365    1.04      42.79  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    1038   0.26      82.93  0.00    0.00               0.60    0.20              
+Spotify Helper (Renderer)          933    1.45      91.76  0.00    0.00               6.37    0.00              
+Microsoft Excel                    66768  0.96      56.79  0.00    0.00               1.19    0.20              
+PerfPowerServices                  43152  1.05      67.51  0.00    0.00               0.20    0.00              
+fseventsd                          337    0.64      20.06  0.00    0.00               1.99    0.00              
+nearbyd                            784    0.46      61.04  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    1039   0.20      85.10  0.00    0.00               0.40    0.00              
+mdworker_shared                    72302  0.69      66.48  0.00    0.00               0.00    0.00              
+audioclocksyncd                    512    0.91      44.89  0.00    0.00               0.00    0.00              
+symptomsd                          482    0.64      56.19  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1401   0.28      87.25  0.00    0.00               0.40    0.00              
+MonitorControl                     793    0.51      69.47  0.00    0.00               1.00    0.00              
+karabiner_session_monitor          746    0.57      30.32  1.99    0.00               2.39    0.20              
+gamepolicyd                        38296  0.60      44.75  0.00    0.00               0.60    0.00              
+Docker Desktop                     73099  0.28      64.50  0.20    0.00               1.19    0.20              
+milod                              37854  0.25      77.45  0.00    0.00               0.00    0.00              
+powerd                             347    0.57      41.45  0.00    0.00               0.00    0.00              
+filecoordinationd                  663    0.36      51.70  0.00    0.00               0.40    0.00              
+Notion Helper                      88685  0.39      35.42  0.00    0.00               0.20    0.00              
+useractivityd                      819    0.49      58.22  0.00    0.00               0.20    0.00              
+distnoted                          612    0.33      93.02  0.00    0.00               0.00    0.00              
+mDNSResponder                      462    0.41      40.99  0.80    0.00               1.19    0.00              
+snyk-macos-arm64                   26363  0.21      39.50  2.59    0.00               3.98    0.20              
+Finder                             647    0.20      51.21  0.00    0.00               0.20    0.00              
+fileproviderd                      665    0.53      48.23  0.00    0.00               4.18    0.00              
+mdworker_shared                    71018  0.35      47.07  0.00    0.00               0.00    0.00              
+org.pqrs.Karabiner-DriverKit-Vir   586    0.47      18.98  0.00    0.00               0.00    0.00              
+identityservicesd                  659    0.27      54.03  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    51969  0.25      60.49  0.00    0.00               0.00    0.00              
+locationd                          381    0.31      48.50  0.00    0.00               1.19    0.00              
+duetexpertd                        96948  0.41      52.70  0.00    0.00               0.00    0.00              
+distnoted                          388    0.31      41.40  0.00    0.00               0.00    0.00              
+Brave Browser Helper               1025   0.44      77.34  0.00    0.00               0.60    0.00              
+Brave Browser Helper (Renderer)    1182   0.09      91.65  0.00    0.00               0.20    0.00              
+Notion Helper                      88684  0.38      82.36  0.00    0.00               0.80    0.00              
+MSTeams                            78958  0.09      64.60  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    67794  0.13      63.38  0.00    0.00               0.20    0.00              
+snyk-macos-arm64                   28600  0.29      34.52  2.39    0.00               3.78    0.00              
+Karabiner-Menu                     773    0.31      45.01  0.00    0.00               1.00    0.00              
+Microsoft Teams ModuleHost         78998  0.29      51.43  0.00    0.00               2.19    0.00              
+Brave Browser Helper (Renderer)    67795  0.31      68.62  0.00    0.00               3.98    0.00              
+Gemini                             90611  0.18      56.20  0.00    0.00               1.39    0.00              
+thermalmonitord                    371    0.19      39.74  0.00    0.00               1.00    0.00              
+Microsoft Teams WebView            78975  0.18      65.37  0.00    0.00               1.00    0.00              
+lockoutagent                       847    0.24      28.44  0.00    0.00               1.00    0.00              
+contextstored                      372    0.19      41.87  0.00    0.00               0.20    0.00              
+Siri                               93957  0.19      61.96  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    1032   0.17      70.86  0.00    0.00               0.40    0.00              
+AeroSpace                          91873  0.21      40.15  0.00    0.00               1.00    0.00              
+Brave Browser Helper (Renderer)    1253   0.05      87.02  0.00    0.00               0.40    0.00              
+WirelessRadioManagerd              37988  0.06      44.32  0.00    0.00               0.00    0.00              
+Brave Browser Helper (Renderer)    36111  0.15      70.41  0.00    0.00               0.00    0.00              
+Spotify Helper                     918    0.13      63.13  0.00    0.00               0.80    0.00              
+SiriNCService                      94725  0.10      36.47  0.00    0.00               0.40    0.20              
+Docker Desktop Helper              73115  0.12      55.37  0.00    0.00               0.80    0.00              
+wifip2pd                           39570  0.04      36.94  0.00    0.00               0.00    0.00              
+Discord Helper (GPU)               36906  0.09      47.05  0.00    0.00               0.60    0.00              
+appstorecomponentsd                72529  0.04      19.55  0.00    0.00               0.20    0.00              
+appleh13camerad                    533    0.08      18.34  0.00    0.00               1.00    0.00              
+amsondevicestoraged                931    0.04      26.41  0.00    0.00               0.20    0.00              
+audioanalyticsd                    91391  0.08      22.79  0.00    0.00               0.20    0.00              
+MIDIServer                         6221   0.08      42.17  0.00    0.00               2.99    0.00              
+Brave Browser Helper               1109   0.03      72.29  0.00    0.00               0.20    0.00              
+loginwindow                        408    0.05      16.71  0.00    0.00               0.40    0.00              
+Spotify Helper                     919    0.04      63.11  0.00    0.00               0.40    0.00              
+ViewBridgeAuxiliary                684    0.05      50.58  0.00    0.00               0.00    0.00              
+WeatherMenu                        767    0.03      14.09  0.00    0.00               0.40    0.00              
+remindd                            94615  0.04      32.09  0.00    0.00               0.40    0.00              
+mDNSResponderHelper                484    0.03      39.62  0.00    0.00               1.00    0.00              
+distnoted                          439    0.05      21.15  0.00    0.00               0.00    0.00              
+mobiletimerd                       94613  0.05      22.63  0.00    0.00               0.20    0.00              
+nsurlsessiond                      686    0.05      23.01  0.00    0.00               0.40    0.00              
+Spotify Helper                     1103   0.05      86.46  0.00    0.00               0.40    0.00              
+sudo                               72607  0.01      18.39  0.00    0.00               0.00    0.00              
+distnoted                          570    0.04      24.59  0.00    0.00               0.00    0.00              
+distnoted                          443    0.04      21.85  0.00    0.00               0.00    0.00              
+distnoted                          565    0.04      24.68  0.00    0.00               0.00    0.00              
+universalaccessd                   626    0.04      48.99  0.00    0.00               0.20    0.00              
+distnoted                          451    0.04      28.53  0.00    0.00               0.00    0.00              
+analyticsd                         425    0.06      18.29  0.00    0.00               0.00    0.00              
+Brave Browser Helper               1029   0.05      62.32  0.00    0.00               0.40    0.00              
+node                               40331  0.06      66.21  0.40    0.00               0.80    0.40              
+distnoted                          514    0.04      24.31  0.00    0.00               0.00    0.00              
+Calendar                           31298  0.04      14.20  0.00    0.00               0.40    0.00              
+distnoted                          562    0.03      25.51  0.00    0.00               0.00    0.00              
+distnoted                          966    0.03      25.32  0.00    0.00               0.00    0.00              
+distnoted                          971    0.03      28.39  0.00    0.00               0.00    0.00              
+distnoted                          649    0.03      25.76  0.00    0.00               0.00    0.00              
+LogiPluginServiceExt               6230   0.03      37.23  0.00    0.00               1.00    0.00              
+distnoted                          595    0.03      24.15  0.00    0.00               0.00    0.00              
+distnoted                          982    0.03      26.16  0.00    0.00               0.00    0.00              
+distnoted                          50336  0.03      27.64  0.00    0.00               0.00    0.00              
+distnoted                          545    0.03      26.52  0.00    0.00               0.00    0.00              
+distnoted                          43674  0.03      27.66  0.00    0.00               0.00    0.00              
+distnoted                          4104   0.03      23.94  0.00    0.00               0.00    0.00              
+distnoted                          64191  0.03      26.95  0.00    0.00               0.00    0.00              
+searchpartyd                       597    0.03      22.04  0.00    0.00               0.20    0.00              
+Discord Helper (Plugin)            36986  0.04      70.10  0.00    0.00               0.20    0.00              
+distnoted                          894    0.03      28.39  0.00    0.00               0.00    0.00              
+distnoted                          1014   0.03      29.89  0.00    0.00               0.00    0.00              
+callservicesd                      11205  0.02      20.49  0.00    0.00               0.20    0.00              
+Docker Desktop Helper              73117  0.04      83.62  0.00    0.00               0.40    0.00              
+com.apple.geod                     6069   0.04      34.60  0.00    0.00               0.20    0.00              
+com.apple.hiservices-xpcservice    62599  0.03      24.53  0.00    0.00               0.00    0.00              
+com.apple.dock.extra               821    0.03      15.44  0.00    0.00               0.40    0.00              
+Brave Browser Helper (Renderer)    1439   0.04      91.01  0.00    0.00               0.20    0.00              
+gitstatusd-darwin-arm64            1603   0.03      19.43  0.00    0.00               1.00    0.00              
+gitstatusd-darwin-arm64            56747  0.04      21.51  0.00    0.00               1.00    0.00              
+mapssyncd                          20539  0.02      31.10  0.00    0.00               0.20    0.00              
+NotificationCenter                 705    0.03      16.52  0.00    0.00               0.40    0.00              
+gitstatusd-darwin-arm64            2477   0.03      18.34  0.00    0.00               1.00    0.00              
+gitstatusd-darwin-arm64            35564  0.04      21.29  0.00    0.00               1.00    0.00              
+Discord Helper                     36985  0.03      74.19  0.00    0.00               0.20    0.00              
+Brave Browser Helper               1108   0.03      82.84  0.00    0.00               0.20    0.00              
+nbagent                            49823  0.03      42.91  0.00    0.00               0.20    0.00              
+Spotify Helper                     921    0.03      74.60  0.00    0.00               0.40    0.00              
+zsh                                2469   0.01      62.77  0.00    0.00               0.20    0.00              
+Discord Helper                     36908  0.03      89.24  0.00    0.00               0.20    0.00              
+photoanalysisd                     26756  0.02      20.16  0.00    0.00               0.20    0.00              
+opendirectoryd                     374    0.02      13.23  0.00    0.00               0.20    0.00              
+avconferenced                      1027   0.02      15.11  0.00    0.00               0.20    0.00              
+amsaccountsd                       88020  0.02      19.02  0.00    0.00               0.20    0.00              
+CategoriesService                  91394  0.02      45.24  0.00    0.00               0.20    0.00              
+WallpaperImageExtension            697    0.02      12.31  0.00    0.00               0.20    0.00              
+dasd                               385    0.02      15.48  0.00    0.00               0.20    0.00              
+com.microsoft.teams2.teamsswitch   48193  0.02      48.04  0.00    0.00               0.20    0.00              
+Dock                               644    0.02      13.10  0.00    0.00               0.20    0.00              
+UserEventAgent                     335    0.02      17.09  0.00    0.00               0.20    0.00              
+cfprefsd                           409    0.02      24.22  0.00    0.00               0.20    0.00              
+apsd                               375    0.02      18.05  0.00    0.00               0.20    0.00              
+imagent                            695    0.02      17.94  0.00    0.00               0.20    0.00              
+Spotlight                          780    0.02      16.51  0.00    0.00               0.20    0.00              
+node                               79502  0.02      74.86  0.20    0.00               0.40    0.00              
+nsurlsessiond                      421    0.02      20.12  0.00    0.00               0.20    0.00              
+mediaanalysisd                     26755  0.01      17.75  0.00    0.00               0.20    0.00              
+tipsd                              34886  0.02      55.07  0.00    0.00               0.20    0.00              
+Maps                               22304  0.01      17.79  0.00    0.00               0.20    0.00              
+JapaneseIM-RomajiTyping            5240   0.02      17.27  0.00    0.00               0.20    0.00              
+searchpartyuseragent               96115  0.01      24.22  0.00    0.00               0.20    0.00              
+iconservicesagent                  94936  0.01      16.50  0.00    0.00               0.20    0.00              
+zsh                                1601   0.02      62.89  0.00    0.00               0.20    0.00              
+replayd                            91153  0.01      19.63  0.00    0.00               0.20    0.00              
+appstoreagent                      63899  0.01      27.72  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    1184   0.01      69.21  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    11243  0.01      66.16  0.00    0.00               0.20    0.00              
+logioptionsplus_updater            6120   0.01      37.63  0.00    0.00               0.20    0.00              
+Brave Browser Helper (Renderer)    72165  0.01      56.11  0.00    0.00               0.20    0.00              
+ALL_TASKS                          -2     688.46    42.46  442.48  12.34              7307.96 193.07            
+
+
+**** Battery and backlight usage ****
+
+Battery: percent_charge: 100
+
+
+**** Network activity ****
+
+out: 8.56 packets/s, 2195.67 bytes/s
+in:  12.34 packets/s, 2110.08 bytes/s
+
+
+**** Disk activity ****
+
+read: 8.56 ops/s 140.23 KBytes/s
+write: 18.31 ops/s 353.02 KBytes/s
+
+****  Interrupt distribution ****
+
+CPU 0:
+	Total IRQ: 2757.98 interrupts/sec
+	|-> IPI: 1967.57 interrupts/sec
+	|-> TIMER: 667.20 interrupts/sec
+CPU 1:
+	Total IRQ: 2391.14 interrupts/sec
+	|-> IPI: 1739.46 interrupts/sec
+	|-> TIMER: 627.39 interrupts/sec
+CPU 2:
+	Total IRQ: 1977.92 interrupts/sec
+	|-> IPI: 1383.37 interrupts/sec
+	|-> TIMER: 583.60 interrupts/sec
+CPU 3:
+	Total IRQ: 1734.48 interrupts/sec
+	|-> IPI: 1163.62 interrupts/sec
+	|-> TIMER: 565.29 interrupts/sec
+CPU 4:
+	Total IRQ: 210.79 interrupts/sec
+	|-> IPI: 156.45 interrupts/sec
+	|-> TIMER: 48.57 interrupts/sec
+CPU 5:
+	Total IRQ: 180.53 interrupts/sec
+	|-> IPI: 145.50 interrupts/sec
+	|-> TIMER: 33.44 interrupts/sec
+CPU 6:
+	Total IRQ: 79.82 interrupts/sec
+	|-> IPI: 50.16 interrupts/sec
+	|-> TIMER: 28.86 interrupts/sec
+CPU 7:
+	Total IRQ: 62.90 interrupts/sec
+	|-> IPI: 32.05 interrupts/sec
+	|-> TIMER: 30.65 interrupts/sec
+
+
+
+**** Processor usage ****
+
+E-Cluster HW active frequency: 0 MHz
+E-Cluster HW active residency:   0.00% (744 MHz: 3.4% 1044 MHz:  68% 1476 MHz: 5.3% 2004 MHz:  13% 2268 MHz: 4.9% 2556 MHz: 2.4% 2748 MHz: 2.9%)
+E-Cluster idle residency: 100.00%
+CPU 0 frequency: 1359 MHz
+CPU 0 active residency:  23.60% (744 MHz: .84% 1044 MHz:  15% 1476 MHz: 1.5% 2004 MHz: 3.8% 2268 MHz: 1.4% 2556 MHz: .57% 2748 MHz: .48%)
+CPU 0 idle residency:  76.40%
+CPU 1 frequency: 1355 MHz
+CPU 1 active residency:  20.78% (744 MHz: .74% 1044 MHz:  13% 1476 MHz: 1.4% 2004 MHz: 3.4% 2268 MHz: 1.1% 2556 MHz: .59% 2748 MHz: .33%)
+CPU 1 idle residency:  79.22%
+CPU 2 frequency: 1352 MHz
+CPU 2 active residency:  15.68% (744 MHz: .66% 1044 MHz:  10% 1476 MHz: .77% 2004 MHz: 2.5% 2268 MHz: .96% 2556 MHz: .49% 2748 MHz: .24%)
+CPU 2 idle residency:  84.32%
+CPU 3 frequency: 1336 MHz
+CPU 3 active residency:  14.12% (744 MHz: .60% 1044 MHz: 9.3% 1476 MHz: .71% 2004 MHz: 2.1% 2268 MHz: .78% 2556 MHz: .38% 2748 MHz: .25%)
+CPU 3 idle residency:  85.88%
+
+P-Cluster HW active frequency: 0 MHz
+P-Cluster HW active residency:   0.00% (816 MHz:  81% 1092 MHz:   0% 1356 MHz: 4.6% 1596 MHz: 2.9% 1884 MHz: 2.1% 2172 MHz: 2.0% 2424 MHz: 1.8% 2616 MHz: 1.1% 2808 MHz: 2.2% 2988 MHz: 1.1% 3144 MHz: .53% 3288 MHz: .30% 3420 MHz: .30% 3540 MHz:   0% 3636 MHz: .34% 3720 MHz: .03% 3780 MHz:   0% 3864 MHz:   0% 3960 MHz:   0% 4056 MHz:   0%)
+P-Cluster idle residency: 100.00%
+CPU 4 frequency: 2166 MHz
+CPU 4 active residency:   2.31% (816 MHz: .11% 1092 MHz:   0% 1356 MHz: .50% 1596 MHz: .30% 1884 MHz: .22% 2172 MHz: .15% 2424 MHz: .16% 2616 MHz: .13% 2808 MHz: .29% 2988 MHz: .18% 3144 MHz: .09% 3288 MHz: .08% 3420 MHz: .03% 3540 MHz:   0% 3636 MHz: .03% 3720 MHz:   0% 3780 MHz: .04% 3864 MHz:   0% 3960 MHz: .02% 4056 MHz:   0%)
+CPU 4 idle residency:  97.69%
+CPU 5 frequency: 2254 MHz
+CPU 5 active residency:   2.24% (816 MHz: .07% 1092 MHz:   0% 1356 MHz: .34% 1596 MHz: .24% 1884 MHz: .27% 2172 MHz: .30% 2424 MHz: .15% 2616 MHz: .17% 2808 MHz: .22% 2988 MHz: .20% 3144 MHz: .07% 3288 MHz: .02% 3420 MHz: .08% 3540 MHz:   0% 3636 MHz: .05% 3720 MHz:   0% 3780 MHz: .05% 3864 MHz:   0% 3960 MHz: .00% 4056 MHz:   0%)
+CPU 5 idle residency:  97.76%
+CPU 6 frequency: 2278 MHz
+CPU 6 active residency:   0.76% (816 MHz: .05% 1092 MHz:   0% 1356 MHz: .05% 1596 MHz: .06% 1884 MHz: .06% 2172 MHz: .11% 2424 MHz: .13% 2616 MHz: .03% 2808 MHz: .18% 2988 MHz: .02% 3144 MHz: .03% 3288 MHz: .02% 3420 MHz: .02% 3540 MHz:   0% 3636 MHz: .00% 3720 MHz:   0% 3780 MHz: .00% 3864 MHz:   0% 3960 MHz: .00% 4056 MHz:   0%)
+CPU 6 idle residency:  99.24%
+CPU 7 frequency: 2237 MHz
+CPU 7 active residency:   0.52% (816 MHz: .05% 1092 MHz:   0% 1356 MHz: .03% 1596 MHz: .02% 1884 MHz: .09% 2172 MHz: .02% 2424 MHz: .12% 2616 MHz: .03% 2808 MHz: .10% 2988 MHz: .02% 3144 MHz: .03% 3288 MHz: .01% 3420 MHz:   0% 3540 MHz:   0% 3636 MHz: .00% 3720 MHz:   0% 3780 MHz: .00% 3864 MHz:   0% 3960 MHz: .00% 4056 MHz:   0%)
+CPU 7 idle residency:  99.48%
+
+CPU Power: 167 mW
+GPU Power: 44 mW
+ANE Power: 0 mW
+Combined Power (CPU + GPU + ANE): 211 mW
+
+**** GPU usage ****
+
+GPU HW active frequency: 457 MHz
+GPU HW active residency:   3.86% (338 MHz: 2.9% 618 MHz:   0% 796 MHz: 1.0% 836 MHz:   0% 928 MHz:   0% 952 MHz:   0% 1056 MHz:   0% 1053 MHz:   0% 1170 MHz:   0% 1152 MHz:   0% 1278 MHz:   0% 1204 MHz:   0% 1338 MHz:   0%)
+GPU SW requested state: (P1 :  73% P2 :   0% P3 :  26% P4 : 1.2% P5 :   0% P6 :   0% P7 :   0% P8 :   0% P9 :   0% P10 :   0% P11 :   0% P12 :   0% P13 :   0%)
+GPU SW state: (SW_P1 : 2.9% SW_P2 :   0% SW_P3 : 1.0% SW_P4 :   0% SW_P5 :   0% SW_P6 :   0% SW_P7 :   0% SW_P8 :   0% SW_P9 :   0% SW_P10 :   0% SW_P11 :   0% SW_P12 :   0% SW_P13 :   0%)
+GPU idle residency:  96.14%
+GPU Power: 44 mW
+

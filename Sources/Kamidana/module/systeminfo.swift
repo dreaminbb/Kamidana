@@ -1,5 +1,32 @@
 import Darwin
 import Foundation
+import Combine
+
+// ユーザーが設定できる表示項目（JSON等から変換可能）
+struct SystemMatrixArgs: Codable {
+    var cpu: Bool = false
+    var memory: Bool = false
+    var disk: Bool = false
+    var internet: Bool = false
+    var power: Bool = false
+    var gpu: Bool = false
+}
+
+// 取得したシステムデータを一括で保持する構造体
+struct SystemMatrixData {
+    var cpuUsage: CPUUsageInfo?
+    var memoryMB: UInt64?
+    var processCount: Int?
+    var threadCount: Int?
+    var diskSpace: String?
+    // TODO: internet, power, gpu のデータを追加
+}
+
+// CPUの使用率をまとめる構造体
+struct CPUUsageInfo {
+    var total: Float
+    var perCore: [Float]
+}
 
 enum DiskSpaceType {
     case total
@@ -7,22 +34,77 @@ enum DiskSpaceType {
     case used
 }
 
-// CPUの使用率をまとめる構造体
-struct CPUUsageInfo {
-    var total: Float  // 全体の使用率
-    var perCore: [Float]  // コアごとの使用率の配列
-}
-
-class systemInfo {
+// args(設定)に基づいて必要な情報だけを取得・保持するメインクラス
+class SystemMatrix: ObservableObject {
     typealias MegaByte = UInt64
-
-    // CPU計算用の状態保存
+    
+    // UI側で監視するデータ
+    @Published var data = SystemMatrixData()
+    
+    // 設定パラメータ
+    var args: SystemMatrixArgs
+    
+    // 内部状態
     private var prevProcessorInfo: processor_info_array_t?
     private var prevProcessorCount: mach_msg_type_number_t = 0
-    private var previousUsage = CPUUsageInfo(total: 0.0, perCore: [])
+    private var previousCPUUsage = CPUUsageInfo(total: 0.0, perCore: [])
+    private var timer: AnyCancellable?
+    
+    private let powerMatrixExecutePath = "/usr/bin/powermetrics"
 
-    /// システム全体のCPU使用率（%）および各コアの使用率を取得
-    func getCPUUsage() -> CPUUsageInfo {
+    init(args: SystemMatrixArgs) {
+        self.args = args
+    }
+
+    /// 定期モニタリングを開始する
+    func startMonitoring() {
+        if args.cpu {
+            _ = getCPUUsage() // 初回の基準点を作成
+        }
+        
+        timer = Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.fetchData()
+            }
+    }
+    
+    func stopMonitoring() {
+        timer?.cancel()
+        timer = nil
+    }
+
+    /// 設定(args)に基づいて、必要なデータだけを取得する
+    func fetchData() {
+        var newData = SystemMatrixData()
+        
+        if args.cpu {
+            newData.cpuUsage = getCPUUsage()
+            let procData = getProcessAndThreadCount()
+            newData.processCount = procData.processes
+            newData.threadCount = procData.threads
+        }
+        
+        if args.memory {
+            newData.memoryMB = getMemoryUsed()
+        }
+        
+        if args.disk {
+            newData.diskSpace = getDiskSpace(.used)
+        }
+        
+        if args.power {
+            // powermetrics を実行（※実行にはRoot権限が必要です）
+            // runPowerMetricsCommand()
+        }
+        
+        // 取得したデータをViewに反映
+        self.data = newData
+    }
+
+    // MARK: - 個別の取得ロジック
+
+    private func getCPUUsage() -> CPUUsageInfo {
         var processorInfo: processor_info_array_t?
         var processorCount: mach_msg_type_number_t = 0
         var processorMsgCount: mach_msg_type_number_t = 0
@@ -35,50 +117,36 @@ class systemInfo {
             &processorMsgCount
         )
 
-        guard result == KERN_SUCCESS, let info = processorInfo else { return previousUsage }
+        guard result == KERN_SUCCESS, let info = processorInfo else { return previousCPUUsage }
 
-        // 初回呼び出し時は状態を保存して0.0を返す
         guard let prev = prevProcessorInfo else {
             prevProcessorInfo = info
             prevProcessorCount = processorCount
-            previousUsage.perCore = Array(repeating: 0.0, count: Int(processorCount))
-            return previousUsage
+            previousCPUUsage.perCore = Array(repeating: 0.0, count: Int(processorCount))
+            return previousCPUUsage
         }
 
         var totalUser: UInt32 = 0
         var totalSystem: UInt32 = 0
         var totalIdle: UInt32 = 0
         var totalNice: UInt32 = 0
-
         var currentCoreUsages: [Float] = []
 
-        // 全コアのチック数を安全に足し合わせる（&- はオーバーフロー対策の引き算）
         for i in 0..<Int(processorCount) {
             let index = Int(CPU_STATE_MAX) * i
-            let u =
-                UInt32(bitPattern: info[index + Int(CPU_STATE_USER)])
-                &- UInt32(bitPattern: prev[index + Int(CPU_STATE_USER)])
-            let s =
-                UInt32(bitPattern: info[index + Int(CPU_STATE_SYSTEM)])
-                &- UInt32(bitPattern: prev[index + Int(CPU_STATE_SYSTEM)])
-            let i_tick =
-                UInt32(bitPattern: info[index + Int(CPU_STATE_IDLE)])
-                &- UInt32(bitPattern: prev[index + Int(CPU_STATE_IDLE)])
-            let n =
-                UInt32(bitPattern: info[index + Int(CPU_STATE_NICE)])
-                &- UInt32(bitPattern: prev[index + Int(CPU_STATE_NICE)])
+            let u = UInt32(bitPattern: info[index + Int(CPU_STATE_USER)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_USER)])
+            let s = UInt32(bitPattern: info[index + Int(CPU_STATE_SYSTEM)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_SYSTEM)])
+            let i_tick = UInt32(bitPattern: info[index + Int(CPU_STATE_IDLE)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_IDLE)])
+            let n = UInt32(bitPattern: info[index + Int(CPU_STATE_NICE)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_NICE)])
 
-            // コア単体の使用率を計算
             let coreTotal = Double(u &+ s &+ i_tick &+ n)
             if coreTotal > 0.0 {
                 let coreUsage = Double(u &+ s &+ n) / coreTotal
                 currentCoreUsages.append(Float(coreUsage * 100.0))
             } else {
-                currentCoreUsages.append(
-                    previousUsage.perCore.indices.contains(i) ? previousUsage.perCore[i] : 0.0)
+                currentCoreUsages.append(previousCPUUsage.perCore.indices.contains(i) ? previousCPUUsage.perCore[i] : 0.0)
             }
 
-            // 全体合計へ加算
             totalUser &+= u
             totalSystem &+= s
             totalIdle &+= i_tick
@@ -86,33 +154,25 @@ class systemInfo {
         }
 
         let totalDiff = Double(totalUser &+ totalSystem &+ totalIdle &+ totalNice)
-
-        // 呼び出し間隔が短すぎる場合の対策
         if totalDiff < 1.0 {
             let size = Int(processorMsgCount) * MemoryLayout<integer_t>.size
             vm_deallocate(mach_task_self_, vm_address_t(bitPattern: info), vm_size_t(size))
-            return previousUsage
+            return previousCPUUsage
         }
 
         let usage = Double(totalUser &+ totalSystem &+ totalNice) / totalDiff
-
-        // メモリリークを防ぐため、前回分のC言語ポインタを解放
-        let prevSize =
-            Int(prevProcessorCount * UInt32(CPU_STATE_MAX)) * MemoryLayout<integer_t>.size
+        let prevSize = Int(prevProcessorCount * UInt32(CPU_STATE_MAX)) * MemoryLayout<integer_t>.size
         vm_deallocate(mach_task_self_, vm_address_t(bitPattern: prev), vm_size_t(prevSize))
 
-        // 今回の情報を保存
         prevProcessorInfo = info
         prevProcessorCount = processorCount
-        previousUsage = CPUUsageInfo(total: Float(usage * 100.0), perCore: currentCoreUsages)
+        previousCPUUsage = CPUUsageInfo(total: Float(usage * 100.0), perCore: currentCoreUsages)
 
-        return previousUsage
+        return previousCPUUsage
     }
 
-    /// システム全体の使用済みメモリ（MB）を取得
-    func getMemoryUsed() -> MegaByte? {
-        var count = mach_msg_type_number_t(
-            MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size)
+    private func getMemoryUsed() -> MegaByte? {
+        var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size)
         var vmStats = vm_statistics64()
 
         let result = withUnsafeMutablePointer(to: &vmStats) {
@@ -126,80 +186,75 @@ class systemInfo {
             let wired = UInt64(vmStats.wire_count) * pageSize
             let active = UInt64(vmStats.active_count) * pageSize
             let compressed = UInt64(vmStats.compressor_page_count) * pageSize
-
-            let totalUsedBytes = wired + active + compressed
-            return totalUsedBytes / 1024 / 1024
+            return (wired + active + compressed) / 1024 / 1024
         }
-
         return nil
     }
 
-    /// 現在起動している全プロセス数と、システム全体の合計スレッド数を取得する
-    func getProcessAndThreadCount() -> (processes: Int, threads: Int) {
-        // macOSのプロセス情報を格納するのに必要なバッファサイズを取得
+    private func getProcessAndThreadCount() -> (processes: Int, threads: Int) {
         var pidsSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, nil, 0)
         let count = pidsSize / Int32(MemoryLayout<pid_t>.size)
 
-        // PID一覧を取得
         var pids = [pid_t](repeating: 0, count: Int(count))
         pidsSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, &pids, pidsSize)
 
         var totalThreads = 0
         var totalProcesses = 0
 
-        // 全PIDをループして、スレッド数を加算していく
         for pid in pids {
             if pid == 0 { continue }
             totalProcesses += 1
 
             var taskInfo = proc_taskinfo()
-            let size = proc_pidinfo(
-                pid, PROC_PIDTASKINFO, 0, &taskInfo, Int32(MemoryLayout<proc_taskinfo>.size))
-
-            // 権限などの問題で取得できなかったプロセスは無視（自身や権限のあるプロセスのみ集計）
-            // ※ アクティビティモニタの全ユーザープロセス数と近い値になります
+            let size = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &taskInfo, Int32(MemoryLayout<proc_taskinfo>.size))
             if size == Int32(MemoryLayout<proc_taskinfo>.size) {
                 totalThreads += Int(taskInfo.pti_threadnum)
             }
         }
-
-        return (processes: totalProcesses, threads: totalThreads)
+        return (totalProcesses, totalThreads)
     }
 
-    func getDiskSpace(_ type: DiskSpaceType) -> String {
+    private func getDiskSpace(_ type: DiskSpaceType) -> String {
         let byteUnitStringConverted: (Int64) -> String = { size in
-            ByteCountFormatter.string(
-                fromByteCount: size, countStyle: ByteCountFormatter.CountStyle.binary)
+            ByteCountFormatter.string(fromByteCount: size, countStyle: .binary)
         }
+        
+        guard let attributes = try? FileManager.default.attributesOfFileSystem(forPath: NSHomeDirectory()),
+              let total = (attributes[.systemSize] as? NSNumber)?.int64Value,
+              let free = (attributes[.systemFreeSize] as? NSNumber)?.int64Value else {
+            return "0 MB"
+        }
+        
         switch type {
-        case .total:
-            return byteUnitStringConverted(totalSpace)
-        case .free:
-            return byteUnitStringConverted(freeSpace)
-        case .used:
-            return byteUnitStringConverted(usedSpace)
+        case .total: return byteUnitStringConverted(total)
+        case .free: return byteUnitStringConverted(free)
+        case .used: return byteUnitStringConverted(total - free)
         }
     }
+    
+    // MARK: - PowerMetrics (高度な情報)
+    
+    /// ※このコマンドを実行するには Root 権限 (sudo) が必要です
+    private func runPowerMetricsCommand() {
+        let process = Process()
+        let pipe = Pipe()
 
-    private var totalSpace: Int64 {
-        guard let attributes = systemAttributes,
-            let size = (attributes[FileAttributeKey.systemSize] as? NSNumber)?.int64Value
-        else { return 0 }
-        return size
-    }
+        process.executableURL = URL(fileURLWithPath: powerMatrixExecutePath)
+        process.arguments = ["-f", "plist", "-n", "1"]
+        process.standardOutput = pipe
+        process.standardError = pipe
 
-    private var freeSpace: Int64 {
-        guard let attributes = systemAttributes,
-            let size = (attributes[FileAttributeKey.systemFreeSize] as? NSNumber)?.int64Value
-        else { return 0 }
-        return size
-    }
+        do {
+            try process.run()
+            process.waitUntilExit()
 
-    private var usedSpace: Int64 {
-        return totalSpace - freeSpace
-    }
-
-    private var systemAttributes: [FileAttributeKey: Any]? {
-        return try? FileManager.default.attributesOfFileSystem(forPath: NSHomeDirectory())
+            let rawData = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: rawData, encoding: .utf8) {
+                print("PowerMetrics Output:", output)
+                // TODO: plist形式で出力されたデータをパースして変数に格納する
+            }
+        } catch {
+            print("Failed to run powermetrics: \(error)")
+        }
     }
 }

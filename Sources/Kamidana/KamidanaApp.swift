@@ -4,7 +4,7 @@ import SwiftUI
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: NSWindow!
-    let barHeight: CGFloat = 32 // バーの高さは共通で使うので外に出す
+    let barHeight: CGFloat = 32  // バーの高さは共通で使うので外に出す
 
     static func main() {
         let app = NSApplication.shared
@@ -18,7 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 最初のウィンドウ作成
         statusBarWindow = NSWindow(
-            contentRect: .zero, // あとで updateWindowPosition で計算するため最初はzero
+            contentRect: .zero,  // あとで updateWindowPosition で計算するため最初はzero
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -46,7 +46,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil
         )
-        
+
         // 【追加】スリープからの復帰を監視
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
@@ -60,14 +60,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func updateWindowPosition() {
         guard let screen = NSScreen.main else { return }
         let screenRect = screen.frame
-        
+
         let windowRect = NSRect(
             x: screenRect.minX,
             y: screenRect.maxY - barHeight,
             width: screenRect.width,
             height: barHeight
         )
-        
+
         // アニメーションなしで即座に正しい位置・サイズにスナップさせる
         statusBarWindow.setFrame(windowRect, display: true)
     }
@@ -75,34 +75,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 struct StatusBarView: View {
     @State private var currentTime = Date()
-
-    // システム情報を取得するクラスのインスタンスを保持
-    @State private var sysInfo = systemInfo()
-
-    // 画面に表示するための状態変数
-    @State private var currentCPU: Float = 0.0
-    @State private var currentMemoryMB: UInt64 = 0
-    @State private var processCount: Int = 0
-    @State private var threadCount: Int = 0
-
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    let clockTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    
+    // SystemMatrixを初期化（今回はテストとしてCPUとメモリを true に設定）
+    @StateObject private var matrix = SystemMatrix(args: SystemMatrixArgs(
+        cpu: true,
+        memory: true,
+        disk: false,
+        internet: false, // まだ実装していない機能はfalse
+        power: false,
+        gpu: false
+    ))
 
     var body: some View {
         HStack(spacing: 0) {
-            // 左側：プロセス数とスレッド数を表示
-            HStack(spacing: 12) {
-                HStack(spacing: 4) {
-                    Image(systemName: "square.grid.2x2")
-                    Text("\(processCount) Procs")
+            // 左側：プロセス数とスレッド数を表示（ArgsでCPUがONの場合のみ表示）
+            if let procs = matrix.data.processCount, let thds = matrix.data.threadCount {
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.grid.2x2")
+                        Text("\(procs) Procs")
+                    }
+                    HStack(spacing: 4) {
+                        Image(systemName: "point.3.connected.trianglepath.dotted")
+                        Text("\(thds) Thds")
+                    }
                 }
-                HStack(spacing: 4) {
-                    Image(systemName: "point.3.connected.trianglepath.dotted")
-                    Text("\(threadCount) Thds")
-                }
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .foregroundColor(.white.opacity(0.8))
+                .padding(.leading, 24)
             }
-            .font(.system(size: 11, weight: .regular, design: .monospaced))
-            .foregroundColor(.white.opacity(0.8))
-            .padding(.leading, 24)
 
             Spacer()
 
@@ -113,16 +115,20 @@ struct StatusBarView: View {
             Spacer()
 
             HStack(spacing: 20) {
-                HStack(spacing: 4) {
-                    Image(systemName: "cpu")
-                    // CPU使用率を小数点第1位まで表示
-                    Text(String(format: "%.1f%%", currentCPU))
+                // CPU情報（ArgsでONの場合のみ表示）
+                if let cpu = matrix.data.cpuUsage {
+                    HStack(spacing: 4) {
+                        Image(systemName: "cpu")
+                        Text(String(format: "%.1f%%", cpu.total))
+                    }
                 }
 
-                HStack(spacing: 4) {
-                    Image(systemName: "memorychip")
-                    // MBをGBに変換して小数点第1位まで表示
-                    Text(String(format: "%.1f GB", Double(currentMemoryMB) / 1024.0))
+                // メモリ情報（ArgsでONの場合のみ表示）
+                if let mem = matrix.data.memoryMB {
+                    HStack(spacing: 4) {
+                        Image(systemName: "memorychip")
+                        Text(String(format: "%.1f GB", Double(mem) / 1024.0))
+                    }
                 }
 
                 Text(currentTime, style: .time)
@@ -140,20 +146,13 @@ struct StatusBarView: View {
                 .foregroundColor(Color.blue.opacity(0.7)),
             alignment: .bottom
         )
-        .onReceive(timer) { input in
-            // 時計を更新
+        .onAppear {
+            // UIが表示された瞬間にモニタリング（取得ループ）を開始
+            matrix.startMonitoring()
+        }
+        .onReceive(clockTimer) { input in
+            // 時計の更新のみ行う
             currentTime = input
-
-            // 毎秒システム情報を取得して状態を更新する
-            // （同じ sysInfo インスタンスを使い回すのでCPU使用率が正しく差分計算される）
-            let cpuData = sysInfo.getCPUUsage()
-            currentCPU = cpuData.total
-
-            currentMemoryMB = sysInfo.getMemoryUsed() ?? 0
-
-            let procData = sysInfo.getProcessAndThreadCount()
-            processCount = procData.processes
-            threadCount = procData.threads
         }
     }
 }
