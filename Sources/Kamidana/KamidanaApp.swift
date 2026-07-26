@@ -77,12 +77,12 @@ struct StatusBarView: View {
     @State private var currentTime = Date()
     let clockTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
-    // SystemMatrixを初期化（今回はテストとしてCPUとメモリを true に設定）
+    // SystemMatrixを初期化（テストとしてCPU, メモリ, ネットワークを true に設定）
     @StateObject private var matrix = SystemMatrix(args: SystemMatrixArgs(
         cpu: true,
         memory: true,
         disk: false,
-        internet: false, // まだ実装していない機能はfalse
+        internet: true, // ネットワーク通信速度の取得をONに変更
         power: false,
         gpu: false
     ))
@@ -115,6 +115,25 @@ struct StatusBarView: View {
             Spacer()
 
             HStack(spacing: 20) {
+                
+                // インターネット通信速度（ArgsでONの場合のみ表示）
+                if let net = matrix.data.internetUsage {
+                    HStack(spacing: 8) {
+                        HStack(spacing: 2) {
+                            Image(systemName: "arrow.up.circle")
+                                .foregroundColor(.blue)
+                            Text(formatBytes(net.uploadBytesPerSecond) + "/s")
+                        }
+                        HStack(spacing: 2) {
+                            Image(systemName: "arrow.down.circle")
+                                .foregroundColor(.green)
+                            Text(formatBytes(net.downloadBytesPerSecond) + "/s")
+                        }
+                    }
+                    // テキストの長さが変わってUIがガタガタ動かないように幅を固定
+                    .frame(width: 150, alignment: .trailing)
+                }
+
                 // CPU情報（ArgsでONの場合のみ表示）
                 if let cpu = matrix.data.cpuUsage {
                     HStack(spacing: 4) {
@@ -147,12 +166,20 @@ struct StatusBarView: View {
             alignment: .bottom
         )
         .onAppear {
-            // UIが表示された瞬間にモニタリング（取得ループ）を開始
             matrix.startMonitoring()
         }
         .onReceive(clockTimer) { input in
-            // 時計の更新のみ行う
             currentTime = input
         }
+    }
+    
+    // バイト数を綺麗にフォーマットするヘルパー関数
+    private func formatBytes(_ bytes: UInt64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useKB, .useBytes]
+        formatter.countStyle = .binary // 1024ベースで計算
+        // "Zero KB" のような表示を防ぐ処理
+        if bytes == 0 { return "0 KB" }
+        return formatter.string(fromByteCount: Int64(bytes))
     }
 }
