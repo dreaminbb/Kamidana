@@ -1,6 +1,7 @@
 import Combine
 import Darwin
 import Foundation
+import IOKit
 
 // ユーザーが設定できる表示項目（JSON等から変換可能）
 struct SystemMatrixArgs: Codable {
@@ -10,6 +11,7 @@ struct SystemMatrixArgs: Codable {
     var internet: Bool = false
     var power: Bool = false
     var gpu: Bool = false
+    var thermal: Bool = false // 追加：サーマル・ファン設定
 }
 
 // 取得したシステムデータを一括で保持する構造体
@@ -22,6 +24,7 @@ struct SystemMatrixData {
     var gpuUsage: GPUUsageInfo?
     var powerUsage: PowerUsageInfo?
     var internetUsage: NetworkUsageInfo?
+    var thermalState: String? // 追加：Macの温度状態
 }
 
 // 通信速度をまとめる構造体
@@ -70,14 +73,10 @@ class SystemMatrix: ObservableObject {
     private var prevNetworkOutput: UInt64 = 0
     private var isFirstNetworkFetch = true
 
-    // Powermetricsの連続ストリームプロセス管理用
-    private var powerMetricsProcess: Process?
-    private var powerMetricsBuffer = Data()
-
-    // Powermetricsから取得した最新の全データ（辞書型）
-    private var latestPowerMetricsDict: [String: Any]?
-
-    private let powerMatrixExecutePath = "/usr/bin/powermetrics"
+    // CPU計算用の状態保存
+    private var prevProcessorInfo: processor_info_array_t?
+    private var prevProcessorCount: mach_msg_type_number_t = 0
+    private var previousCPUUsage = CPUUsageInfo(total: 0.0, perCore: [])
 
     init(args: SystemMatrixArgs) {
         self.args = args
@@ -85,11 +84,6 @@ class SystemMatrix: ObservableObject {
 
     /// 定期モニタリングを開始する
     func startMonitoring() {
-        // CPU, GPU, Power のいずれかが必要な場合のみ Powermetrics を起動する
-        if args.cpu || args.gpu || args.power {
-            startPowerMetricsStream()
-        }
-
         timer = Timer.publish(every: 1.0, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
@@ -100,9 +94,6 @@ class SystemMatrix: ObservableObject {
     func stopMonitoring() {
         timer?.cancel()
         timer = nil
-
-        powerMetricsProcess?.terminate()
-        powerMetricsProcess = nil
     }
 
     /// 設定(args)に基づいて、必要なデータだけを取得する
@@ -112,31 +103,24 @@ class SystemMatrix: ObservableObject {
             guard let self = self else { return }
             var newData = self.data  // 現在のデータをベースにする
 
-            // 1. Powermetrics由来のデータ抽出
-            if let pmDict = self.latestPowerMetricsDict {
-                if self.args.cpu {
-                    newData.cpuUsage = self.extractCPUUsage(from: pmDict)
-                    let procData = self.getProcessAndThreadCount()
-                    newData.processCount = procData.processes
-                    newData.threadCount = procData.threads
-                }
-                if self.args.gpu {
-                    newData.gpuUsage = self.extractGPUUsage(from: pmDict)
-                }
-                if self.args.power {
-                    newData.powerUsage = self.extractPowerUsage(from: pmDict)
-                }
+            if self.args.cpu {
+                newData.cpuUsage = self.getCPUUsage()
+                let procData = self.getProcessAndThreadCount()
+                newData.processCount = procData.processes
+                newData.threadCount = procData.threads
             }
-
-            // 2. その他のAPI由来のデータ抽出
+            if self.args.gpu {
+                newData.gpuUsage = self.getGPUUsage()
+            }
+            if self.args.thermal {
+                newData.thermalState = self.getThermalState()
+            }
             if self.args.memory {
                 newData.memoryMB = self.getMemoryUsed()
             }
-
             if self.args.disk {
                 newData.diskSpace = self.getDiskSpace(.used)
             }
-
             if self.args.internet {
                 newData.internetUsage = self.getNetworkUsage()
             }
@@ -144,7 +128,7 @@ class SystemMatrix: ObservableObject {
             // 取得完了後、メインスレッドでUIに反映
             DispatchQueue.main.async {
                 self.data = newData
-                self.printRichConsoleOutput(newData)
+                // self.printRichConsoleOutput(newData)
             }
         }
     }
@@ -210,136 +194,124 @@ class SystemMatrix: ObservableObject {
         return formatter.string(fromByteCount: Int64(bytes))
     }
 
-    // MARK: - PowerMetrics Continuous Stream
 
-    /// powermetrics をバックグラウンドで起動し、-i (インターバル) 指定で垂れ流し出力を読み取り続ける
-    private func startPowerMetricsStream() {
-        guard powerMetricsProcess == nil else { return }
-
-        let process = Process()
-        let pipe = Pipe()
-
-        process.executableURL = URL(fileURLWithPath: powerMatrixExecutePath)
-
-        // 必要な情報だけをサンプリングして負荷を下げる
-        var samplers: [String] = []
-        if args.cpu || args.gpu || args.power {
-            samplers.append("cpu_power")  // CPU, GPU, Power はすべて cpu_power サンプラーに含まれることが多い
-        }
-
-        let samplerArgs = samplers.joined(separator: ",")
-
-        if !samplerArgs.isEmpty {
-            process.arguments = ["-f", "plist", "-i", "1000", "-s", samplerArgs]
-        } else {
-            process.arguments = ["-f", "plist", "-i", "1000"]
-        }
-
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-
-        powerMetricsProcess = process
-
-        // 非同期でパイプからデータが送られてくるたびに読み取る
-        pipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
-            let incomingData = handle.availableData
-            guard !incomingData.isEmpty else { return }
-            self?.processIncomingPowerMetricsData(incomingData)
-        }
-
-        do {
-            try process.run()
-        } catch {
-            print("Failed to start powermetrics stream: \(error)")
-        }
-    }
-
-    /// 受け取った生データをバッファに貯め、1回分のXMLが完了するごとにパースする
-    private func processIncomingPowerMetricsData(_ newData: Data) {
-        powerMetricsBuffer.append(newData)
-
-        // powermetricsの連続出力は、1回分のデータの末尾に必ず NUL文字 (0x00) が入る仕様
-        while let nullIndex = powerMetricsBuffer.firstIndex(of: 0x00) {
-            // NUL文字までの1ブロック（完全な1回分のXML）を切り出し
-            let chunk = powerMetricsBuffer[..<nullIndex]
-            powerMetricsBuffer.removeSubrange(...nullIndex)
-
-            // 非同期でパース処理へ
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                self?.parsePowerMetricsChunk(chunk)
-            }
-        }
-    }
-
-    /// 1回分のXMLデータをまるごとパースして辞書として保存する
-    private func parsePowerMetricsChunk(_ data: Data) {
-        do {
-            if let plist = try PropertyListSerialization.propertyList(
-                from: data, options: [], format: nil) as? [String: Any]
-            {
-                // パース済みの辞書をそのまま保存
-                self.latestPowerMetricsDict = plist
-            }
-        } catch {
-            print(
-                "Plist Serialization Error (Chunk size: \(data.count)): \(error.localizedDescription)"
-            )
-        }
-    }
-
-    // MARK: - データ抽出ロジック (Extractors)
-
-    /// 辞書データからCPU情報を抽出
-    private func extractCPUUsage(from dict: [String: Any]) -> CPUUsageInfo? {
-        guard let processor = dict["processor"] as? [String: Any],
-            let clusters = processor["clusters"] as? [[String: Any]]
-        else {
-            return nil
-        }
-
-        var coreUsages: [Float] = []
-        for cluster in clusters {
-            if let cpus = cluster["cpus"] as? [[String: Any]] {
-                for cpu in cpus {
-                    if let activeRatio = cpu["active_ratio"] as? Double {
-                        coreUsages.append(Float(activeRatio * 100.0))
-                    } else if let idleRatio = cpu["idle_ratio"] as? Double {
-                        coreUsages.append(Float((1.0 - idleRatio) * 100.0))
-                    }
+    /// GPU使用率を取得する (IOKit経由)
+    private func getGPUUsage() -> GPUUsageInfo? {
+        let matchingDict = IOServiceMatching("IOAccelerator")
+        var iterator: io_iterator_t = 0
+        let result = IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator)
+        
+        guard result == kIOReturnSuccess else { return nil }
+        
+        var activeRatio: Float? = nil
+        var object: io_object_t = IOIteratorNext(iterator)
+        
+        while object != 0 {
+            if let properties = IORegistryEntryCreateCFProperty(object, "PerformanceStatistics" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? [String: Any] {
+                // Device Utilization % が存在する場合はそのまま使用（Intel/Apple Silicon共通の標準的な手法）
+                if let utilization = properties["Device Utilization %"] as? Int {
+                    activeRatio = Float(utilization)
+                    IOObjectRelease(object)
+                    break
                 }
             }
+            IOObjectRelease(object)
+            object = IOIteratorNext(iterator)
         }
-
-        if !coreUsages.isEmpty {
-            let total = coreUsages.reduce(0, +) / Float(coreUsages.count)
-            return CPUUsageInfo(total: total, perCore: coreUsages)
-        }
-        return nil
-    }
-
-    /// 辞書データからGPU情報を抽出
-    private func extractGPUUsage(from dict: [String: Any]) -> GPUUsageInfo? {
-        // ※ Macによってキーが "gpu" や "processor" 内のクラスタになっている場合があります
-        // M1などのApple Siliconでは processor の中に含まれることが多いです
-        if let processor = dict["processor"] as? [String: Any],
-            let activeRatio = processor["gpu_active_ratio"] as? Double
-        {  // 仮のキー名
-            return GPUUsageInfo(activeRatio: Float(activeRatio * 100.0))
+        IOObjectRelease(iterator)
+        
+        if let ratio = activeRatio {
+            return GPUUsageInfo(activeRatio: ratio)
         }
         return nil
     }
 
-    /// 辞書データから消費電力(Power)情報を抽出
-    private func extractPowerUsage(from dict: [String: Any]) -> PowerUsageInfo? {
-        if let processor = dict["processor"] as? [String: Any],
-            let packageWatts = processor["package_watts"] as? Double
-        {  // 仮のキー名
-            return PowerUsageInfo(packageWatts: Float(packageWatts))
+    /// Macの温度状態（サーマルステータス）を取得する
+    private func getThermalState() -> String {
+        let state = ProcessInfo.processInfo.thermalState
+        switch state {
+        case .nominal:
+            return "Normal" // 正常・発熱なし
+        case .fair:
+            return "Warm"   // 暖かい・ファンが回り始める
+        case .serious:
+            return "Hot"    // 熱い・パフォーマンス低下の恐れ
+        case .critical:
+            return "Critical" // 限界・システム緊急状態
+        @unknown default:
+            return "Unknown"
         }
-        return nil
     }
 
-    // MARK: - 個別のAPI取得ロジック (OS標準API)
+    /// システム全体のCPU使用率（%）および各コアの使用率を取得
+    private func getCPUUsage() -> CPUUsageInfo {
+        var processorInfo: processor_info_array_t?
+        var processorCount: mach_msg_type_number_t = 0
+        var processorMsgCount: mach_msg_type_number_t = 0
+
+        let result = host_processor_info(
+            mach_host_self(),
+            PROCESSOR_CPU_LOAD_INFO,
+            &processorCount,
+            &processorInfo,
+            &processorMsgCount
+        )
+
+        guard result == KERN_SUCCESS, let info = processorInfo else { return previousCPUUsage }
+
+        guard let prev = prevProcessorInfo else {
+            prevProcessorInfo = info
+            prevProcessorCount = processorCount
+            previousCPUUsage.perCore = Array(repeating: 0.0, count: Int(processorCount))
+            return previousCPUUsage
+        }
+
+        var totalUser: UInt32 = 0
+        var totalSystem: UInt32 = 0
+        var totalIdle: UInt32 = 0
+        var totalNice: UInt32 = 0
+
+        var currentCoreUsages: [Float] = []
+
+        for i in 0..<Int(processorCount) {
+            let index = Int(CPU_STATE_MAX) * i
+            let u = UInt32(bitPattern: info[index + Int(CPU_STATE_USER)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_USER)])
+            let s = UInt32(bitPattern: info[index + Int(CPU_STATE_SYSTEM)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_SYSTEM)])
+            let i_tick = UInt32(bitPattern: info[index + Int(CPU_STATE_IDLE)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_IDLE)])
+            let n = UInt32(bitPattern: info[index + Int(CPU_STATE_NICE)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_NICE)])
+
+            let coreTotal = Double(u &+ s &+ i_tick &+ n)
+            if coreTotal > 0.0 {
+                let coreUsage = Double(u &+ s &+ n) / coreTotal
+                currentCoreUsages.append(Float(coreUsage * 100.0))
+            } else {
+                currentCoreUsages.append(previousCPUUsage.perCore.indices.contains(i) ? previousCPUUsage.perCore[i] : 0.0)
+            }
+
+            totalUser &+= u
+            totalSystem &+= s
+            totalIdle &+= i_tick
+            totalNice &+= n
+        }
+
+        let totalDiff = Double(totalUser &+ totalSystem &+ totalIdle &+ totalNice)
+        if totalDiff < 1.0 {
+            let size = Int(processorMsgCount) * MemoryLayout<integer_t>.size
+            vm_deallocate(mach_task_self_, vm_address_t(bitPattern: info), vm_size_t(size))
+            return previousCPUUsage
+        }
+
+        let usage = Double(totalUser &+ totalSystem &+ totalNice) / totalDiff
+
+        let prevSize = Int(prevProcessorCount * UInt32(CPU_STATE_MAX)) * MemoryLayout<integer_t>.size
+        vm_deallocate(mach_task_self_, vm_address_t(bitPattern: prev), vm_size_t(prevSize))
+
+        prevProcessorInfo = info
+        prevProcessorCount = processorCount
+        previousCPUUsage = CPUUsageInfo(total: Float(usage * 100.0), perCore: currentCoreUsages)
+        
+        return previousCPUUsage
+    }
 
     /// ネットワーク（Wi-Fi等）の通信速度（上り/下り）を取得する
     private func getNetworkUsage() -> NetworkUsageInfo? {

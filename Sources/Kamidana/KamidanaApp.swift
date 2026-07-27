@@ -84,7 +84,8 @@ struct StatusBarView: View {
         disk: false,
         internet: true,
         power: false,
-        gpu: false
+        gpu: true,        // GPUを有効化
+        thermal: true     // サーマルステータスを有効化
     ))
     
     // LocalSendマネージャーを初期化
@@ -109,46 +110,79 @@ struct StatusBarView: View {
             
             // インターネット通信速度
             if let net = matrix.data.internetUsage {
-                    HStack(spacing: 8) {
-                        HStack(spacing: 3) {
-                            Image(systemName: "arrow.up.right")
-                                .foregroundColor(Color(red: 0.4, green: 0.8, blue: 1.0))
-                            Text(formatBytes(net.uploadBytesPerSecond) + "/s")
-                                .foregroundColor(.white)
-                        }
-                        HStack(spacing: 3) {
-                            Image(systemName: "arrow.down.right")
-                                .foregroundColor(Color(red: 0.4, green: 1.0, blue: 0.6))
-                            Text(formatBytes(net.downloadBytesPerSecond) + "/s")
-                                .foregroundColor(.white)
-                        }
+                HStack(spacing: 8) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.up.right")
+                            .foregroundColor(Color(red: 0.4, green: 0.8, blue: 1.0))
+                        Text(formatBytes(net.uploadBytesPerSecond) + "/s")
+                            .foregroundColor(.white)
                     }
-                    .frame(width: 160, alignment: .center)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.05))
-                    .cornerRadius(8)
-                }
-
-                // CPU情報
-                if let cpu = matrix.data.cpuUsage {
-                    let cpuColor = getCPUColor(cpu.total)
-                    HStack(spacing: 4) {
-                        Image(systemName: "cpu")
-                            .foregroundColor(cpuColor)
-                        Text(String(format: "%5.1f%%", cpu.total))
-                            .foregroundColor(cpuColor)
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.down.right")
+                            .foregroundColor(Color(red: 0.4, green: 1.0, blue: 0.6))
+                        Text(formatBytes(net.downloadBytesPerSecond) + "/s")
+                            .foregroundColor(.white)
                     }
-                    .frame(width: 75, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(cpuColor.opacity(0.15))
-                    .cornerRadius(8)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(cpuColor.opacity(0.3), lineWidth: 1))
                 }
+                .frame(width: 160, alignment: .center)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.05))
+                .cornerRadius(8)
+            }
 
-                // メモリ情報
-                if let mem = matrix.data.memoryMB {
+            // GPU情報
+            if let gpu = matrix.data.gpuUsage {
+                let gpuColor = Color(red: 0.2, green: 0.8, blue: 0.9)
+                HStack(spacing: 4) {
+                    Image(systemName: "g.circle.fill")
+                        .foregroundColor(gpuColor)
+                    Text(String(format: "%3.0f%%", gpu.activeRatio))
+                        .foregroundColor(gpuColor)
+                }
+                .frame(width: 60, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(gpuColor.opacity(0.15))
+                .cornerRadius(8)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(gpuColor.opacity(0.3), lineWidth: 1))
+            }
+
+            // CPU情報
+            if let cpu = matrix.data.cpuUsage {
+                let cpuColor = getCPUColor(cpu.total)
+                HStack(spacing: 4) {
+                    Image(systemName: "cpu")
+                        .foregroundColor(cpuColor)
+                    Text(String(format: "%5.1f%%", cpu.total))
+                        .foregroundColor(cpuColor)
+                }
+                .frame(width: 75, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(cpuColor.opacity(0.15))
+                .cornerRadius(8)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(cpuColor.opacity(0.3), lineWidth: 1))
+            }
+
+            // サーマルステータス（温度）
+            if let thermal = matrix.data.thermalState {
+                let thermalColor = getThermalColor(thermal)
+                HStack(spacing: 4) {
+                    Image(systemName: "thermometer")
+                        .foregroundColor(thermalColor)
+                    Text(thermal)
+                        .foregroundColor(thermalColor)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(thermalColor.opacity(0.15))
+                .cornerRadius(8)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(thermalColor.opacity(0.3), lineWidth: 1))
+            }
+
+            // メモリ情報
+            if let mem = matrix.data.memoryMB {
                     HStack(spacing: 4) {
                         Image(systemName: "memorychip")
                             .foregroundColor(Color(red: 0.8, green: 0.6, blue: 1.0))
@@ -195,6 +229,16 @@ struct StatusBarView: View {
         if usage < 30.0 { return Color(red: 0.4, green: 1.0, blue: 0.6) } // 緑
         if usage < 70.0 { return Color(red: 1.0, green: 0.8, blue: 0.2) } // 黄色
         return Color(red: 1.0, green: 0.4, blue: 0.4) // 赤
+    }
+    
+    // サーマルステータスに応じて色を変えるヘルパー関数
+    private func getThermalColor(_ state: String) -> Color {
+        switch state {
+        case "Normal": return Color(red: 0.4, green: 0.8, blue: 1.0)
+        case "Warm": return Color(red: 1.0, green: 0.8, blue: 0.2)
+        case "Hot", "Critical": return Color(red: 1.0, green: 0.4, blue: 0.4)
+        default: return .white
+        }
     }
     
     // バイト数を綺麗にフォーマットするヘルパー関数
