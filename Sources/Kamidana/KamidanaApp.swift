@@ -77,86 +77,101 @@ struct StatusBarView: View {
     @State private var currentTime = Date()
     let clockTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
-    // SystemMatrixを初期化（テストとしてCPU, メモリ, ネットワークを true に設定）
+    // SystemMatrixを初期化
     @StateObject private var matrix = SystemMatrix(args: SystemMatrixArgs(
         cpu: true,
         memory: true,
         disk: false,
-        internet: true, // ネットワーク通信速度の取得をONに変更
+        internet: true,
         power: false,
         gpu: false
     ))
+    
+    // LocalSendマネージャーを初期化
+    @StateObject private var localSend = LocalSendManager()
 
     var body: some View {
-        HStack(spacing: 0) {
-            // 左側：プロセス数とスレッド数を表示（ArgsでCPUがONの場合のみ表示）
-            if let procs = matrix.data.processCount, let thds = matrix.data.threadCount {
-                HStack(spacing: 12) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "square.grid.2x2")
-                        Text("\(procs) Procs")
-                    }
-                    HStack(spacing: 4) {
-                        Image(systemName: "point.3.connected.trianglepath.dotted")
-                        Text("\(thds) Thds")
-                    }
+        HStack(spacing: 12) {
+            // LocalSend デバイスが見つかった場合の表示（テスト用）
+            if !localSend.discoveredDevices.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "paperplane.circle.fill")
+                        .foregroundColor(.blue)
+                    Text("\(localSend.discoveredDevices.count) Devices")
+                        .foregroundColor(.white)
                 }
-                .font(.system(size: 11, weight: .regular, design: .monospaced))
-                .foregroundColor(.white.opacity(0.8))
-                .padding(.leading, 24)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.blue.opacity(0.2))
+                .cornerRadius(8)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.4), lineWidth: 1))
             }
-
-            Spacer()
-
-            Text("⛩️ Kamidana Custom Status Bar")
-                .font(.system(size: 14, weight: .bold, design: .default))
-                .foregroundColor(.white)
-
-            Spacer()
-
-            HStack(spacing: 20) {
-                
-                // インターネット通信速度（ArgsでONの場合のみ表示）
-                if let net = matrix.data.internetUsage {
+            
+            // インターネット通信速度
+            if let net = matrix.data.internetUsage {
                     HStack(spacing: 8) {
-                        HStack(spacing: 2) {
-                            Image(systemName: "arrow.up.circle")
-                                .foregroundColor(.blue)
+                        HStack(spacing: 3) {
+                            Image(systemName: "arrow.up.right")
+                                .foregroundColor(Color(red: 0.4, green: 0.8, blue: 1.0))
                             Text(formatBytes(net.uploadBytesPerSecond) + "/s")
+                                .foregroundColor(.white)
                         }
-                        HStack(spacing: 2) {
-                            Image(systemName: "arrow.down.circle")
-                                .foregroundColor(.green)
+                        HStack(spacing: 3) {
+                            Image(systemName: "arrow.down.right")
+                                .foregroundColor(Color(red: 0.4, green: 1.0, blue: 0.6))
                             Text(formatBytes(net.downloadBytesPerSecond) + "/s")
+                                .foregroundColor(.white)
                         }
                     }
-                    // テキストの長さが変わってUIがガタガタ動かないように幅を固定
-                    .frame(width: 150, alignment: .trailing)
+                    .frame(width: 160, alignment: .center)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.05))
+                    .cornerRadius(8)
                 }
 
-                // CPU情報（ArgsでONの場合のみ表示）
+                // CPU情報
                 if let cpu = matrix.data.cpuUsage {
+                    let cpuColor = getCPUColor(cpu.total)
                     HStack(spacing: 4) {
                         Image(systemName: "cpu")
-                        Text(String(format: "%.1f%%", cpu.total))
+                            .foregroundColor(cpuColor)
+                        Text(String(format: "%5.1f%%", cpu.total))
+                            .foregroundColor(cpuColor)
                     }
+                    .frame(width: 75, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(cpuColor.opacity(0.15))
+                    .cornerRadius(8)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(cpuColor.opacity(0.3), lineWidth: 1))
                 }
 
-                // メモリ情報（ArgsでONの場合のみ表示）
+                // メモリ情報
                 if let mem = matrix.data.memoryMB {
                     HStack(spacing: 4) {
                         Image(systemName: "memorychip")
+                            .foregroundColor(Color(red: 0.8, green: 0.6, blue: 1.0))
                         Text(String(format: "%.1f GB", Double(mem) / 1024.0))
+                            .foregroundColor(Color(red: 0.9, green: 0.8, blue: 1.0))
                     }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color(red: 0.6, green: 0.3, blue: 0.9).opacity(0.2))
+                    .cornerRadius(8)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(red: 0.6, green: 0.3, blue: 0.9).opacity(0.4), lineWidth: 1))
                 }
 
-                Text(currentTime, style: .time)
-                    .fontWeight(.medium)
-            }
-            .font(.system(size: 13, weight: .regular, design: .monospaced))
-            .foregroundColor(.white)
-            .padding(.trailing, 24)
+        // 時計
+        Text(currentTime, style: .time)
+            .fontWeight(.bold)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+            .background(Color.black.opacity(0.3))
+            .cornerRadius(8)
         }
+        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+        .padding(.trailing, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(red: 0.1, green: 0.1, blue: 0.12).opacity(0.85))
         .overlay(
@@ -167,10 +182,19 @@ struct StatusBarView: View {
         )
         .onAppear {
             matrix.startMonitoring()
+            // LocalSendのネットワークスキャンを開始
+            localSend.scanNetwork()
         }
         .onReceive(clockTimer) { input in
             currentTime = input
         }
+    }
+    
+    // CPUの使用率に応じて色を動的に変えるヘルパー関数
+    private func getCPUColor(_ usage: Float) -> Color {
+        if usage < 30.0 { return Color(red: 0.4, green: 1.0, blue: 0.6) } // 緑
+        if usage < 70.0 { return Color(red: 1.0, green: 0.8, blue: 0.2) } // 黄色
+        return Color(red: 1.0, green: 0.4, blue: 0.4) // 赤
     }
     
     // バイト数を綺麗にフォーマットするヘルパー関数
