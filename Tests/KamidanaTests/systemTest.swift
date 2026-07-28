@@ -48,9 +48,21 @@ final class KamidanaTests: XCTestCase {
     //
     // }
 
-    func testsystemMatrix() {
+    // func testsystemMatrix() {
+    //
+    //     let sysinfoIns = systemInfo()
+    //     let _ = sysinfoIns.runSystemMatrixCommand()
+    // }
 
-        let sysinfoIns = systemInfo()
-        let _ = sysinfoIns.runSystemMatrixCommand()
+    func testpowerTest() {
+        let sys = SystemMatrix(args: SystemMatrixArgs())
+        let snapshot = sys.powerInfoSnapShot()
+        print("Snapshot: \(snapshot)")
+
+        // print("Is Charging: \(sys.getIsNowCharging())")
+        // print("Battery (%): \(sys.currentBatteryCharged())")
+        // print("Time to Empty (mins): \(sys.batteryTimeLeft())")
+        // print("Time to Full (mins): \(sys.chargingTimeLeft())")
+        print("Power (Watts): \(sys.getChargingPowerWat())")
     }
 }

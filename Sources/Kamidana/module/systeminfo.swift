@@ -2,6 +2,7 @@ import Combine
 import Darwin
 import Foundation
 import IOKit
+import IOKit.ps
 
 // ユーザーが設定できる表示項目（JSON等から変換可能）
 struct SystemMatrixArgs: Codable {
@@ -11,7 +12,7 @@ struct SystemMatrixArgs: Codable {
     var internet: Bool = false
     var power: Bool = false
     var gpu: Bool = false
-    var thermal: Bool = false // 追加：サーマル・ファン設定
+    var thermal: Bool = false  // 追加：サーマル・ファン設定
 }
 
 // 取得したシステムデータを一括で保持する構造体
@@ -24,7 +25,7 @@ struct SystemMatrixData {
     var gpuUsage: GPUUsageInfo?
     var powerUsage: PowerUsageInfo?
     var internetUsage: NetworkUsageInfo?
-    var thermalState: String? // 追加：Macの温度状態
+    var thermalState: String?  // 追加：Macの温度状態
 }
 
 // 通信速度をまとめる構造体
@@ -44,9 +45,18 @@ struct GPUUsageInfo {
     var activeRatio: Float
 }
 
+struct WatInfo {
+    var miliAmperage: Float
+    var miliVoltage: Float
+    var isCharging: Bool
+}
+
 // 電力量をまとめる構造体
 struct PowerUsageInfo {
-    var packageWatts: Float
+    var packageWatts: WatInfo
+    var currentBatteryCharged: Int64
+    var batteryTimeLeft: Int64
+    var chargingTimeLeft: Int64?
 }
 
 enum DiskSpaceType {
@@ -128,7 +138,7 @@ class SystemMatrix: ObservableObject {
             // 取得完了後、メインスレッドでUIに反映
             DispatchQueue.main.async {
                 self.data = newData
-                // self.printRichConsoleOutput(newData)
+                self.printRichConsoleOutput(newData)
             }
         }
     }
@@ -194,20 +204,22 @@ class SystemMatrix: ObservableObject {
         return formatter.string(fromByteCount: Int64(bytes))
     }
 
-
     /// GPU使用率を取得する (IOKit経由)
     private func getGPUUsage() -> GPUUsageInfo? {
         let matchingDict = IOServiceMatching("IOAccelerator")
         var iterator: io_iterator_t = 0
         let result = IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator)
-        
+
         guard result == kIOReturnSuccess else { return nil }
-        
+
         var activeRatio: Float? = nil
         var object: io_object_t = IOIteratorNext(iterator)
-        
+
         while object != 0 {
-            if let properties = IORegistryEntryCreateCFProperty(object, "PerformanceStatistics" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? [String: Any] {
+            if let properties = IORegistryEntryCreateCFProperty(
+                object, "PerformanceStatistics" as CFString, kCFAllocatorDefault, 0)?
+                .takeRetainedValue() as? [String: Any]
+            {
                 // Device Utilization % が存在する場合はそのまま使用（Intel/Apple Silicon共通の標準的な手法）
                 if let utilization = properties["Device Utilization %"] as? Int {
                     activeRatio = Float(utilization)
@@ -219,7 +231,7 @@ class SystemMatrix: ObservableObject {
             object = IOIteratorNext(iterator)
         }
         IOObjectRelease(iterator)
-        
+
         if let ratio = activeRatio {
             return GPUUsageInfo(activeRatio: ratio)
         }
@@ -231,13 +243,13 @@ class SystemMatrix: ObservableObject {
         let state = ProcessInfo.processInfo.thermalState
         switch state {
         case .nominal:
-            return "Normal" // 正常・発熱なし
+            return "Normal"  // 正常・発熱なし
         case .fair:
-            return "Warm"   // 暖かい・ファンが回り始める
+            return "Warm"  // 暖かい・ファンが回り始める
         case .serious:
-            return "Hot"    // 熱い・パフォーマンス低下の恐れ
+            return "Hot"  // 熱い・パフォーマンス低下の恐れ
         case .critical:
-            return "Critical" // 限界・システム緊急状態
+            return "Critical"  // 限界・システム緊急状態
         @unknown default:
             return "Unknown"
         }
@@ -275,17 +287,27 @@ class SystemMatrix: ObservableObject {
 
         for i in 0..<Int(processorCount) {
             let index = Int(CPU_STATE_MAX) * i
-            let u = UInt32(bitPattern: info[index + Int(CPU_STATE_USER)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_USER)])
-            let s = UInt32(bitPattern: info[index + Int(CPU_STATE_SYSTEM)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_SYSTEM)])
-            let i_tick = UInt32(bitPattern: info[index + Int(CPU_STATE_IDLE)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_IDLE)])
-            let n = UInt32(bitPattern: info[index + Int(CPU_STATE_NICE)]) &- UInt32(bitPattern: prev[index + Int(CPU_STATE_NICE)])
+            let u =
+                UInt32(bitPattern: info[index + Int(CPU_STATE_USER)])
+                &- UInt32(bitPattern: prev[index + Int(CPU_STATE_USER)])
+            let s =
+                UInt32(bitPattern: info[index + Int(CPU_STATE_SYSTEM)])
+                &- UInt32(bitPattern: prev[index + Int(CPU_STATE_SYSTEM)])
+            let i_tick =
+                UInt32(bitPattern: info[index + Int(CPU_STATE_IDLE)])
+                &- UInt32(bitPattern: prev[index + Int(CPU_STATE_IDLE)])
+            let n =
+                UInt32(bitPattern: info[index + Int(CPU_STATE_NICE)])
+                &- UInt32(bitPattern: prev[index + Int(CPU_STATE_NICE)])
 
             let coreTotal = Double(u &+ s &+ i_tick &+ n)
             if coreTotal > 0.0 {
                 let coreUsage = Double(u &+ s &+ n) / coreTotal
                 currentCoreUsages.append(Float(coreUsage * 100.0))
             } else {
-                currentCoreUsages.append(previousCPUUsage.perCore.indices.contains(i) ? previousCPUUsage.perCore[i] : 0.0)
+                currentCoreUsages.append(
+                    previousCPUUsage.perCore.indices.contains(i) ? previousCPUUsage.perCore[i] : 0.0
+                )
             }
 
             totalUser &+= u
@@ -303,13 +325,14 @@ class SystemMatrix: ObservableObject {
 
         let usage = Double(totalUser &+ totalSystem &+ totalNice) / totalDiff
 
-        let prevSize = Int(prevProcessorCount * UInt32(CPU_STATE_MAX)) * MemoryLayout<integer_t>.size
+        let prevSize =
+            Int(prevProcessorCount * UInt32(CPU_STATE_MAX)) * MemoryLayout<integer_t>.size
         vm_deallocate(mach_task_self_, vm_address_t(bitPattern: prev), vm_size_t(prevSize))
 
         prevProcessorInfo = info
         prevProcessorCount = processorCount
         previousCPUUsage = CPUUsageInfo(total: Float(usage * 100.0), perCore: currentCoreUsages)
-        
+
         return previousCPUUsage
     }
 
@@ -423,6 +446,74 @@ class SystemMatrix: ObservableObject {
         case .free: return byteUnitStringConverted(free)
         case .used: return byteUnitStringConverted(total - free)
         }
+    }
+
+    public func powerInfoSnapShot() -> [String: Any]? {
+        let snapshot = IOPSCopyPowerSourcesInfo().takeRetainedValue()
+        let sources = IOPSCopyPowerSourcesList(snapshot).takeRetainedValue() as Array
+        for source in sources {
+            if let desc = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue()
+                as? [String: Any]
+            {
+                return desc
+            }
+        }
+        return nil
+    }
+
+    // return value - = 放電
+    // return value + = 充電
+    // これらをisChargingの値に
+    public func getChargingPowerWat() -> WatInfo? {
+        let matchingDict = IOServiceMatching("AppleSmartBattery")
+        var iterator: io_iterator_t = 0
+        if IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator)
+            == kIOReturnSuccess
+        {
+            var _amperage: Float = 0.0
+            var _voltage: Float = 0.0
+            var _isCharging: Bool = false
+
+            var object: io_object_t = IOIteratorNext(iterator)
+            while object != 0 {
+                var props: Unmanaged<CFMutableDictionary>?
+                if IORegistryEntryCreateCFProperties(object, &props, kCFAllocatorDefault, 0)
+                    == kIOReturnSuccess
+                {
+                    if let d = props?.takeRetainedValue() as? [String: Any] {
+                        _amperage = Float(d["Amperage"] as? Int ?? 0)
+                        _voltage = Float(d["Voltage"] as? Int ?? 0)
+                        _isCharging = (_amperage < 0)
+                    }
+                }
+                IOObjectRelease(object)
+                object = IOIteratorNext(iterator)
+            }
+            IOObjectRelease(iterator)
+            return WatInfo(miliAmperage: _amperage, miliVoltage: _voltage, isCharging: _isCharging)
+        }
+        // couldn't fetch charging information
+        return WatInfo(miliAmperage: 0.0, miliVoltage: 0.0, isCharging: false)
+    }
+
+    public func getIsNowCharging() -> Bool {
+        guard let desc = powerInfoSnapShot() else { return false }
+        return (desc["Is Charging"] as? Bool) ?? false
+    }
+
+    public func currentBatteryCharged() -> Int64 {
+        guard let desc = powerInfoSnapShot() else { return 0 }
+        return (desc["Current Capacity"] as? Int64) ?? 0
+    }
+
+    public func batteryTimeLeft() -> Int64 {
+        guard let desc = powerInfoSnapShot() else { return 0 }
+        return (desc["Time to Empty"] as? Int64) ?? 0
+    }
+
+    public func chargingTimeLeft() -> Int64 {
+        guard let desc = powerInfoSnapShot() else { return 0 }
+        return (desc["Time to Full Charge"] as? Int64) ?? 0
     }
 
     // MARK: - PowerMetrics (高度な情報)
