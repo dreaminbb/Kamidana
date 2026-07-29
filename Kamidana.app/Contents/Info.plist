@@ -12,5 +12,9 @@
 	<string>1.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>
+	<key>NSLocationUsageDescription</key>
+	<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>
 </dict>
 </plist>

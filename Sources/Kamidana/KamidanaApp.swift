@@ -1,4 +1,5 @@
 import AppKit
+import CoreWLAN
 import SwiftUI
 
 @main
@@ -84,12 +85,18 @@ struct StatusBarView: View {
         disk: false,
         internet: true,
         power: false,
-        gpu: true,        // GPUを有効化
-        thermal: true     // サーマルステータスを有効化
+        gpu: true,
+        thermal: true,
+        battery: true
     ))
     
     // LocalSendマネージャーを初期化
     @StateObject private var localSend = LocalSendManager()
+    
+    // ネットワークマネージャーを初期化
+    @StateObject private var netManager = NetworkManager()
+    
+    @State private var showWiFiPopover = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -106,6 +113,74 @@ struct StatusBarView: View {
                 .background(Color.blue.opacity(0.2))
                 .cornerRadius(8)
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.4), lineWidth: 1))
+            }
+            
+            // Wi-Fi接続状態ボタン（クリックでWi-Fiリストを表示）
+            Button(action: {
+                showWiFiPopover.toggle()
+                if showWiFiPopover {
+                    netManager.scanForNetworks()
+                }
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: netManager.currentConnection == "WIFI" ? "wifi" : (netManager.currentConnection == "LAN" ? "network" : "wifi.slash"))
+                    Text(netManager.currentConnection)
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.blue.opacity(netManager.currentConnection != "OFF" ? 0.3 : 0.1))
+                .cornerRadius(8)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.4), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showWiFiPopover, arrowEdge: .bottom) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("Wi-Fi Networks")
+                            .font(.headline)
+                        Spacer()
+                        Button(action: {
+                            netManager.scanForNetworks()
+                        }) {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.bottom, 5)
+                    
+                    if netManager.availableNetworks.isEmpty {
+                        Text("ネットワークを検索中...")
+                            .foregroundColor(.gray)
+                            .frame(width: 250, alignment: .center)
+                            .padding()
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 8) {
+                                ForEach(netManager.availableNetworks, id: \.bssid) { network in
+                                    HStack {
+                                        Image(systemName: "wifi")
+                                        Text(network.ssid ?? "Hidden")
+                                            .lineLimit(1)
+                                        Spacer()
+                                        Text("\(network.rssiValue) dBm")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                    .frame(width: 250)
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 8)
+                                    .background(Color.white.opacity(0.05))
+                                    .cornerRadius(6)
+                                }
+                            }
+                        }
+                        .frame(maxHeight: 300) // リストが長すぎないように高さを制限
+                    }
+                }
+                .padding()
+                // ポップオーバーの背景をダークモードに合わせる
+                .background(Color(red: 0.15, green: 0.15, blue: 0.18))
             }
             
             // インターネット通信速度

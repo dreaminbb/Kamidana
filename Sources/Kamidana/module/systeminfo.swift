@@ -13,6 +13,7 @@ struct SystemMatrixArgs: Codable {
     var power: Bool = false
     var gpu: Bool = false
     var thermal: Bool = false  // 追加：サーマル・ファン設定
+    var battery: Bool = false  // 追加：バッテリー設定
 }
 
 // 取得したシステムデータを一括で保持する構造体
@@ -26,12 +27,23 @@ struct SystemMatrixData {
     var powerUsage: PowerUsageInfo?
     var internetUsage: NetworkUsageInfo?
     var thermalState: String?  // 追加：Macの温度状態
+    var batteryUsage: BatteryUsageInfo? // 追加：バッテリー情報
+    var topCPU: [ProcessStat]? // 追加：トッププロセス（CPU）
+    var topMemory: [ProcessStat]? // 追加：トッププロセス（メモリ）
+    var topDisk: [ProcessStat]? // 追加：トッププロセス（ディスク）
+    var diskIOUsage: DiskUsageInfo? // 追加：ディスク全体のI/O
 }
 
 // 通信速度をまとめる構造体
 struct NetworkUsageInfo {
     var uploadBytesPerSecond: UInt64
     var downloadBytesPerSecond: UInt64
+}
+
+// ディスクI/O速度をまとめる構造体
+struct DiskUsageInfo {
+    var readBytesPerSecond: UInt64
+    var writeBytesPerSecond: UInt64
 }
 
 // CPUの使用率をまとめる構造体
@@ -46,17 +58,24 @@ struct GPUUsageInfo {
 }
 
 struct WatInfo {
-    var miliAmperage: Float
-    var miliVoltage: Float
+    var activeWatts: Float
+    var amperage: Float
+    var voltage: Float
     var isCharging: Bool
 }
 
-// 電力量をまとめる構造体
+// バッテリー情報をまとめる構造体
+struct BatteryUsageInfo {
+    var isCharging: Bool
+    var currentCapacity: Int64
+    var timeToEmpty: Int64
+    var timeToFull: Int64
+    var wattInfo: WatInfo?
+}
+
+// 電力量をまとめる構造体（拡張用）
 struct PowerUsageInfo {
-    var packageWatts: WatInfo
-    var currentBatteryCharged: Int64
-    var batteryTimeLeft: Int64
-    var chargingTimeLeft: Int64?
+    var packageWatts: Float
 }
 
 enum DiskSpaceType {
@@ -83,10 +102,18 @@ class SystemMatrix: ObservableObject {
     private var prevNetworkOutput: UInt64 = 0
     private var isFirstNetworkFetch = true
 
+    // ディスクI/O計算用の状態保存
+    private var prevDiskRead: UInt64 = 0
+    private var prevDiskWrite: UInt64 = 0
+    private var isFirstDiskFetch = true
+
     // CPU計算用の状態保存
     private var prevProcessorInfo: processor_info_array_t?
     private var prevProcessorCount: mach_msg_type_number_t = 0
     private var previousCPUUsage = CPUUsageInfo(total: 0.0, perCore: [])
+    
+    // プロセス監視用のマネージャー
+    private var processMonitor = ProcessMonitor()
 
     init(args: SystemMatrixArgs) {
         self.args = args
@@ -112,12 +139,16 @@ class SystemMatrix: ObservableObject {
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
             var newData = self.data  // 現在のデータをベースにする
+            
+            // プロセス情報を更新（CPU, Mem, Diskのトッププロセスのため）
+            self.processMonitor.update()
 
             if self.args.cpu {
                 newData.cpuUsage = self.getCPUUsage()
                 let procData = self.getProcessAndThreadCount()
                 newData.processCount = procData.processes
                 newData.threadCount = procData.threads
+                newData.topCPU = self.processMonitor.getTopCPU(limit: 5)
             }
             if self.args.gpu {
                 newData.gpuUsage = self.getGPUUsage()
@@ -127,12 +158,18 @@ class SystemMatrix: ObservableObject {
             }
             if self.args.memory {
                 newData.memoryMB = self.getMemoryUsed()
+                newData.topMemory = self.processMonitor.getTopMemory(limit: 5)
             }
             if self.args.disk {
                 newData.diskSpace = self.getDiskSpace(.used)
+                newData.topDisk = self.processMonitor.getTopDisk(limit: 5)
+                newData.diskIOUsage = self.getDiskIOUsage()
             }
             if self.args.internet {
                 newData.internetUsage = self.getNetworkUsage()
+            }
+            if self.args.battery {
+                newData.batteryUsage = self.getBatteryUsageInfo()
             }
 
             // 取得完了後、メインスレッドでUIに反映
@@ -382,6 +419,43 @@ class SystemMatrix: ObservableObject {
         return NetworkUsageInfo(uploadBytesPerSecond: diffOutput, downloadBytesPerSecond: diffInput)
     }
 
+    /// ディスクI/O速度（Read/Write）を取得する
+    private func getDiskIOUsage() -> DiskUsageInfo? {
+        let matchingDict = IOServiceMatching("IOBlockStorageDriver")
+        var iterator: io_iterator_t = 0
+        
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator) == kIOReturnSuccess else { return nil }
+        
+        var currentRead: UInt64 = 0
+        var currentWrite: UInt64 = 0
+        
+        var object: io_object_t = IOIteratorNext(iterator)
+        while object != 0 {
+            if let props = IORegistryEntryCreateCFProperty(object, "Statistics" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? [String: Any] {
+                if let bytesRead = props["Bytes (Read)"] as? UInt64 { currentRead += bytesRead }
+                if let bytesWrite = props["Bytes (Write)"] as? UInt64 { currentWrite += bytesWrite }
+            }
+            IOObjectRelease(object)
+            object = IOIteratorNext(iterator)
+        }
+        IOObjectRelease(iterator)
+
+        if isFirstDiskFetch {
+            prevDiskRead = currentRead
+            prevDiskWrite = currentWrite
+            isFirstDiskFetch = false
+            return DiskUsageInfo(readBytesPerSecond: 0, writeBytesPerSecond: 0)
+        }
+
+        let diffRead = currentRead >= prevDiskRead ? currentRead - prevDiskRead : 0
+        let diffWrite = currentWrite >= prevDiskWrite ? currentWrite - prevDiskWrite : 0
+
+        prevDiskRead = currentRead
+        prevDiskWrite = currentWrite
+
+        return DiskUsageInfo(readBytesPerSecond: diffRead, writeBytesPerSecond: diffWrite)
+    }
+
     private func getMemoryUsed() -> MegaByte? {
         var count = mach_msg_type_number_t(
             MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size)
@@ -473,6 +547,7 @@ class SystemMatrix: ObservableObject {
             var _amperage: Float = 0.0
             var _voltage: Float = 0.0
             var _isCharging: Bool = false
+            var _activeWatts: Float = 0.0
 
             var object: io_object_t = IOIteratorNext(iterator)
             while object != 0 {
@@ -483,17 +558,17 @@ class SystemMatrix: ObservableObject {
                     if let d = props?.takeRetainedValue() as? [String: Any] {
                         _amperage = Float(d["Amperage"] as? Int ?? 0)
                         _voltage = Float(d["Voltage"] as? Int ?? 0)
-                        _isCharging = (_amperage < 0)
+                        _isCharging = (_amperage >= 0) // 0以上の場合は充電・AC電源駆動
+                        _activeWatts = Float(abs(_amperage) * _voltage) / 1_000_000.0
                     }
                 }
                 IOObjectRelease(object)
                 object = IOIteratorNext(iterator)
             }
             IOObjectRelease(iterator)
-            return WatInfo(miliAmperage: _amperage, miliVoltage: _voltage, isCharging: _isCharging)
+            return WatInfo(activeWatts: _activeWatts, amperage: _amperage, voltage: _voltage, isCharging: _isCharging)
         }
-        // couldn't fetch charging information
-        return WatInfo(miliAmperage: 0.0, miliVoltage: 0.0, isCharging: false)
+        return nil
     }
 
     public func getIsNowCharging() -> Bool {
@@ -515,8 +590,16 @@ class SystemMatrix: ObservableObject {
         guard let desc = powerInfoSnapShot() else { return 0 }
         return (desc["Time to Full Charge"] as? Int64) ?? 0
     }
+    
+    /// バッテリー関連の情報を一括取得して返す
+    private func getBatteryUsageInfo() -> BatteryUsageInfo {
+        return BatteryUsageInfo(
+            isCharging: getIsNowCharging(),
+            currentCapacity: currentBatteryCharged(),
+            timeToEmpty: batteryTimeLeft(),
+            timeToFull: chargingTimeLeft(),
+            wattInfo: getChargingPowerWat()
+        )
+    }
 
-    // MARK: - PowerMetrics (高度な情報)
-
-    // 現在はgetCPUUsageFromPowerMetricsに統合されたため、こちらは削除または将来の拡張用に残します
 }
