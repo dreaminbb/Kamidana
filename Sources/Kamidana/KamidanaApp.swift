@@ -77,26 +77,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 struct StatusBarView: View {
     @State private var currentTime = Date()
     let clockTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    
+
     // SystemMatrixを初期化
-    @StateObject private var matrix = SystemMatrix(args: SystemMatrixArgs(
-        cpu: true,
-        memory: true,
-        disk: false,
-        internet: true,
-        power: false,
-        gpu: true,
-        thermal: true,
-        battery: true
-    ))
-    
+    @StateObject private var matrix = SystemMatrix(
+        args: SystemMatrixArgs(
+            cpu: true,
+            memory: true,
+            disk: false,
+            internet: true,
+            power: false,
+            gpu: true,
+            thermal: true,
+            battery: true
+        ))
+
     // LocalSendマネージャーを初期化
     @StateObject private var localSend = LocalSendManager()
-    
+
     // ネットワークマネージャーを初期化
     @StateObject private var netManager = NetworkManager()
-    
+
     @State private var showWiFiPopover = false
+    @State private var selectedSSID: String? = nil
+    @State private var wifiPassword = ""
+    @State private var connectionStatusMsg = ""
 
     var body: some View {
         HStack(spacing: 12) {
@@ -112,9 +116,10 @@ struct StatusBarView: View {
                 .padding(.vertical, 4)
                 .background(Color.blue.opacity(0.2))
                 .cornerRadius(8)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.4), lineWidth: 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.4), lineWidth: 1))
             }
-            
+
             // Wi-Fi接続状態ボタン（クリックでWi-Fiリストを表示）
             Button(action: {
                 showWiFiPopover.toggle()
@@ -123,7 +128,10 @@ struct StatusBarView: View {
                 }
             }) {
                 HStack(spacing: 4) {
-                    Image(systemName: netManager.currentConnection == "WIFI" ? "wifi" : (netManager.currentConnection == "LAN" ? "network" : "wifi.slash"))
+                    Image(
+                        systemName: netManager.currentConnection == "WIFI"
+                            ? "wifi"
+                            : (netManager.currentConnection == "LAN" ? "network" : "wifi.slash"))
                     Text(netManager.currentConnection)
                 }
                 .foregroundColor(.white)
@@ -131,7 +139,8 @@ struct StatusBarView: View {
                 .padding(.vertical, 4)
                 .background(Color.blue.opacity(netManager.currentConnection != "OFF" ? 0.3 : 0.1))
                 .cornerRadius(8)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.4), lineWidth: 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8).stroke(Color.blue.opacity(0.4), lineWidth: 1))
             }
             .buttonStyle(.plain)
             .popover(isPresented: $showWiFiPopover, arrowEdge: .bottom) {
@@ -148,8 +157,61 @@ struct StatusBarView: View {
                         .buttonStyle(.plain)
                     }
                     .padding(.bottom, 5)
-                    
-                    if netManager.availableNetworks.isEmpty {
+
+                    if let ssid = selectedSSID {
+                        // ▼ パスワード入力画面 ▼
+                        VStack(spacing: 12) {
+                            Text("\(ssid) に接続")
+                                .font(.subheadline)
+                            
+                            SecureField("パスワード", text: $wifiPassword)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 230)
+                            
+                            if !connectionStatusMsg.isEmpty {
+                                Text(connectionStatusMsg)
+                                    .font(.caption)
+                                    .foregroundColor(connectionStatusMsg.contains("成功") ? .green : .red)
+                            }
+                            
+                            HStack {
+                                Button("キャンセル") {
+                                    selectedSSID = nil
+                                    wifiPassword = ""
+                                    connectionStatusMsg = ""
+                                }
+                                Spacer()
+                                Button("接続") {
+                                    connectionStatusMsg = "接続中..."
+                                    // UIが固まらないように裏側で接続処理を行う
+                                    DispatchQueue.global(qos: .userInitiated).async {
+                                        let result = netManager.connectWIFI(ssid: ssid, password: wifiPassword)
+                                        DispatchQueue.main.async {
+                                            switch result {
+                                            case .success(_):
+                                                connectionStatusMsg = "✅ 接続成功！"
+                                                // 1秒後にポップオーバーを閉じて状態をリセット
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                                    showWiFiPopover = false
+                                                    selectedSSID = nil
+                                                    wifiPassword = ""
+                                                    connectionStatusMsg = ""
+                                                }
+                                            case .failure(let error):
+                                                connectionStatusMsg = "❌ 失敗: \(error.localizedDescription)"
+                                            }
+                                        }
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(wifiPassword.isEmpty) // パスワードが空の時は押せないようにする
+                            }
+                            .frame(width: 230)
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 10)
+                        // ▲ パスワード入力画面おわり ▲
+                    } else if netManager.availableNetworks.isEmpty {
                         Text("ネットワークを検索中...")
                             .foregroundColor(.gray)
                             .frame(width: 250, alignment: .center)
@@ -157,32 +219,71 @@ struct StatusBarView: View {
                     } else {
                         ScrollView {
                             VStack(spacing: 8) {
+                                // もしパスワードなしの自動接続中などのメッセージがあれば表示
+                                if !connectionStatusMsg.isEmpty && selectedSSID == nil {
+                                    Text(connectionStatusMsg)
+                                        .font(.caption)
+                                        .foregroundColor(connectionStatusMsg.contains("✅") ? .green : (connectionStatusMsg.contains("❌") ? .red : .yellow))
+                                        .padding(.bottom, 5)
+                                }
+                                
                                 ForEach(netManager.availableNetworks, id: \.bssid) { network in
-                                    HStack {
-                                        Image(systemName: "wifi")
-                                        Text(network.ssid ?? "Hidden")
-                                            .lineLimit(1)
-                                        Spacer()
-                                        Text("\(network.rssiValue) dBm")
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
+                                    // Wi-Fiリストの各行をボタンにしてクリック可能にする
+                                    Button(action: {
+                                        if let ssid = network.ssid {
+                                            if netManager.isKnownNetwork(ssid: ssid) {
+                                                // 過去に接続したことがある場合はパスワード不要で即座に接続
+                                                connectionStatusMsg = "自動接続中: \(ssid)..."
+                                                DispatchQueue.global(qos: .userInitiated).async {
+                                                    let result = netManager.connectWIFI(ssid: ssid, password: nil)
+                                                    DispatchQueue.main.async {
+                                                        switch result {
+                                                        case .success(_):
+                                                            connectionStatusMsg = "✅ 接続しました！"
+                                                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                                                showWiFiPopover = false
+                                                                connectionStatusMsg = ""
+                                                            }
+                                                        case .failure(let error):
+                                                            connectionStatusMsg = "❌ 失敗: \(error.localizedDescription)"
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                // 初めてのネットワークの場合はパスワード入力画面へ
+                                                selectedSSID = ssid
+                                                wifiPassword = ""
+                                                connectionStatusMsg = ""
+                                            }
+                                        }
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "wifi")
+                                            Text(network.ssid ?? "Hidden")
+                                                .lineLimit(1)
+                                            Spacer()
+                                            Text("\(network.rssiValue) dBm")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                        .frame(width: 230)
+                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, 8)
+                                        .background(Color.white.opacity(0.05))
+                                        .cornerRadius(6)
                                     }
-                                    .frame(width: 250)
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 8)
-                                    .background(Color.white.opacity(0.05))
-                                    .cornerRadius(6)
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
-                        .frame(maxHeight: 300) // リストが長すぎないように高さを制限
+                        .frame(maxHeight: 300)  // リストが長すぎないように高さを制限
                     }
                 }
                 .padding()
                 // ポップオーバーの背景をダークモードに合わせる
                 .background(Color(red: 0.15, green: 0.15, blue: 0.18))
             }
-            
+
             // インターネット通信速度
             if let net = matrix.data.internetUsage {
                 HStack(spacing: 8) {
@@ -220,7 +321,8 @@ struct StatusBarView: View {
                 .padding(.vertical, 4)
                 .background(gpuColor.opacity(0.15))
                 .cornerRadius(8)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(gpuColor.opacity(0.3), lineWidth: 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8).stroke(gpuColor.opacity(0.3), lineWidth: 1))
             }
 
             // CPU情報
@@ -237,7 +339,8 @@ struct StatusBarView: View {
                 .padding(.vertical, 4)
                 .background(cpuColor.opacity(0.15))
                 .cornerRadius(8)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(cpuColor.opacity(0.3), lineWidth: 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8).stroke(cpuColor.opacity(0.3), lineWidth: 1))
             }
 
             // サーマルステータス（温度）
@@ -253,31 +356,35 @@ struct StatusBarView: View {
                 .padding(.vertical, 4)
                 .background(thermalColor.opacity(0.15))
                 .cornerRadius(8)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(thermalColor.opacity(0.3), lineWidth: 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8).stroke(
+                        thermalColor.opacity(0.3), lineWidth: 1))
             }
 
             // メモリ情報
             if let mem = matrix.data.memoryMB {
-                    HStack(spacing: 4) {
-                        Image(systemName: "memorychip")
-                            .foregroundColor(Color(red: 0.8, green: 0.6, blue: 1.0))
-                        Text(String(format: "%.1f GB", Double(mem) / 1024.0))
-                            .foregroundColor(Color(red: 0.9, green: 0.8, blue: 1.0))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Color(red: 0.6, green: 0.3, blue: 0.9).opacity(0.2))
-                    .cornerRadius(8)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(red: 0.6, green: 0.3, blue: 0.9).opacity(0.4), lineWidth: 1))
+                HStack(spacing: 4) {
+                    Image(systemName: "memorychip")
+                        .foregroundColor(Color(red: 0.8, green: 0.6, blue: 1.0))
+                    Text(String(format: "%.1f GB", Double(mem) / 1024.0))
+                        .foregroundColor(Color(red: 0.9, green: 0.8, blue: 1.0))
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color(red: 0.6, green: 0.3, blue: 0.9).opacity(0.2))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8).stroke(
+                        Color(red: 0.6, green: 0.3, blue: 0.9).opacity(0.4), lineWidth: 1))
+            }
 
-        // 時計
-        Text(currentTime, style: .time)
-            .fontWeight(.bold)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 4)
-            .background(Color.black.opacity(0.3))
-            .cornerRadius(8)
+            // 時計
+            Text(currentTime, style: .time)
+                .fontWeight(.bold)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(Color.black.opacity(0.3))
+                .cornerRadius(8)
         }
         .font(.system(size: 12, weight: .semibold, design: .monospaced))
         .padding(.trailing, 20)
@@ -298,14 +405,14 @@ struct StatusBarView: View {
             currentTime = input
         }
     }
-    
+
     // CPUの使用率に応じて色を動的に変えるヘルパー関数
     private func getCPUColor(_ usage: Float) -> Color {
-        if usage < 30.0 { return Color(red: 0.4, green: 1.0, blue: 0.6) } // 緑
-        if usage < 70.0 { return Color(red: 1.0, green: 0.8, blue: 0.2) } // 黄色
-        return Color(red: 1.0, green: 0.4, blue: 0.4) // 赤
+        if usage < 30.0 { return Color(red: 0.4, green: 1.0, blue: 0.6) }  // 緑
+        if usage < 70.0 { return Color(red: 1.0, green: 0.8, blue: 0.2) }  // 黄色
+        return Color(red: 1.0, green: 0.4, blue: 0.4)  // 赤
     }
-    
+
     // サーマルステータスに応じて色を変えるヘルパー関数
     private func getThermalColor(_ state: String) -> Color {
         switch state {
@@ -315,12 +422,12 @@ struct StatusBarView: View {
         default: return .white
         }
     }
-    
+
     // バイト数を綺麗にフォーマットするヘルパー関数
     private func formatBytes(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useKB, .useBytes]
-        formatter.countStyle = .binary // 1024ベースで計算
+        formatter.countStyle = .binary  // 1024ベースで計算
         // "Zero KB" のような表示を防ぐ処理
         if bytes == 0 { return "0 KB" }
         return formatter.string(fromByteCount: Int64(bytes))

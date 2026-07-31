@@ -12,19 +12,19 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "NetworkMonitor")
-    
+
     // Wi-FiのSSID（名前）を取得するために位置情報権限を要求するマネージャー
     private let locationManager = CLLocationManager()
 
     override init() {
         super.init()
-        
+
         // 位置情報（Wi-Fiの名前取得に必須）の権限リクエスト
         locationManager.delegate = self
         if locationManager.authorizationStatus == .notDetermined {
             locationManager.requestWhenInUseAuthorization()
         }
-        
+
         startMonitoring()
     }
 
@@ -80,7 +80,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         do {
             // スキャンを実行
             let allNetworks = try interface.scanForNetworks(withName: nil)
-            
+
             // 1. SSIDが空（nil または ""）の非公開ネットワーク（Hidden Network）を除外する
             let publicNetworks = allNetworks.filter { network in
                 guard let ssid = network.ssid, !ssid.isEmpty else {
@@ -88,13 +88,13 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 }
                 return true
             }
-            
+
             // 2. MacのWi-Fi設定画面と同じように「同じ名前(SSID)のWi-Fi」を重複排除する
             // （メッシュWi-Fi等で同じ名前の電波が複数飛んでいる場合、一番電波が強いものを1つだけ残す）
             var uniqueNetworks = [String: CWNetwork]()
             for network in publicNetworks {
                 guard let ssid = network.ssid else { continue }
-                
+
                 if let existing = uniqueNetworks[ssid] {
                     // RSSI（電波強度）はマイナスの値（例: -50dBm と -80dBm）。0に近い（大きい）方が電波が強い
                     if network.rssiValue > existing.rssiValue {
@@ -104,10 +104,65 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     uniqueNetworks[ssid] = network
                 }
             }
-            
+
             return .success(Set(uniqueNetworks.values))
         } catch {
             // 権限エラーやスキャン失敗時はエラーを返す
+            return .failure(error)
+        }
+    }
+
+    /// 指定したSSIDが、過去に接続したことのある「既知のネットワーク」かどうかを判定する
+    func isKnownNetwork(ssid: String) -> Bool {
+        guard let interface = CWWiFiClient.shared().interface(),
+              let config = interface.configuration() else {
+            return false
+        }
+        
+        let profiles = config.networkProfiles
+        for p in profiles {
+            if let profile = p as? CWNetworkProfile, profile.ssid == ssid {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// Wi-Fiに接続する。パスワードが不要（既知のネットワークやフリーWi-Fi）の場合は nil を渡せる
+    func connectWIFI(ssid: String, password: String?) -> Result<Bool, Error> {
+        // 1. まず利用可能なネットワーク一覧を取得する
+        let result = fetchAvailableNetwork()
+
+        switch result {
+        case .success(let networks):
+            // 2. 取得した Set<CWNetwork> の中から、指定されたSSIDと完全に一致するものを探す
+            guard let targetNetwork = networks.first(where: { $0.ssid == ssid }) else {
+                let error = NSError(
+                    domain: "NetworkManager", code: 404,
+                    userInfo: [NSLocalizedDescriptionKey: "指定されたWi-Fiが見つかりません"])
+                return .failure(error)
+            }
+
+            // 3. 接続するためのWi-Fiインターフェースを準備
+            let client = CWWiFiClient.shared()
+            guard let interface = client.interface() else {
+                let error = NSError(
+                    domain: "NetworkManager", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "Wi-Fiインターフェースが見つかりません"])
+                return .failure(error)
+            }
+
+            do {
+                // 4. 実際に接続（アソシエーション）を試みる
+                try interface.associate(to: targetNetwork, password: password)
+                return .success(true)
+            } catch {
+                // パスワード間違いなどのエラー
+                return .failure(error)
+            }
+
+        case .failure(let error):
+            // そもそもスキャンに失敗した場合
             return .failure(error)
         }
     }
