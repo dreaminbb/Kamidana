@@ -117,7 +117,7 @@ class MusicPlayingManager: ObservableObject {
         // アートワークURLから画像をダウンロード（バックグラウンド）
         let artworkURLString = parts[3]
         // 無駄なトラフィックを防ぐために、曲が変わった際にのみ取得する
-        if previousTitle != "" && previousTitle != title || artwork == nil {
+        if previousTitle != title {
             loadArtwork(from: artworkURLString)
 
             print("Song changed fetch img...")
