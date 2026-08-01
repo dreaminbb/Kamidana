@@ -62,3 +62,7 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 .nvim
 .vscode
+/Kamidana.app/Contents/MacOS
+/document/.obsidian
+/Kamidana.app/Contents/_CodeSignature
+/Tests/KamidanaTests/musicTest.swift

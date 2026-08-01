@@ -97,6 +97,9 @@ struct StatusBarView: View {
     // ネットワークマネージャーを初期化
     @StateObject private var netManager = NetworkManager()
 
+    // 音楽マネージャー（メディア再生）を初期化
+    @StateObject private var musicManager = MusicPlayingManager()
+
     @State private var showWiFiPopover = false
     @State private var selectedSSID: String? = nil
     @State private var wifiPassword = ""
@@ -163,17 +166,18 @@ struct StatusBarView: View {
                         VStack(spacing: 12) {
                             Text("\(ssid) に接続")
                                 .font(.subheadline)
-                            
+
                             SecureField("パスワード", text: $wifiPassword)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 230)
-                            
+
                             if !connectionStatusMsg.isEmpty {
                                 Text(connectionStatusMsg)
                                     .font(.caption)
-                                    .foregroundColor(connectionStatusMsg.contains("成功") ? .green : .red)
+                                    .foregroundColor(
+                                        connectionStatusMsg.contains("成功") ? .green : .red)
                             }
-                            
+
                             HStack {
                                 Button("キャンセル") {
                                     selectedSSID = nil
@@ -185,26 +189,30 @@ struct StatusBarView: View {
                                     connectionStatusMsg = "接続中..."
                                     // UIが固まらないように裏側で接続処理を行う
                                     DispatchQueue.global(qos: .userInitiated).async {
-                                        let result = netManager.connectWIFI(ssid: ssid, password: wifiPassword)
+                                        let result = netManager.connectWIFI(
+                                            ssid: ssid, password: wifiPassword)
                                         DispatchQueue.main.async {
                                             switch result {
                                             case .success(_):
                                                 connectionStatusMsg = "✅ 接続成功！"
                                                 // 1秒後にポップオーバーを閉じて状態をリセット
-                                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                                DispatchQueue.main.asyncAfter(
+                                                    deadline: .now() + 1.0
+                                                ) {
                                                     showWiFiPopover = false
                                                     selectedSSID = nil
                                                     wifiPassword = ""
                                                     connectionStatusMsg = ""
                                                 }
                                             case .failure(let error):
-                                                connectionStatusMsg = "❌ 失敗: \(error.localizedDescription)"
+                                                connectionStatusMsg =
+                                                    "❌ 失敗: \(error.localizedDescription)"
                                             }
                                         }
                                     }
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .disabled(wifiPassword.isEmpty) // パスワードが空の時は押せないようにする
+                                .disabled(wifiPassword.isEmpty)  // パスワードが空の時は押せないようにする
                             }
                             .frame(width: 230)
                         }
@@ -223,10 +231,15 @@ struct StatusBarView: View {
                                 if !connectionStatusMsg.isEmpty && selectedSSID == nil {
                                     Text(connectionStatusMsg)
                                         .font(.caption)
-                                        .foregroundColor(connectionStatusMsg.contains("✅") ? .green : (connectionStatusMsg.contains("❌") ? .red : .yellow))
+                                        .foregroundColor(
+                                            connectionStatusMsg.contains("✅")
+                                                ? .green
+                                                : (connectionStatusMsg.contains("❌")
+                                                    ? .red : .yellow)
+                                        )
                                         .padding(.bottom, 5)
                                 }
-                                
+
                                 ForEach(netManager.availableNetworks, id: \.bssid) { network in
                                     // Wi-Fiリストの各行をボタンにしてクリック可能にする
                                     Button(action: {
@@ -235,17 +248,21 @@ struct StatusBarView: View {
                                                 // 過去に接続したことがある場合はパスワード不要で即座に接続
                                                 connectionStatusMsg = "自動接続中: \(ssid)..."
                                                 DispatchQueue.global(qos: .userInitiated).async {
-                                                    let result = netManager.connectWIFI(ssid: ssid, password: nil)
+                                                    let result = netManager.connectWIFI(
+                                                        ssid: ssid, password: nil)
                                                     DispatchQueue.main.async {
                                                         switch result {
                                                         case .success(_):
                                                             connectionStatusMsg = "✅ 接続しました！"
-                                                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                                            DispatchQueue.main.asyncAfter(
+                                                                deadline: .now() + 1.0
+                                                            ) {
                                                                 showWiFiPopover = false
                                                                 connectionStatusMsg = ""
                                                             }
                                                         case .failure(let error):
-                                                            connectionStatusMsg = "❌ 失敗: \(error.localizedDescription)"
+                                                            connectionStatusMsg =
+                                                                "❌ 失敗: \(error.localizedDescription)"
                                                         }
                                                     }
                                                 }
@@ -283,6 +300,9 @@ struct StatusBarView: View {
                 // ポップオーバーの背景をダークモードに合わせる
                 .background(Color(red: 0.15, green: 0.15, blue: 0.18))
             }
+
+            // 🎵 音楽再生UI（AppleScript実装のデバッグ中のため一時無効化）
+            // musicManager はバックグラウンドで動作し、DEBUGビルドで情報をコンソールに出力する
 
             // インターネット通信速度
             if let net = matrix.data.internetUsage {
