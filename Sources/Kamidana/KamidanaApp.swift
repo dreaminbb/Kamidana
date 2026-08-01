@@ -301,8 +301,72 @@ struct StatusBarView: View {
                 .background(Color(red: 0.15, green: 0.15, blue: 0.18))
             }
 
-            // 🎵 音楽再生UI（AppleScript実装のデバッグ中のため一時無効化）
-            // musicManager はバックグラウンドで動作し、DEBUGビルドで情報をコンソールに出力する
+            // 🎵 音楽再生UI
+            if !musicManager.title.isEmpty {
+                HStack(spacing: 6) {
+                    if let artwork = musicManager.artwork {
+                        Image(nsImage: artwork)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
+                            .cornerRadius(4)
+                    } else {
+                        Image(systemName: "music.note")
+                            .foregroundColor(.pink)
+                            .frame(width: 20, height: 20)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(4)
+                    }
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(musicManager.title)
+                            .font(.system(size: 10, weight: .bold))
+                            .lineLimit(1)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: 100, alignment: .leading)
+                        Text(musicManager.artist)
+                            .font(.system(size: 8))
+                            .lineLimit(1)
+                            .foregroundColor(.gray)
+                            .frame(maxWidth: 100, alignment: .leading)
+                    }
+
+                    HStack(spacing: 6) {
+                        Button(action: {
+                            musicManager.changeTrack(direction: .previous)
+                        }) {
+                            Image(systemName: "backward.fill")
+                                .font(.system(size: 10))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: {
+                            musicManager.pauseMusic()
+                        }) {
+                            Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 12))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: {
+                            musicManager.changeTrack(direction: .next)
+                        }) {
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 10))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.leading, 4)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+            }
 
             // インターネット通信速度
             if let net = matrix.data.internetUsage {
