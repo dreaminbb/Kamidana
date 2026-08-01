@@ -4,12 +4,18 @@ import Foundation
 
 class MusicPlayingManager: ObservableObject {
 
+    enum PrimaryApp {
+        case appleMusic
+        case spotify
+    }
+
     // UI側でリアルタイムに画面を書き換えるための変数
     @Published var title: String = ""
     @Published var artist: String = ""
     @Published var album: String = ""
     @Published var artwork: NSImage? = nil
     @Published var isPlaying: Bool = false
+    @Published var primaryApp: PrimaryApp = .spotify
 
     // 定期取得用のタイマー
     private var timer: AnyCancellable?
@@ -19,9 +25,7 @@ class MusicPlayingManager: ObservableObject {
     }
 
     private func startMonitoring() {
-        #if DEBUG
-            print("🎵 start music monitoring (AppleScript)")
-        #endif
+        print("🎵 start music monitoring (AppleScript)")
 
         timer = Timer.publish(every: 2.0, on: .main, in: .common)
             .autoconnect()
@@ -35,13 +39,37 @@ class MusicPlayingManager: ObservableObject {
         }
     }
 
+    private func currentPrimaryAppStr() -> String {
+        var key: String
+        switch primaryApp {
+        case .spotify:
+            key = "Spotify"
+        case .appleMusic:
+            key = "Music"
+        }
+        return key
+
+    }
+
     // MARK: - メインの取得処理
 
     private func fetchNowPlaying() {
-        // Spotify → Music.app の優先順で、再生中のアプリから情報を取得する
-        if fetchFromSpotify() { return }
-        if fetchFromMusicApp() { return }
 
+        switch primaryApp {
+        case .spotify:
+            if fetchFromSpotify() { return }
+            if fetchFromMusicApp() {
+                primaryApp = .appleMusic
+                return
+            }
+        case .appleMusic:
+            if fetchFromMusicApp() { return }
+            if fetchFromSpotify() {
+                primaryApp = .spotify
+                return
+            }
+
+        }
         // どちらも再生していなければ空にする
         clearInfo()
     }
@@ -50,18 +78,19 @@ class MusicPlayingManager: ObservableObject {
 
     /// Spotifyから再生情報を取得する。成功したら true を返す。
     private func fetchFromSpotify() -> Bool {
-        // Spotifyが起動しているか & 再生中かを確認するスクリプト
+        // Spotifyが起動しているか & 再生中/一時停止中かを確認するスクリプト
         let checkScript = """
             tell application "System Events"
                 if not (exists process "Spotify") then return "NOT_RUNNING"
             end tell
             tell application "Spotify"
-                if player state is playing then
+                if player state is playing or player state is paused then
                     set trackName to name of current track
                     set trackArtist to artist of current track
                     set trackAlbum to album of current track
                     set artURL to artwork url of current track
-                    return trackName & "\n" & trackArtist & "\n" & trackAlbum & "\n" & artURL
+                    set pState to player state as string
+                    return trackName & "\n" & trackArtist & "\n" & trackAlbum & "\n" & artURL & "\n" & pState
                 else
                     return "NOT_PLAYING"
                 end if
@@ -72,28 +101,26 @@ class MusicPlayingManager: ObservableObject {
         if result == "NOT_RUNNING" || result == "NOT_PLAYING" { return false }
 
         let parts = result.components(separatedBy: "\n")
-        guard parts.count >= 4 else { return false }
+        guard parts.count >= 5 else { return false }
 
         let previousTitle = title
 
         title = parts[0]
         artist = parts[1]
         album = parts[2]
-        isPlaying = true
+        isPlaying = (parts[4] == "playing")
 
-        #if DEBUG
-            print("🎵 [Spotify] title: \(title) | artist: \(artist) | album: \(album)")
-        #endif
+        print(
+            "🎵 [Spotify] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
+        )
 
         // アートワークURLから画像をダウンロード（バックグラウンド）
         let artworkURLString = parts[3]
         // 無駄なトラフィックを防ぐために、曲が変わった際にのみ取得する
-        if previousTitle != "" && previousTitle != title {
+        if previousTitle != "" && previousTitle != title || artwork == nil {
             loadArtwork(from: artworkURLString)
 
-            #if DEBUG
-                print("Song changed fetch img...")
-            #endif
+            print("Song changed fetch img...")
         }
 
         return true
@@ -108,11 +135,12 @@ class MusicPlayingManager: ObservableObject {
                 if not (exists process "Music") then return "NOT_RUNNING"
             end tell
             tell application "Music"
-                if player state is playing then
+                if player state is playing or player state is paused then
                     set trackName to name of current track
                     set trackArtist to artist of current track
                     set trackAlbum to album of current track
-                    return trackName & "\n" & trackArtist & "\n" & trackAlbum
+                    set pState to player state as string
+                    return trackName & "\n" & trackArtist & "\n" & trackAlbum & "\n" & pState
                 else
                     return "NOT_PLAYING"
                 end if
@@ -123,16 +151,16 @@ class MusicPlayingManager: ObservableObject {
         if result == "NOT_RUNNING" || result == "NOT_PLAYING" { return false }
 
         let parts = result.components(separatedBy: "\n")
-        guard parts.count >= 3 else { return false }
+        guard parts.count >= 4 else { return false }
 
         title = parts[0]
         artist = parts[1]
         album = parts[2]
-        isPlaying = true
+        isPlaying = (parts[3] == "playing")
 
-        #if DEBUG
-            print("🎵 [Music] title: \(title) | artist: \(artist) | album: \(album)")
-        #endif
+        print(
+            "🎵 [Music] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
+        )
 
         // Music.appのアートワークはAppleScriptで直接データとして取得
         loadMusicAppArtwork()
@@ -193,9 +221,7 @@ class MusicPlayingManager: ObservableObject {
         let result = appleScript?.executeAndReturnError(&errorInfo)
 
         if let error = errorInfo {
-            #if DEBUG
-                print("⚠️ AppleScript error: \(error)")
-            #endif
+            print("⚠️ AppleScript error: \(error)")
             return nil
         }
 
@@ -204,12 +230,95 @@ class MusicPlayingManager: ObservableObject {
 
     /// 再生情報をクリアする
     private func clearInfo() {
-        if isPlaying {
+        if !title.isEmpty || isPlaying {
             title = ""
             artist = ""
             album = ""
             artwork = nil
             isPlaying = false
+        }
+    }
+
+    public func skipSong(sec: Int64) {
+
+        var key: String = currentPrimaryAppStr()
+
+        let script = """
+                    tell application "System Events"
+                        if not (exists process "\(key)") then return "NOT_RUNNING"
+                    end tell
+                    tell application "\(key)"
+                        if player state is playing then
+                            set player position to (player position + \(sec))
+                            return "SUCCESS"
+                        end if
+                    end tell
+                    return "NOT_PLAYING"
+            """
+
+        if let result = runAppleScript(script), result == "SUCCESS" {
+            print("\(key): Succeed to skip song \(sec)s skipping")
+            return
+        }
+
+    }
+
+    enum TrackDirection {
+        case next
+        case previous
+    }
+
+    /// A description
+    /// - Parameter direction:direction Bool -> true:Next false:Previous
+    public func changeTrack(direction: TrackDirection) {
+
+        let key: String
+
+        switch direction {
+        case .next:
+            key = "next"
+        case .previous:
+            key = "previous"
+        }
+
+        let appName = currentPrimaryAppStr()
+        let changeTrackScript = """
+                        tell application "System Events"
+                            if not (exists process "\(appName)") then return "NOT_RUNNING"
+                        end tell
+                        tell application "\(appName)"
+                            if player state is playing then
+                                \(key) track
+                                return "SUCCESS"
+                            end if
+                        end tell
+                        return "NOT_PLAYING"
+            """
+
+        if let result = runAppleScript(changeTrackScript), result == "SUCCESS" {
+            return
+        }
+
+    }
+
+    public func pauseMusic() {
+        let appName = currentPrimaryAppStr()
+        // SpotifyとMusicの両方で playpause コマンドが使用可能です
+        // これにより再生中は一時停止し、一時停止中は再生します
+        let pauseScript = """
+                        tell application "System Events"
+                            if not (exists process "\(appName)") then return "NOT_RUNNING"
+                        end tell
+                        tell application "\(appName)"
+                            playpause
+                            return "SUCCESS"
+                        end tell
+            """
+
+        if let result = runAppleScript(pauseScript), result == "SUCCESS" {
+            // UIを即座に反映させるために手動で状態を更新するか、
+            // 次回のタイマー処理(2秒ごと)に任せます。
+            return
         }
     }
 }
