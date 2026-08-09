@@ -14,70 +14,58 @@ struct MusicWidget: View {
     
     var body: some View {
         if !musicManager.title.isEmpty {
-            HStack(spacing: 8) {
-                // アートワーク（常に20x20に固定してUIの縦ブレを防ぐ）
-                Group {
-                    if let artwork = musicManager.artwork {
-                        Image(nsImage: artwork)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } else {
-                        ZStack {
-                            theme.surface0
-                            Image(systemName: "music.note")
-                                .foregroundColor(theme.pink)
+            VStack(spacing: isHovered ? 16 : 0) {
+                // 上段：アートワークと基本情報
+                HStack(spacing: 12) {
+                    // アートワーク
+                    Group {
+                        if let artwork = musicManager.artwork {
+                            Image(nsImage: artwork)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } else {
+                            ZStack {
+                                theme.surface0
+                                Image(systemName: "music.note").foregroundColor(theme.pink)
+                            }
                         }
                     }
-                }
-                .frame(width: 20, height: 20)
-                .clipShape(Circle())
-                .rotationEffect(.degrees(rotation))
-                .overlay(
-                    Circle().stroke(theme.surface2.opacity(0.5), lineWidth: 1)
-                )
-                
-                // 曲情報とコントロール
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
+                    .frame(width: isHovered ? 64 : 20, height: isHovered ? 64 : 20)
+                    .clipShape(Circle())
+                    .rotationEffect(.degrees(rotation))
+                    .overlay(Circle().stroke(theme.surface2.opacity(0.5), lineWidth: 1))
+                    
+                    // テキスト情報
+                    if isHovered {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(musicManager.title)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(theme.text)
+                                .lineLimit(1)
+                            Text(musicManager.artist)
+                                .font(.system(size: 11))
+                                .foregroundColor(theme.subtext0)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                    } else {
+                        // 縮小時
                         Text(musicManager.title)
                             .font(.custom("Menlo", size: 10).bold())
-                            .lineLimit(1)
                             .foregroundColor(theme.text)
-                        
-                        Spacer()
-                        
-                        // ホバー時のみ表示されるコントロールボタン群
-                        if isHovered {
-                            HStack(spacing: 8) {
-                                Button(action: { musicManager.changeTrack(direction: .previous) }) {
-                                    Image(systemName: "backward.fill").foregroundColor(theme.text)
-                                }.buttonStyle(.plain)
-                                
-                                Button(action: { musicManager.pauseMusic() }) {
-                                    Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill").foregroundColor(theme.green)
-                                }.buttonStyle(.plain)
-                                
-                                Button(action: { musicManager.changeTrack(direction: .next) }) {
-                                    Image(systemName: "forward.fill").foregroundColor(theme.text)
-                                }.buttonStyle(.plain)
-                            }
-                            .font(.system(size: 10))
-                        }
-                    }
-                    
-                    HStack(spacing: 6) {
-                        // 縮小時・拡大時共通: アーティスト名を左に表示（拡大時は短く制限）
-                        Text(musicManager.artist)
-                            .font(.custom("Menlo", size: 9))
                             .lineLimit(1)
-                            .foregroundColor(theme.subtext0)
-                            .frame(maxWidth: isHovered ? 60 : .infinity, alignment: .leading)
-                        
-                        // シークバー (Slider) - アーティスト名と同じ行（2行目）に配置
-                        if isHovered && musicManager.trackTime > 0 {
-                            HStack(spacing: 4) {
+                            .frame(maxWidth: 80, alignment: .leading)
+                    }
+                }
+                
+                // 下段：シークバーとコントロール（拡大時のみ）
+                if isHovered {
+                    VStack(spacing: 12) {
+                        // シークバー
+                        if musicManager.trackTime > 0 {
+                            HStack(spacing: 8) {
                                 Text(formatTime(isDraggingSlider ? sliderValue : musicManager.currentPosition))
-                                    .font(.system(size: 8, design: .monospaced))
+                                    .font(.system(size: 9, design: .monospaced))
                                     .foregroundColor(theme.subtext1)
                                 
                                 Slider(value: Binding(
@@ -91,17 +79,35 @@ struct MusicWidget: View {
                                 .accentColor(theme.mauve)
                                 
                                 Text(formatTime(musicManager.trackTime))
-                                    .font(.system(size: 8, design: .monospaced))
+                                    .font(.system(size: 9, design: .monospaced))
                                     .foregroundColor(theme.subtext1)
                             }
                         }
+                        
+                        // コントロール
+                        HStack(spacing: 24) {
+                            Button(action: { musicManager.changeTrack(direction: .previous) }) {
+                                Image(systemName: "backward.fill").font(.system(size: 16)).foregroundColor(theme.text)
+                            }.buttonStyle(.plain)
+                            
+                            Button(action: { musicManager.pauseMusic() }) {
+                                Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(theme.green)
+                            }.buttonStyle(.plain)
+                            
+                            Button(action: { musicManager.changeTrack(direction: .next) }) {
+                                Image(systemName: "forward.fill").font(.system(size: 16)).foregroundColor(theme.text)
+                            }.buttonStyle(.plain)
+                        }
                     }
                 }
-                .frame(maxWidth: isHovered ? 250 : 100, alignment: .leading)
             }
+            .frame(width: isHovered ? 280 : nil) // 拡大時は幅を固定して大きく見せる
+            .padding(isHovered ? 12 : 0)         // 拡大時だけ内側に余白を追加して四方に広げる
             .SmoothUIModule(theme: theme)
             .onHover { hover in
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                     isHovered = hover
                 }
             }
@@ -122,5 +128,4 @@ struct MusicWidget: View {
         let seconds = totalSeconds % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
-
 }

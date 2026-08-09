@@ -8,7 +8,7 @@ import SwiftUI
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: NSWindow!
-    let barHeight: CGFloat = 32  // バーの高さは共通で使うので外に出す
+    let barHeight: CGFloat = 160  // バーの高さは共通で使うので外に出す
 
     static func main() {
         let app = NSApplication.shared
@@ -116,7 +116,7 @@ struct StatusBarView: View {
     var body: some View {
         let theme = Theme.catppuccinMocha
 
-        ZStack {
+        ZStack(alignment: .top) {
             // 左側のウィジェット群
             HStack(spacing: 8) {
                 LocalSendWidget(localSend: localSend, theme: theme)
@@ -124,10 +124,13 @@ struct StatusBarView: View {
                 AudioWidget(audioVM: audioVM, theme: theme)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 32)
             .padding(.leading, 10)
 
             // 中央のウィジェット（Dynamic Island風）
+            // 上部の32pxバーと高さを合わせるためにパディングを調整
             MusicWidget(musicManager: musicManager, theme: theme)
+                .padding(.top, 2)
 
             // 右側のウィジェット群
             HStack(spacing: 8) {
@@ -139,10 +142,11 @@ struct StatusBarView: View {
                 ClockWidget(theme: theme)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
+            .frame(height: 32)
             .padding(.trailing, 10)
         }
         .font(.system(size: 12, weight: .semibold, design: .monospaced))
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: 160, alignment: .top)
         .background(Color.clear)
         .onAppear {
             matrix.startMonitoring()
