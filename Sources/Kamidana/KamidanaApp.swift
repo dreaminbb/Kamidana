@@ -122,8 +122,8 @@ struct StatusBarView: View {
                 LocalSendWidget(localSend: localSend, theme: theme)
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)
-                Spacer()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 10)
 
             // 中央のウィジェット（Dynamic Island風）
@@ -131,7 +131,6 @@ struct StatusBarView: View {
 
             // 右側のウィジェット群
             HStack(spacing: 8) {
-                Spacer()
                 BatteryWidget(matrix: matrix, theme: theme)
                 NetworkWidget(matrix: matrix, theme: theme)
                 CpuGpuWidget(matrix: matrix, theme: theme)
@@ -139,6 +138,7 @@ struct StatusBarView: View {
                 DiskWidget(matrix: matrix, theme: theme)
                 ClockWidget(theme: theme)
             }
+            .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, 10)
         }
         .font(.system(size: 12, weight: .semibold, design: .monospaced))
