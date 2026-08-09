@@ -2,6 +2,9 @@ import AppKit
 import CoreWLAN
 import SwiftUI
 
+// FIX:
+// - [ ] ホバーした後にホバーが戻らないでUIが全体が下に下がる
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: NSWindow!
@@ -83,12 +86,12 @@ struct StatusBarView: View {
         args: SystemMatrixArgs(
             cpu: true,
             memory: true,
-            disk: false,
+            disk: true,    // ←追加: ディスクI/O用
             internet: true,
-            power: false,
+            power: true,   // ←追加: バッテリー計算用
             gpu: true,
             thermal: true,
-            battery: true
+            battery: true  // ←追加: バッテリーUI用
         ))
 
     // LocalSendマネージャーを初期化
@@ -99,7 +102,7 @@ struct StatusBarView: View {
 
     // 音楽マネージャー（メディア再生）を初期化
     @StateObject private var musicManager = MusicPlayingManager()
-    
+
     // オーディオマネージャーを初期化
     @StateObject private var audioVM = AudioViewModel()
 
@@ -139,7 +142,8 @@ struct StatusBarView: View {
                             : (netManager.currentConnection == "LAN" ? "network" : "wifi.slash"))
                     Text(netManager.currentConnection)
                 }
-                .foregroundColor(netManager.currentConnection != "OFF" ? theme.text : theme.subtext0)
+                .foregroundColor(
+                    netManager.currentConnection != "OFF" ? theme.text : theme.subtext0)
             }
             .buttonStyle(.plain)
             .hyprlandModule(theme: theme)
@@ -172,7 +176,8 @@ struct StatusBarView: View {
                                 Text(connectionStatusMsg)
                                     .font(.caption)
                                     .foregroundColor(
-                                        connectionStatusMsg.contains("成功") ? theme.green : theme.red)
+                                        connectionStatusMsg.contains("成功") ? theme.green : theme.red
+                                    )
                             }
 
                             HStack {
@@ -294,29 +299,32 @@ struct StatusBarView: View {
                     }
                 }
                 .padding()
-                .background(theme.base) // ポップオーバーの背景もテーマに合わせる
+                .background(theme.base)  // ポップオーバーの背景もテーマに合わせる
             }
 
             // 🎵 音楽再生UI (Hyprlandスタイルモジュール)
             MusicWidget(musicManager: musicManager)
-            
+
             // 🔊 オーディオ入出力UIモジュール
             HStack(spacing: 12) {
                 // 出力 (スピーカー)
                 HStack(spacing: 6) {
                     Button(action: { audioVM.toggleOutputMute() }) {
-                        Image(systemName: audioVM.isOutputMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                            .foregroundColor(audioVM.isOutputMuted ? theme.red : theme.blue)
+                        Image(
+                            systemName: audioVM.isOutputMuted
+                                ? "speaker.slash.fill" : "speaker.wave.2.fill"
+                        )
+                        .foregroundColor(audioVM.isOutputMuted ? theme.red : theme.blue)
                     }
                     .buttonStyle(.plain)
-                    
+
                     Button(action: { showAudioPopover.toggle() }) {
                         HStack(spacing: 4) {
                             Text(String(format: "%.0f%%", audioVM.outputVolume * 100))
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(theme.text)
                                 .frame(width: 30, alignment: .trailing)
-                            
+
                             Text(audioVM.outputFormat)
                                 .font(.system(size: 9))
                                 .foregroundColor(theme.subtext0)
@@ -329,26 +337,41 @@ struct StatusBarView: View {
                                 .font(.headline)
                                 .foregroundColor(theme.text)
                                 .padding(.bottom, 5)
-                            
+
                             HStack {
-                                Image(systemName: "speaker.fill").foregroundColor(theme.subtext0).font(.system(size: 10))
-                                Slider(value: Binding(get: { audioVM.outputVolume }, set: { audioVM.setOutputVolume($0) }), in: 0.0...1.0)
-                                    .frame(width: 150).accentColor(theme.blue)
-                                Image(systemName: "speaker.wave.3.fill").foregroundColor(theme.subtext0).font(.system(size: 10))
+                                Image(systemName: "speaker.fill").foregroundColor(theme.subtext0)
+                                    .font(.system(size: 10))
+                                Slider(
+                                    value: Binding(
+                                        get: { audioVM.outputVolume },
+                                        set: { audioVM.setOutputVolume($0) }), in: 0.0...1.0
+                                )
+                                .frame(width: 150).accentColor(theme.blue)
+                                Image(systemName: "speaker.wave.3.fill").foregroundColor(
+                                    theme.subtext0
+                                ).font(.system(size: 10))
                             }
                             .padding(.bottom, 5)
-                            
+
                             ScrollView {
                                 VStack(alignment: .leading, spacing: 8) {
                                     ForEach(audioVM.outputDevices) { device in
                                         Button(action: { audioVM.changeOutputDevice(device) }) {
                                             HStack {
-                                                Image(systemName: audioVM.currentOutputDevice?.id == device.id ? "checkmark.circle.fill" : "circle")
-                                                    .foregroundColor(audioVM.currentOutputDevice?.id == device.id ? theme.blue : theme.subtext0)
+                                                Image(
+                                                    systemName: audioVM.currentOutputDevice?.id
+                                                        == device.id
+                                                        ? "checkmark.circle.fill" : "circle"
+                                                )
+                                                .foregroundColor(
+                                                    audioVM.currentOutputDevice?.id == device.id
+                                                        ? theme.blue : theme.subtext0)
                                                 Text(device.name).foregroundColor(theme.text)
                                                 Spacer()
                                             }
-                                            .frame(width: 200).padding(.vertical, 4).padding(.horizontal, 8)
+                                            .frame(width: 200).padding(.vertical, 4).padding(
+                                                .horizontal, 8
+                                            )
                                             .background(theme.surface0).cornerRadius(6)
                                         }
                                         .buttonStyle(.plain)
@@ -361,7 +384,7 @@ struct StatusBarView: View {
                         .background(theme.base)
                     }
                 }
-                
+
                 // 入力 (マイク)
                 HStack(spacing: 6) {
                     Button(action: { audioVM.toggleInputMute() }) {
@@ -369,14 +392,14 @@ struct StatusBarView: View {
                             .foregroundColor(audioVM.isInputMuted ? theme.red : theme.peach)
                     }
                     .buttonStyle(.plain)
-                    
+
                     Button(action: { showMicPopover.toggle() }) {
                         HStack(spacing: 4) {
                             Text(String(format: "%.0f%%", audioVM.inputVolume * 100))
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(theme.text)
                                 .frame(width: 30, alignment: .trailing)
-                            
+
                             Text(audioVM.inputFormat)
                                 .font(.system(size: 9))
                                 .foregroundColor(theme.subtext0)
@@ -389,26 +412,41 @@ struct StatusBarView: View {
                                 .font(.headline)
                                 .foregroundColor(theme.text)
                                 .padding(.bottom, 5)
-                            
+
                             HStack {
-                                Image(systemName: "mic.fill").foregroundColor(theme.subtext0).font(.system(size: 10))
-                                Slider(value: Binding(get: { audioVM.inputVolume }, set: { audioVM.setInputVolume($0) }), in: 0.0...1.0)
-                                    .frame(width: 150).accentColor(theme.peach)
-                                Image(systemName: "mic.and.signal.meter.fill").foregroundColor(theme.subtext0).font(.system(size: 10))
+                                Image(systemName: "mic.fill").foregroundColor(theme.subtext0).font(
+                                    .system(size: 10))
+                                Slider(
+                                    value: Binding(
+                                        get: { audioVM.inputVolume },
+                                        set: { audioVM.setInputVolume($0) }), in: 0.0...1.0
+                                )
+                                .frame(width: 150).accentColor(theme.peach)
+                                Image(systemName: "mic.and.signal.meter.fill").foregroundColor(
+                                    theme.subtext0
+                                ).font(.system(size: 10))
                             }
                             .padding(.bottom, 5)
-                            
+
                             ScrollView {
                                 VStack(alignment: .leading, spacing: 8) {
                                     ForEach(audioVM.inputDevices) { device in
                                         Button(action: { audioVM.changeInputDevice(device) }) {
                                             HStack {
-                                                Image(systemName: audioVM.currentInputDevice?.id == device.id ? "checkmark.circle.fill" : "circle")
-                                                    .foregroundColor(audioVM.currentInputDevice?.id == device.id ? theme.peach : theme.subtext0)
+                                                Image(
+                                                    systemName: audioVM.currentInputDevice?.id
+                                                        == device.id
+                                                        ? "checkmark.circle.fill" : "circle"
+                                                )
+                                                .foregroundColor(
+                                                    audioVM.currentInputDevice?.id == device.id
+                                                        ? theme.peach : theme.subtext0)
                                                 Text(device.name).foregroundColor(theme.text)
                                                 Spacer()
                                             }
-                                            .frame(width: 200).padding(.vertical, 4).padding(.horizontal, 8)
+                                            .frame(width: 200).padding(.vertical, 4).padding(
+                                                .horizontal, 8
+                                            )
                                             .background(theme.surface0).cornerRadius(6)
                                         }
                                         .buttonStyle(.plain)
@@ -426,61 +464,15 @@ struct StatusBarView: View {
 
             Spacer()
 
+            // 🔋 バッテリーモジュール
+            BatteryWidget(matrix: matrix, theme: theme)
+            
+            // 🌐 ネットワークモジュール
+            NetworkWidget(matrix: matrix, theme: theme)
+            
             // 📊 システム情報モジュール
-            HStack(spacing: 12) {
-                // インターネット通信速度
-                if let net = matrix.data.internetUsage {
-                    HStack(spacing: 8) {
-                        HStack(spacing: 3) {
-                            Image(systemName: "arrow.up.right").foregroundColor(theme.sapphire)
-                            Text(formatBytes(net.uploadBytesPerSecond) + "/s").foregroundColor(theme.text)
-                        }
-                        HStack(spacing: 3) {
-                            Image(systemName: "arrow.down.right").foregroundColor(theme.teal)
-                            Text(formatBytes(net.downloadBytesPerSecond) + "/s").foregroundColor(theme.text)
-                        }
-                    }
-                    .frame(width: 160, alignment: .center)
-                }
-
-                // GPU情報
-                if let gpu = matrix.data.gpuUsage {
-                    HStack(spacing: 4) {
-                        Image(systemName: "g.circle.fill").foregroundColor(theme.sky)
-                        Text(String(format: "%3.0f%%", gpu.activeRatio)).foregroundColor(theme.sky)
-                    }
-                    .frame(width: 60, alignment: .leading)
-                }
-
-                // CPU情報
-                if let cpu = matrix.data.cpuUsage {
-                    let cpuColor = getCPUColor(cpu.total, theme: theme)
-                    HStack(spacing: 4) {
-                        Image(systemName: "cpu").foregroundColor(cpuColor)
-                        Text(String(format: "%5.1f%%", cpu.total)).foregroundColor(cpuColor)
-                    }
-                    .frame(width: 75, alignment: .leading)
-                }
-
-                // サーマルステータス（温度）
-                if let thermal = matrix.data.thermalState {
-                    let thermalColor = getThermalColor(thermal, theme: theme)
-                    HStack(spacing: 4) {
-                        Image(systemName: "thermometer").foregroundColor(thermalColor)
-                        Text(thermal).foregroundColor(thermalColor)
-                    }
-                }
-
-                // メモリ情報
-                if let mem = matrix.data.memoryMB {
-                    HStack(spacing: 4) {
-                        Image(systemName: "memorychip").foregroundColor(theme.mauve)
-                        Text(String(format: "%.1f GB", Double(mem) / 1024.0)).foregroundColor(theme.mauve)
-                    }
-                }
-            }
-            .hyprlandModule(theme: theme)
-
+            SystemWidget(matrix: matrix, theme: theme)
+            
             // 時計モジュール
             Text(currentTime, style: .time)
                 .fontWeight(.bold)
@@ -488,7 +480,7 @@ struct StatusBarView: View {
                 .hyprlandModule(theme: theme)
         }
         .font(.system(size: 12, weight: .semibold, design: .monospaced))
-        .padding(.horizontal, 10)
+        // .padding(.horizontal, 10) // いらない
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // アプリケーションウィンドウの全体背景を完全に透明化（モジュールだけが浮くようにする）
         .background(Color.clear)
@@ -518,7 +510,7 @@ struct StatusBarView: View {
         default: return theme.text
         }
     }
-    
+
     // バイト数を綺麗にフォーマットするヘルパー関数
     private func formatBytes(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()
