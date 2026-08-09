@@ -16,6 +16,8 @@ class MusicPlayingManager: ObservableObject {
     @Published var artwork: NSImage? = nil
     @Published var isPlaying: Bool = false
     @Published var primaryApp: PrimaryApp = .spotify
+    @Published var currentPosition: Double = 0
+    @Published var trackTime: Double = 0
 
     // 定期取得用のタイマー
     private var timer: AnyCancellable?
@@ -90,7 +92,9 @@ class MusicPlayingManager: ObservableObject {
                     set trackAlbum to album of current track
                     set artURL to artwork url of current track
                     set pState to player state as string
-                    return trackName & "\n" & trackArtist & "\n" & trackAlbum & "\n" & artURL & "\n" & pState
+                    set currentPosition to player position
+                    set trackTime to duration of current track
+                    return trackName & "\n" & trackArtist & "\n" & trackAlbum & "\n" & artURL & "\n" & pState & "\n" & currentPosition & "\n" & trackTime
                 else
                     return "NOT_PLAYING"
                 end if
@@ -101,7 +105,7 @@ class MusicPlayingManager: ObservableObject {
         if result == "NOT_RUNNING" || result == "NOT_PLAYING" { return false }
 
         let parts = result.components(separatedBy: "\n")
-        guard parts.count >= 5 else { return false }
+        guard parts.count >= 7 else { return false }
 
         let previousTitle = title
 
@@ -109,6 +113,9 @@ class MusicPlayingManager: ObservableObject {
         artist = parts[1]
         album = parts[2]
         isPlaying = (parts[4] == "playing")
+        currentPosition = Double(parts[5]) ?? 0.0
+        // Spotifyのdurationはミリ秒なので秒に変換
+        trackTime = (Double(parts[6]) ?? 0.0) / 1000.0
 
         print(
             "🎵 [Spotify] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
@@ -140,7 +147,9 @@ class MusicPlayingManager: ObservableObject {
                     set trackArtist to artist of current track
                     set trackAlbum to album of current track
                     set pState to player state as string
-                    return trackName & "\n" & trackArtist & "\n" & trackAlbum & "\n" & pState
+                    set currentPosition to player position
+                    set trackTime to duration of current track
+                    return trackName & "\n" & trackArtist & "\n" & trackAlbum & "\n" & pState & "\n" & currentPosition & "\n" & trackTime
                 else
                     return "NOT_PLAYING"
                 end if
@@ -151,12 +160,14 @@ class MusicPlayingManager: ObservableObject {
         if result == "NOT_RUNNING" || result == "NOT_PLAYING" { return false }
 
         let parts = result.components(separatedBy: "\n")
-        guard parts.count >= 4 else { return false }
+        guard parts.count >= 6 else { return false }
 
         title = parts[0]
         artist = parts[1]
         album = parts[2]
         isPlaying = (parts[3] == "playing")
+        currentPosition = Double(parts[4]) ?? 0.0
+        trackTime = Double(parts[5]) ?? 0.0
 
         print(
             "🎵 [Music] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
@@ -319,6 +330,23 @@ class MusicPlayingManager: ObservableObject {
             // UIを即座に反映させるために手動で状態を更新するか、
             // 次回のタイマー処理(2秒ごと)に任せます。
             return
+        }
+    }
+    
+    // MARK: - シーク（再生位置の変更）
+    public func seek(to seconds: Double) {
+        let appName = currentPrimaryAppStr()
+        let script = """
+            tell application "System Events"
+                if not (exists process "\(appName)") then return "NOT_RUNNING"
+            end tell
+            tell application "\(appName)"
+                set player position to \(seconds)
+                return "SUCCESS"
+            end tell
+        """
+        if runAppleScript(script) == "SUCCESS" {
+            self.currentPosition = seconds
         }
     }
 }

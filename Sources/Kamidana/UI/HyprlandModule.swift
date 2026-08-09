@@ -5,7 +5,7 @@ struct HyprlandModuleModifier: ViewModifier {
     var theme: Theme
     @State private var isHovered = false
     
-    func body(content: Content) -> View {
+    func body(content: Content) -> some View {
         content
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
