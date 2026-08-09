@@ -116,21 +116,30 @@ struct StatusBarView: View {
     var body: some View {
         let theme = Theme.catppuccinMocha
 
-        HStack(spacing: 8) {
-            LocalSendWidget(localSend: localSend, theme: theme)
-            WiFiWidget(netManager: netManager, theme: theme)
+        ZStack {
+            // 左側のウィジェット群
+            HStack(spacing: 8) {
+                LocalSendWidget(localSend: localSend, theme: theme)
+                WiFiWidget(netManager: netManager, theme: theme)
+                AudioWidget(audioVM: audioVM, theme: theme)
+                Spacer()
+            }
+            .padding(.leading, 10)
+
+            // 中央のウィジェット（Dynamic Island風）
             MusicWidget(musicManager: musicManager, theme: theme)
-            AudioWidget(audioVM: audioVM, theme: theme)
 
-            Spacer()
-
-            BatteryWidget(matrix: matrix, theme: theme)
-            NetworkWidget(matrix: matrix, theme: theme)
-            CpuGpuWidget(matrix: matrix, theme: theme)
-            MemoryWidget(matrix: matrix, theme: theme)
-            DiskWidget(matrix: matrix, theme: theme)
-            
-            ClockWidget(theme: theme)
+            // 右側のウィジェット群
+            HStack(spacing: 8) {
+                Spacer()
+                BatteryWidget(matrix: matrix, theme: theme)
+                NetworkWidget(matrix: matrix, theme: theme)
+                CpuGpuWidget(matrix: matrix, theme: theme)
+                MemoryWidget(matrix: matrix, theme: theme)
+                DiskWidget(matrix: matrix, theme: theme)
+                ClockWidget(theme: theme)
+            }
+            .padding(.trailing, 10)
         }
         .font(.system(size: 12, weight: .semibold, design: .monospaced))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
