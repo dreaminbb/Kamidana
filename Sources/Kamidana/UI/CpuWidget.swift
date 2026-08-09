@@ -15,7 +15,7 @@ struct CpuWidget: View {
                 }
             }
             .buttonStyle(.plain)
-            .hyprlandModule(theme: theme)
+            .SmoothUIModule(theme: theme)
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {

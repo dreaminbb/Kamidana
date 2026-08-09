@@ -5,6 +5,7 @@ struct BatteryWidget: View {
     var theme: Theme
     
     @State private var showPopover = false
+    @State private var isHovered = false
     
     var body: some View {
         if let battery = matrix.data.batteryUsage {
@@ -14,12 +15,16 @@ struct BatteryWidget: View {
                     Image(systemName: battery.isCharging ? "battery.100.bolt" : "battery.50")
                         .foregroundColor(battery.isCharging ? theme.green : theme.text)
                     
-                    Text("\(battery.currentCapacity)%")
-                        .foregroundColor(theme.text)
+                    if isHovered {
+                        Text("\(battery.currentCapacity)%")
+                            .foregroundColor(theme.text)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
                 }
             }
             .buttonStyle(.plain)
-            .hyprlandModule(theme: theme)
+            .SmoothUIModule(theme: theme)
+            .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("System Power & Thermal")

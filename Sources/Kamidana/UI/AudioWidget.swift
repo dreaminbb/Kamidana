@@ -6,6 +6,7 @@ struct AudioWidget: View {
     
     @State private var showAudioPopover = false
     @State private var showMicPopover = false
+    @State private var isHovered = false
     
     var body: some View {
         HStack(spacing: 12) {
@@ -22,14 +23,18 @@ struct AudioWidget: View {
 
                 Button(action: { showAudioPopover.toggle() }) {
                     HStack(spacing: 4) {
-                        Text(String(format: "%.0f%%", audioVM.outputVolume * 100))
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(theme.text)
-                            .frame(width: 30, alignment: .trailing)
+                        if isHovered {
+                            Text(String(format: "%.0f%%", audioVM.outputVolume * 100))
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(theme.text)
+                                .frame(width: 30, alignment: .trailing)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
 
-                        Text(audioVM.outputFormat)
-                            .font(.system(size: 9))
-                            .foregroundColor(theme.subtext0)
+                            Text(audioVM.outputFormat)
+                                .font(.system(size: 9))
+                                .foregroundColor(theme.subtext0)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
                     }
                 }
                 .buttonStyle(.plain)
@@ -97,14 +102,18 @@ struct AudioWidget: View {
 
                 Button(action: { showMicPopover.toggle() }) {
                     HStack(spacing: 4) {
-                        Text(String(format: "%.0f%%", audioVM.inputVolume * 100))
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(theme.text)
-                            .frame(width: 30, alignment: .trailing)
+                        if isHovered {
+                            Text(String(format: "%.0f%%", audioVM.inputVolume * 100))
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(theme.text)
+                                .frame(width: 30, alignment: .trailing)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
 
-                        Text(audioVM.inputFormat)
-                            .font(.system(size: 9))
-                            .foregroundColor(theme.subtext0)
+                            Text(audioVM.inputFormat)
+                                .font(.system(size: 9))
+                                .foregroundColor(theme.subtext0)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
                     }
                 }
                 .buttonStyle(.plain)
@@ -162,6 +171,7 @@ struct AudioWidget: View {
                 }
             }
         }
-        .hyprlandModule(theme: theme)
+        .SmoothUIModule(theme: theme)
+        .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
     }
 }

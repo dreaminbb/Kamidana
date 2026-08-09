@@ -5,17 +5,23 @@ struct DiskWidget: View {
     var theme: Theme
     
     @State private var showPopover = false
+    @State private var isHovered = false
     
     var body: some View {
         if let diskSpace = matrix.data.diskSpace {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
                     Image(systemName: "internaldrive.fill").foregroundColor(theme.peach)
-                    Text(diskSpace).foregroundColor(theme.peach)
+                    if isHovered {
+                        Text(diskSpace)
+                            .foregroundColor(theme.peach)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
                 }
             }
             .buttonStyle(.plain)
-            .hyprlandModule(theme: theme)
+            .SmoothUIModule(theme: theme)
+            .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {

@@ -9,7 +9,7 @@ struct ClockWidget: View {
         Text(currentTime, style: .time)
             .fontWeight(.bold)
             .foregroundColor(theme.text)
-            .hyprlandModule(theme: theme)
+            .SmoothUIModule(theme: theme)
             .onReceive(clockTimer) { input in
                 currentTime = input
             }

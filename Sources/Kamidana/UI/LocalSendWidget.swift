@@ -12,7 +12,7 @@ struct LocalSendWidget: View {
                 Text("\(localSend.discoveredDevices.count) Devices")
                     .foregroundColor(theme.text)
             }
-            .hyprlandModule(theme: theme)
+            .SmoothUIModule(theme: theme)
         }
     }
 }

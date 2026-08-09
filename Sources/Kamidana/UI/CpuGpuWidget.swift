@@ -5,6 +5,7 @@ struct CpuGpuWidget: View {
     var theme: Theme
     
     @State private var showPopover = false
+    @State private var isHovered = false
     
     var body: some View {
         Button(action: { showPopover.toggle() }) {
@@ -13,7 +14,11 @@ struct CpuGpuWidget: View {
                 if let cpu = matrix.data.cpuUsage {
                     HStack(spacing: 4) {
                         Image(systemName: "cpu").foregroundColor(getCPUColor(cpu.total, theme: theme))
-                        Text(String(format: "%5.1f%%", cpu.total)).foregroundColor(getCPUColor(cpu.total, theme: theme))
+                        if isHovered {
+                            Text(String(format: "%5.1f%%", cpu.total))
+                                .foregroundColor(getCPUColor(cpu.total, theme: theme))
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
                     }
                 }
                 
@@ -21,13 +26,18 @@ struct CpuGpuWidget: View {
                 if let gpu = matrix.data.gpuUsage {
                     HStack(spacing: 4) {
                         Image(systemName: "g.circle.fill").foregroundColor(theme.sky)
-                        Text(String(format: "%3.0f%%", gpu.activeRatio)).foregroundColor(theme.sky)
+                        if isHovered {
+                            Text(String(format: "%3.0f%%", gpu.activeRatio))
+                                .foregroundColor(theme.sky)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
                     }
                 }
             }
         }
         .buttonStyle(.plain)
-        .hyprlandModule(theme: theme)
+        .SmoothUIModule(theme: theme)
+        .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
         .popover(isPresented: $showPopover, arrowEdge: .bottom) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {

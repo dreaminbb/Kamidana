@@ -9,6 +9,7 @@ struct WiFiWidget: View {
     @State private var selectedSSID: String? = nil
     @State private var wifiPassword = ""
     @State private var connectionStatusMsg = ""
+    @State private var isHovered = false
     
     var body: some View {
         Button(action: {
@@ -22,13 +23,13 @@ struct WiFiWidget: View {
                     systemName: netManager.currentConnection == "WIFI"
                         ? "wifi"
                         : (netManager.currentConnection == "LAN" ? "network" : "wifi.slash"))
-                Text(netManager.currentConnection)
             }
             .foregroundColor(
                 netManager.currentConnection != "OFF" ? theme.text : theme.subtext0)
         }
         .buttonStyle(.plain)
-        .hyprlandModule(theme: theme)
+        .SmoothUIModule(theme: theme)
+        .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
         .popover(isPresented: $showPopover, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {

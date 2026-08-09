@@ -5,17 +5,23 @@ struct MemoryWidget: View {
     var theme: Theme
     
     @State private var showPopover = false
+    @State private var isHovered = false
     
     var body: some View {
         if let mem = matrix.data.memoryMB {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
                     Image(systemName: "memorychip").foregroundColor(theme.mauve)
-                    Text(String(format: "%.1f GB", Double(mem) / 1024.0)).foregroundColor(theme.mauve)
+                    if isHovered {
+                        Text(String(format: "%.1f GB", Double(mem) / 1024.0))
+                            .foregroundColor(theme.mauve)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
                 }
             }
             .buttonStyle(.plain)
-            .hyprlandModule(theme: theme)
+            .SmoothUIModule(theme: theme)
+            .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {

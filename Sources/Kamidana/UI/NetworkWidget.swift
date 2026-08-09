@@ -5,6 +5,7 @@ struct NetworkWidget: View {
     var theme: Theme
     
     @State private var showPopover = false
+    @State private var isHovered = false
     
     var body: some View {
         if let net = matrix.data.internetUsage {
@@ -13,16 +14,25 @@ struct NetworkWidget: View {
                     // コンパクト表示：ネット通信速度
                     HStack(spacing: 3) {
                         Image(systemName: "arrow.up.right").foregroundColor(theme.sapphire)
-                        Text(formatBytes(net.uploadBytesPerSecond) + "/s").foregroundColor(theme.text)
+                        if isHovered {
+                            Text(formatBytes(net.uploadBytesPerSecond) + "/s")
+                                .foregroundColor(theme.text)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
                     }
                     HStack(spacing: 3) {
                         Image(systemName: "arrow.down.right").foregroundColor(theme.teal)
-                        Text(formatBytes(net.downloadBytesPerSecond) + "/s").foregroundColor(theme.text)
+                        if isHovered {
+                            Text(formatBytes(net.downloadBytesPerSecond) + "/s")
+                                .foregroundColor(theme.text)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
                     }
                 }
             }
             .buttonStyle(.plain)
-            .hyprlandModule(theme: theme)
+            .SmoothUIModule(theme: theme)
+            .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Network Activity")
