@@ -175,70 +175,9 @@ class SystemMatrix: ObservableObject {
             // 取得完了後、メインスレッドでUIに反映
             DispatchQueue.main.async {
                 self.data = newData
-                self.printRichConsoleOutput(newData)
+                DebugRichConsole.printSystemMatrix(newData)
             }
         }
-    }
-
-    // MARK: - コンソール用リッチ出力
-    // WARN: 本番ビルドで入れないように
-    private func printRichConsoleOutput(_ data: SystemMatrixData) {
-        // ANSIエスケープシーケンス（色付け）
-        let reset = "\u{001B}[0m"
-        let bold = "\u{001B}[1m"
-        let cyan = "\u{001B}[36m"
-        let green = "\u{001B}[32m"
-        let yellow = "\u{001B}[33m"
-        let red = "\u{001B}[31m"
-        let purple = "\u{001B}[35m"
-        let blue = "\u{001B}[34m"
-
-        var out =
-            "\n\(bold)\(cyan)┏━━━━━━━━━━━━━━━━━━ KAMIDANA MATRIX ━━━━━━━━━━━━━━━━━━┓\(reset)\n"
-
-        // --- CPU ---
-        if let cpu = data.cpuUsage {
-            let color = cpu.total < 30 ? green : (cpu.total < 70 ? yellow : red)
-            out +=
-                " \(bold)CPU\(reset)    | Total: \(color)\(String(format: "%5.1f%%", cpu.total))\(reset)\n"
-
-            // コアごとのグラフ（簡易的な棒グラフ）
-            var coreGraph = ""
-            for core in cpu.perCore {
-                let block = core < 20 ? " " : (core < 50 ? "▂" : (core < 80 ? "▆" : "█"))
-                let cColor = core < 30 ? green : (core < 70 ? yellow : red)
-                coreGraph += "\(cColor)\(block)\(reset)"
-            }
-            out += " \(bold)CORES\(reset)  | [\(coreGraph)]\n"
-        }
-
-        // --- Memory ---
-        if let mem = data.memoryMB {
-            out +=
-                " \(bold)MEMORY\(reset) | \(purple)\(String(format: "%.1f GB", Double(mem) / 1024.0))\(reset) in use\n"
-        }
-
-        // --- Network ---
-        if let net = data.internetUsage {
-            out +=
-                " \(bold)NET\(reset)    | \(blue)↑ \(formatBytes(net.uploadBytesPerSecond))/s\(reset)  \(green)↓ \(formatBytes(net.downloadBytesPerSecond))/s\(reset)\n"
-        }
-
-        // --- Process/Threads ---
-        if let p = data.processCount, let t = data.threadCount {
-            out += " \(bold)TASKS\(reset)  | \(p) Processes, \(t) Threads\n"
-        }
-
-        out += "\(bold)\(cyan)┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\(reset)"
-        print(out)
-    }
-
-    private func formatBytes(_ bytes: UInt64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useMB, .useKB, .useBytes]
-        formatter.countStyle = .binary
-        if bytes == 0 { return "0 KB" }
-        return formatter.string(fromByteCount: Int64(bytes))
     }
 
     /// GPU使用率を取得する (IOKit経由)
