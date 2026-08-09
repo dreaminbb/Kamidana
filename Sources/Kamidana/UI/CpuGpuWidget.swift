@@ -14,11 +14,8 @@ struct CpuGpuWidget: View {
                 if let cpu = matrix.data.cpuUsage {
                     HStack(spacing: 4) {
                         Image(systemName: "cpu").foregroundColor(getCPUColor(cpu.total, theme: theme))
-                        if isHovered {
-                            Text(String(format: "%5.1f%%", cpu.total))
-                                .foregroundColor(getCPUColor(cpu.total, theme: theme))
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
-                        }
+                        Text(String(format: "%5.1f%%", cpu.total))
+                            .foregroundColor(getCPUColor(cpu.total, theme: theme))
                     }
                 }
                 
@@ -26,18 +23,18 @@ struct CpuGpuWidget: View {
                 if let gpu = matrix.data.gpuUsage {
                     HStack(spacing: 4) {
                         Image(systemName: "g.circle.fill").foregroundColor(theme.sky)
-                        if isHovered {
-                            Text(String(format: "%3.0f%%", gpu.activeRatio))
-                                .foregroundColor(theme.sky)
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
-                        }
+                        Text(String(format: "%3.0f%%", gpu.activeRatio))
+                            .foregroundColor(theme.sky)
                     }
                 }
             }
         }
         .buttonStyle(.plain)
         .SmoothUIModule(theme: theme)
-        .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
+        .onHover { hover in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
+            showPopover = hover
+        }
         .popover(isPresented: $showPopover, arrowEdge: .bottom) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {

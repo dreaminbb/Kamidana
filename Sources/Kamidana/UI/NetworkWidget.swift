@@ -14,25 +14,22 @@ struct NetworkWidget: View {
                     // コンパクト表示：ネット通信速度
                     HStack(spacing: 3) {
                         Image(systemName: "arrow.up.right").foregroundColor(theme.sapphire)
-                        if isHovered {
-                            Text(formatBytes(net.uploadBytesPerSecond) + "/s")
-                                .foregroundColor(theme.text)
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
-                        }
+                        Text(formatBytes(net.uploadBytesPerSecond) + "/s")
+                            .foregroundColor(theme.text)
                     }
                     HStack(spacing: 3) {
                         Image(systemName: "arrow.down.right").foregroundColor(theme.teal)
-                        if isHovered {
-                            Text(formatBytes(net.downloadBytesPerSecond) + "/s")
-                                .foregroundColor(theme.text)
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
-                        }
+                        Text(formatBytes(net.downloadBytesPerSecond) + "/s")
+                            .foregroundColor(theme.text)
                     }
                 }
             }
             .buttonStyle(.plain)
             .SmoothUIModule(theme: theme)
-            .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
+            .onHover { hover in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
+            showPopover = hover
+        }
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Network Activity")

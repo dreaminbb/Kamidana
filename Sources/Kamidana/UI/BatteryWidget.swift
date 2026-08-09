@@ -15,16 +15,16 @@ struct BatteryWidget: View {
                     Image(systemName: battery.isCharging ? "battery.100.bolt" : "battery.50")
                         .foregroundColor(battery.isCharging ? theme.green : theme.text)
                     
-                    if isHovered {
-                        Text("\(battery.currentCapacity)%")
-                            .foregroundColor(theme.text)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
-                    }
+                    Text("\(battery.currentCapacity)%")
+                        .foregroundColor(theme.text)
                 }
             }
             .buttonStyle(.plain)
             .SmoothUIModule(theme: theme)
-            .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
+            .onHover { hover in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
+            showPopover = hover
+        }
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("System Power & Thermal")

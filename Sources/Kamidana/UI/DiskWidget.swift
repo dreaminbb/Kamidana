@@ -12,16 +12,16 @@ struct DiskWidget: View {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
                     Image(systemName: "internaldrive.fill").foregroundColor(theme.peach)
-                    if isHovered {
-                        Text(diskSpace)
-                            .foregroundColor(theme.peach)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
-                    }
+                    Text(diskSpace)
+                        .foregroundColor(theme.peach)
                 }
             }
             .buttonStyle(.plain)
             .SmoothUIModule(theme: theme)
-            .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
+            .onHover { hover in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
+            showPopover = hover
+        }
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {

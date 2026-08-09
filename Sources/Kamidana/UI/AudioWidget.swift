@@ -23,18 +23,14 @@ struct AudioWidget: View {
 
                 Button(action: { showAudioPopover.toggle() }) {
                     HStack(spacing: 4) {
-                        if isHovered {
-                            Text(String(format: "%.0f%%", audioVM.outputVolume * 100))
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(theme.text)
-                                .frame(width: 30, alignment: .trailing)
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                        Text(String(format: "%.0f%%", audioVM.outputVolume * 100))
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(theme.text)
+                            .frame(width: 30, alignment: .trailing)
 
-                            Text(audioVM.outputFormat)
-                                .font(.system(size: 9))
-                                .foregroundColor(theme.subtext0)
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
-                        }
+                        Text(audioVM.outputFormat)
+                            .font(.system(size: 9))
+                            .foregroundColor(theme.subtext0)
                     }
                 }
                 .buttonStyle(.plain)
@@ -102,18 +98,14 @@ struct AudioWidget: View {
 
                 Button(action: { showMicPopover.toggle() }) {
                     HStack(spacing: 4) {
-                        if isHovered {
-                            Text(String(format: "%.0f%%", audioVM.inputVolume * 100))
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(theme.text)
-                                .frame(width: 30, alignment: .trailing)
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                        Text(String(format: "%.0f%%", audioVM.inputVolume * 100))
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(theme.text)
+                            .frame(width: 30, alignment: .trailing)
 
-                            Text(audioVM.inputFormat)
-                                .font(.system(size: 9))
-                                .foregroundColor(theme.subtext0)
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
-                        }
+                        Text(audioVM.inputFormat)
+                            .font(.system(size: 9))
+                            .foregroundColor(theme.subtext0)
                     }
                 }
                 .buttonStyle(.plain)
