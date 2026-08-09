@@ -134,12 +134,12 @@ struct StatusBarView: View {
 
             // 右側のウィジェット群
             HStack(spacing: 8) {
-                BatteryWidget(matrix: matrix, theme: theme)
                 NetworkWidget(matrix: matrix, theme: theme)
                 CpuWidget(matrix: matrix, theme: theme)
                 GpuWidget(matrix: matrix, theme: theme)
                 MemoryWidget(matrix: matrix, theme: theme)
                 DiskWidget(matrix: matrix, theme: theme)
+                BatteryWidget(matrix: matrix, theme: theme)
                 ClockWidget(theme: theme)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
