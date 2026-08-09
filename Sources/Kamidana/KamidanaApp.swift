@@ -404,6 +404,24 @@ struct StatusBarView: View {
                             .font(.headline)
                             .padding(.bottom, 5)
                         
+                        // 🔊 音量調節スライダーを追加
+                        HStack {
+                            Image(systemName: "speaker.fill")
+                                .foregroundColor(.gray)
+                                .font(.system(size: 10))
+                            
+                            Slider(value: Binding(
+                                get: { audioVM.outputVolume },
+                                set: { newValue in audioVM.setOutputVolume(newValue) }
+                            ), in: 0.0...1.0)
+                            .frame(width: 150)
+                            
+                            Image(systemName: "speaker.wave.3.fill")
+                                .foregroundColor(.gray)
+                                .font(.system(size: 10))
+                        }
+                        .padding(.bottom, 5)
+                        
                         ScrollView {
                             VStack(alignment: .leading, spacing: 8) {
                                 ForEach(audioVM.outputDevices) { device in
@@ -468,6 +486,24 @@ struct StatusBarView: View {
                         Text("Input Devices")
                             .font(.headline)
                             .padding(.bottom, 5)
+                        
+                        // 🎙 マイク入力レベル（ゲイン）調節スライダーを追加
+                        HStack {
+                            Image(systemName: "mic.fill")
+                                .foregroundColor(.gray)
+                                .font(.system(size: 10))
+                            
+                            Slider(value: Binding(
+                                get: { audioVM.inputVolume },
+                                set: { newValue in audioVM.setInputVolume(newValue) }
+                            ), in: 0.0...1.0)
+                            .frame(width: 150)
+                            
+                            Image(systemName: "mic.and.signal.meter.fill")
+                                .foregroundColor(.gray)
+                                .font(.system(size: 10))
+                        }
+                        .padding(.bottom, 5)
                         
                         ScrollView {
                             VStack(alignment: .leading, spacing: 8) {
