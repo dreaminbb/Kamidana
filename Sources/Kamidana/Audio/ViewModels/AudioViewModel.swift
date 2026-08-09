@@ -14,9 +14,13 @@ public class AudioViewModel: ObservableObject {
     @Published public var isInputMuted: Bool = false
     
     @Published public var outputFormat: String = ""
+    @Published public var inputFormat: String = ""
     
     @Published public var outputDevices: [AudioDevice] = []
     @Published public var currentOutputDevice: AudioDevice?
+    
+    @Published public var inputDevices: [AudioDevice] = []
+    @Published public var currentInputDevice: AudioDevice?
     
     private var timer: AnyCancellable?
     
@@ -40,6 +44,9 @@ public class AudioViewModel: ObservableObject {
         self.outputDevices = deviceManager.outputDevices()
         self.currentOutputDevice = deviceManager.defaultOutput()
         
+        self.inputDevices = deviceManager.inputDevices()
+        self.currentInputDevice = deviceManager.defaultInput()
+        
         fetchVolumeOnly()
         
         if let outDeviceID = deviceManager.defaultOutputDeviceID(),
@@ -47,6 +54,13 @@ public class AudioViewModel: ObservableObject {
             self.outputFormat = "\(format.bitDepth)bit \(format.formatName) \(Int(format.sampleRate))Hz"
         } else {
             self.outputFormat = "Unknown"
+        }
+        
+        if let inDeviceID = deviceManager.defaultInputDeviceID(),
+           let format = deviceManager.getPhysicalFormat(deviceID: inDeviceID, scope: kAudioObjectPropertyScopeInput) {
+            self.inputFormat = "\(format.bitDepth)bit \(format.formatName) \(Int(format.sampleRate))Hz"
+        } else {
+            self.inputFormat = "Unknown"
         }
     }
     
@@ -72,6 +86,24 @@ public class AudioViewModel: ObservableObject {
     
     public func changeOutputDevice(_ device: AudioDevice) {
         deviceManager.setOutput(device)
+        // 変更直後に再取得
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.fetchInitialState()
+        }
+    }
+    
+    public func setInputVolume(_ value: Float) {
+        self.inputVolume = value
+        volumeManager.setInputVolume(value)
+    }
+    
+    public func toggleInputMute() {
+        self.isInputMuted.toggle()
+        volumeManager.setInputMute(self.isInputMuted)
+    }
+    
+    public func changeInputDevice(_ device: AudioDevice) {
+        deviceManager.setInput(device)
         // 変更直後に再取得
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.fetchInitialState()
