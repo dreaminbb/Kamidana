@@ -16,26 +16,36 @@ public class AudioListener {
         
         let systemObjectID = AudioObjectID(kAudioObjectSystemObject)
         
-        // デバイス変更の監視
+        // デフォルト出力デバイスの変更監視
         var defaultOutputAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
         
+        // デフォルト入力デバイスの変更監視
         var defaultInputAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultInputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
         
-        let selfPointer = Unmanaged.passUnretained(self).toOpaque()
+        // 物理的なデバイスの接続・切断の監視（リストの更新）
+        var devicesAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDevices,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
         
         AudioObjectAddPropertyListenerBlock(systemObjectID, &defaultOutputAddress, DispatchQueue.main) { [weak self] _, _ in
             self?.onDeviceChanged?()
         }
         
         AudioObjectAddPropertyListenerBlock(systemObjectID, &defaultInputAddress, DispatchQueue.main) { [weak self] _, _ in
+            self?.onDeviceChanged?()
+        }
+        
+        AudioObjectAddPropertyListenerBlock(systemObjectID, &devicesAddress, DispatchQueue.main) { [weak self] _, _ in
             self?.onDeviceChanged?()
         }
         
