@@ -99,6 +99,9 @@ struct StatusBarView: View {
 
     // 音楽マネージャー（メディア再生）を初期化
     @StateObject private var musicManager = MusicPlayingManager()
+    
+    // オーディオマネージャーを初期化
+    @StateObject private var audioVM = AudioViewModel()
 
     @State private var showWiFiPopover = false
     @State private var selectedSSID: String? = nil
@@ -367,6 +370,30 @@ struct StatusBarView: View {
                     RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.2), lineWidth: 1)
                 )
             }
+            
+            // 🔊 オーディオUI
+            HStack(spacing: 8) {
+                Button(action: {
+                    audioVM.toggleOutputMute()
+                }) {
+                    Image(systemName: audioVM.isOutputMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                        .foregroundColor(audioVM.isOutputMuted ? .red : .blue)
+                }
+                .buttonStyle(.plain)
+                
+                Text(String(format: "%.0f%%", audioVM.outputVolume * 100))
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 30, alignment: .trailing)
+                
+                Text(audioVM.outputFormat)
+                    .font(.system(size: 9))
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.white.opacity(0.05))
+            .cornerRadius(8)
 
             // インターネット通信速度
             if let net = matrix.data.internetUsage {
