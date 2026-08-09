@@ -4,43 +4,67 @@ struct NetworkWidget: View {
     @ObservedObject var matrix: SystemMatrix
     var theme: Theme
     
-    @State private var isHovered = false
+    @State private var showPopover = false
     
     var body: some View {
         if let net = matrix.data.internetUsage {
-            HStack(spacing: 8) {
-                // コンパクト表示：ネット通信速度
-                HStack(spacing: 3) {
-                    Image(systemName: "arrow.up.right").foregroundColor(theme.sapphire)
-                    Text(formatBytes(net.uploadBytesPerSecond) + "/s").foregroundColor(theme.text)
-                }
-                HStack(spacing: 3) {
-                    Image(systemName: "arrow.down.right").foregroundColor(theme.teal)
-                    Text(formatBytes(net.downloadBytesPerSecond) + "/s").foregroundColor(theme.text)
-                }
-                
-                // ホバー時展開：ディスクI/O速度
-                if isHovered, let disk = matrix.data.diskIOUsage {
-                    Divider().frame(height: 16).background(theme.surface2)
-                    
-                    HStack(spacing: 6) {
-                        Image(systemName: "internaldrive").foregroundColor(theme.mauve)
-                        HStack(spacing: 3) {
-                            Text("R:").foregroundColor(theme.subtext1)
-                            Text("\(formatBytes(disk.readBytesPerSecond))/s").foregroundColor(theme.text)
-                        }
-                        HStack(spacing: 3) {
-                            Text("W:").foregroundColor(theme.subtext1)
-                            Text("\(formatBytes(disk.writeBytesPerSecond))/s").foregroundColor(theme.text)
-                        }
+            Button(action: { showPopover.toggle() }) {
+                HStack(spacing: 8) {
+                    // コンパクト表示：ネット通信速度
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.up.right").foregroundColor(theme.sapphire)
+                        Text(formatBytes(net.uploadBytesPerSecond) + "/s").foregroundColor(theme.text)
+                    }
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.down.right").foregroundColor(theme.teal)
+                        Text(formatBytes(net.downloadBytesPerSecond) + "/s").foregroundColor(theme.text)
                     }
                 }
             }
+            .buttonStyle(.plain)
             .hyprlandModule(theme: theme)
-            .onHover { hover in
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    isHovered = hover
+            .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Network & Disk Activity")
+                        .font(.headline)
+                        .foregroundColor(theme.text)
+                        .padding(.bottom, 4)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: "network").foregroundColor(theme.blue).frame(width: 20)
+                            Text("Upload:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
+                            Text("\(formatBytes(net.uploadBytesPerSecond))/s").foregroundColor(theme.sapphire)
+                        }
+                        HStack {
+                            Image(systemName: "").frame(width: 20)
+                            Text("Download:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
+                            Text("\(formatBytes(net.downloadBytesPerSecond))/s").foregroundColor(theme.teal)
+                        }
+                    }
+                    .font(.system(size: 11, design: .monospaced))
+                    
+                    if let disk = matrix.data.diskIOUsage {
+                        Divider().background(theme.surface2).padding(.vertical, 4)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "internaldrive.fill").foregroundColor(theme.mauve).frame(width: 20)
+                                Text("Read:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
+                                Text("\(formatBytes(disk.readBytesPerSecond))/s").foregroundColor(theme.text)
+                            }
+                            HStack {
+                                Image(systemName: "").frame(width: 20)
+                                Text("Write:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
+                                Text("\(formatBytes(disk.writeBytesPerSecond))/s").foregroundColor(theme.text)
+                            }
+                        }
+                        .font(.system(size: 11, design: .monospaced))
+                    }
                 }
+                .padding()
+                .frame(width: 220)
+                .background(theme.base)
             }
         }
     }
@@ -54,3 +78,4 @@ struct NetworkWidget: View {
         return formatter.string(fromByteCount: Int64(bytes))
     }
 }
+
