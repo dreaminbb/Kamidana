@@ -86,9 +86,9 @@ struct StatusBarView: View {
         args: SystemMatrixArgs(
             cpu: true,
             memory: true,
-            disk: true,    // ←追加: ディスクI/O用
+            disk: true,  // ←追加: ディスクI/O用
             internet: true,
-            power: true,   // ←追加: バッテリー計算用
+            power: true,  // ←追加: バッテリー計算用
             gpu: true,
             thermal: true,
             battery: true  // ←追加: バッテリーUI用
@@ -136,7 +136,8 @@ struct StatusBarView: View {
             HStack(spacing: 8) {
                 BatteryWidget(matrix: matrix, theme: theme)
                 NetworkWidget(matrix: matrix, theme: theme)
-                CpuGpuWidget(matrix: matrix, theme: theme)
+                CpuWidget(matrix: matrix, theme: theme)
+                GpuWidget(matrix: matrix, theme: theme)
                 MemoryWidget(matrix: matrix, theme: theme)
                 DiskWidget(matrix: matrix, theme: theme)
                 ClockWidget(theme: theme)
@@ -146,7 +147,7 @@ struct StatusBarView: View {
             .padding(.trailing, 10)
         }
         .font(.system(size: 12, weight: .semibold, design: .monospaced))
-        .frame(maxWidth: .infinity, maxHeight: 160, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
         .background(Color.clear)
         .onAppear {
             matrix.startMonitoring()

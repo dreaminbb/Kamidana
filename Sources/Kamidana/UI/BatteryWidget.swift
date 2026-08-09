@@ -3,18 +3,21 @@ import SwiftUI
 struct BatteryWidget: View {
     @ObservedObject var matrix: SystemMatrix
     var theme: Theme
-    
+
     @State private var showPopover = false
     @State private var isHovered = false
-    
+
     var body: some View {
         if let battery = matrix.data.batteryUsage {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 6) {
                     // コンパクト表示
-                    Image(systemName: battery.isCharging ? "battery.100.bolt" : "battery.50")
-                        .foregroundColor(battery.isCharging ? theme.green : theme.text)
-                    
+                    Image(
+                        systemName: batteryIconName(
+                            capacity: battery.currentCapacity, isCharging: battery.isCharging)
+                    )
+                    .foregroundColor(battery.isCharging ? theme.green : theme.text)
+
                     Text("\(battery.currentCapacity)%")
                         .foregroundColor(theme.text)
                 }
@@ -22,20 +25,21 @@ struct BatteryWidget: View {
             .buttonStyle(.plain)
             .SmoothUIModule(theme: theme)
             .onHover { hover in
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
-            showPopover = hover
-        }
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
+                showPopover = hover
+            }
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("System Power & Thermal")
                         .font(.headline)
                         .foregroundColor(theme.text)
                         .padding(.bottom, 4)
-                    
+
                     Text("Battery").font(.subheadline).foregroundColor(theme.subtext1)
-                    
+
                     HStack {
-                        Image(systemName: "bolt.fill").foregroundColor(theme.yellow).frame(width: 20)
+                        Image(systemName: "bolt.fill").foregroundColor(theme.yellow).frame(
+                            width: 20)
                         if battery.isCharging {
                             Text("Charging (\(battery.timeToFull)m to full)")
                                 .foregroundColor(theme.green)
@@ -48,34 +52,43 @@ struct BatteryWidget: View {
                         }
                     }
                     .font(.system(size: 11, design: .monospaced))
-                    
+
                     if let watt = battery.wattInfo {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("Power:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
-                                Text(String(format: "%.1f W", watt.activeWatts)).foregroundColor(theme.text)
+                                Text("Power:").foregroundColor(theme.subtext1).frame(
+                                    width: 70, alignment: .leading)
+                                Text(String(format: "%.1f W", watt.activeWatts)).foregroundColor(
+                                    theme.text)
                             }
                             HStack {
-                                Text("Voltage:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
-                                Text(String(format: "%.1f V", watt.voltage)).foregroundColor(theme.text)
+                                Text("Voltage:").foregroundColor(theme.subtext1).frame(
+                                    width: 70, alignment: .leading)
+                                Text(String(format: "%.1f V", watt.voltage)).foregroundColor(
+                                    theme.text)
                             }
                             HStack {
-                                Text("Amperage:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
-                                Text(String(format: "%.0f mA", watt.amperage)).foregroundColor(theme.text)
+                                Text("Amperage:").foregroundColor(theme.subtext1).frame(
+                                    width: 70, alignment: .leading)
+                                Text(String(format: "%.0f mA", watt.amperage)).foregroundColor(
+                                    theme.text)
                             }
                         }
                         .font(.system(size: 11, design: .monospaced))
                         .padding(.leading, 28)
                     }
-                    
+
                     if let thermal = matrix.data.thermalState {
                         Divider().background(theme.surface2).padding(.vertical, 4)
-                        
+
                         Text("Thermal").font(.subheadline).foregroundColor(theme.subtext1)
-                        
+
                         HStack {
-                            Image(systemName: "thermometer").foregroundColor(getThermalColor(thermal, theme: theme)).frame(width: 20)
-                            Text("State:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
+                            Image(systemName: "thermometer").foregroundColor(
+                                getThermalColor(thermal, theme: theme)
+                            ).frame(width: 20)
+                            Text("State:").foregroundColor(theme.subtext1).frame(
+                                width: 70, alignment: .leading)
                             Text(thermal).foregroundColor(getThermalColor(thermal, theme: theme))
                         }
                         .font(.system(size: 11, design: .monospaced))
@@ -87,7 +100,7 @@ struct BatteryWidget: View {
             }
         }
     }
-    
+
     private func getThermalColor(_ state: String, theme: Theme) -> Color {
         switch state {
         case "Normal": return theme.sapphire
@@ -96,6 +109,19 @@ struct BatteryWidget: View {
         default: return theme.text
         }
     }
+
+    private func batteryIconName(capacity: Int64, isCharging: Bool) -> String {
+        let level: String
+        print("capacity: \(capacity)  is charging \(isCharging)")
+        switch (capacity, isCharging) {
+        case (..<13, _): level = "0"
+        case (..<38, _): level = "25"
+        case (..<63, _): level = "50"
+        case (..<88, _): level = "75"
+        case (100, true): level = "100percent"
+        default: level = "100"
+        }
+
+        return isCharging ? "battery.\(level).bolt" : "battery.\(level)"
+    }
 }
-
-

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct CpuGpuWidget: View {
@@ -9,8 +10,7 @@ struct CpuGpuWidget: View {
     
     var body: some View {
         Button(action: { showPopover.toggle() }) {
-            HStack(spacing: 10) {
-                // CPU部分
+            VStack(alignment: .leading, spacing: 2) {
                 if let cpu = matrix.data.cpuUsage {
                     HStack(spacing: 4) {
                         Image(systemName: "cpu").foregroundColor(getCPUColor(cpu.total, theme: theme))
@@ -18,11 +18,10 @@ struct CpuGpuWidget: View {
                             .foregroundColor(getCPUColor(cpu.total, theme: theme))
                     }
                 }
-                
-                // GPU部分
+
                 if let gpu = matrix.data.gpuUsage {
                     HStack(spacing: 4) {
-                        Image(systemName: "g.circle.fill").foregroundColor(theme.sky)
+                        gpuIcon
                         Text(String(format: "%3.0f%%", gpu.activeRatio))
                             .foregroundColor(theme.sky)
                     }
@@ -42,13 +41,29 @@ struct CpuGpuWidget: View {
                         .font(.headline)
                         .foregroundColor(theme.text)
                         .padding(.bottom, 4)
+
+                    // CPU概要
+                    if let cpu = matrix.data.cpuUsage {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("CPU").font(.subheadline).foregroundColor(theme.subtext1)
+                            HStack {
+                                Image(systemName: "cpu").foregroundColor(getCPUColor(cpu.total, theme: theme)).frame(width: 20)
+                                Text("Total:").foregroundColor(theme.subtext1).frame(width: 80, alignment: .leading)
+                                Text(String(format: "%.1f%%", cpu.total)).foregroundColor(theme.text)
+                            }
+                            .font(.system(size: 11, design: .monospaced))
+                        }
+                    }
                     
                     // GPU詳細
                     if let gpu = matrix.data.gpuUsage {
+                        if matrix.data.cpuUsage != nil {
+                            Divider().background(theme.surface2)
+                        }
                         VStack(alignment: .leading, spacing: 6) {
                             Text("GPU").font(.subheadline).foregroundColor(theme.subtext1)
                             HStack {
-                                Image(systemName: "g.circle.fill").foregroundColor(theme.sky).frame(width: 20)
+                                gpuIcon.frame(width: 20)
                                 Text("Utilization:").foregroundColor(theme.subtext1).frame(width: 80, alignment: .leading)
                                 Text(String(format: "%.1f%%", gpu.activeRatio)).foregroundColor(theme.text)
                             }
@@ -110,5 +125,21 @@ struct CpuGpuWidget: View {
         if usage < 30.0 { return theme.green }
         if usage < 70.0 { return theme.yellow }
         return theme.red
+    }
+
+    @ViewBuilder
+    private var gpuIcon: some View {
+        if NSFont(name: "JetBrainsMono Nerd Font Mono", size: 12) != nil {
+            Text("\u{f8ad}")
+                .font(.custom("JetBrainsMono Nerd Font Mono", size: 12))
+                .foregroundColor(theme.sky)
+                .frame(width: 14, height: 14, alignment: .center)
+                .clipped()
+        } else {
+            Text("GPU")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundColor(theme.sky)
+                .frame(width: 14, height: 14, alignment: .center)
+        }
     }
 }

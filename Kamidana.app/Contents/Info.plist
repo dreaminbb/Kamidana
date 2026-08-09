@@ -13,7 +13,7 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>音楽プレイヤーの再生情報を取得するためにAppleScriptを使用します。</string>
+	<string>音楽プレイヤーの再生情報を取得・操作するためにAppleScriptを使用します。</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>
 	<key>NSLocationUsageDescription</key>

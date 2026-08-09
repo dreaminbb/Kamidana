@@ -3,15 +3,15 @@ import SwiftUI
 struct MusicWidget: View {
     @ObservedObject var musicManager: MusicPlayingManager
     var theme: Theme = .catppuccinMocha
-    
+
     @State private var isHovered = false
     @State private var rotation: Double = 0.0
     @State private var isDraggingSlider = false
     @State private var sliderValue: Double = 0.0
-    
+
     // 回転アニメーション用のタイマー
     let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
-    
+
     var body: some View {
         if !musicManager.title.isEmpty {
             VStack(spacing: isHovered ? 16 : 0) {
@@ -34,7 +34,7 @@ struct MusicWidget: View {
                     .clipShape(Circle())
                     .rotationEffect(.degrees(rotation))
                     .overlay(Circle().stroke(theme.surface2.opacity(0.5), lineWidth: 1))
-                    
+
                     // テキスト情報
                     if isHovered {
                         VStack(alignment: .leading, spacing: 4) {
@@ -57,62 +57,77 @@ struct MusicWidget: View {
                             .frame(maxWidth: 80, alignment: .leading)
                     }
                 }
-                
+
                 // 下段：シークバーとコントロール（拡大時のみ）
                 if isHovered {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 15) {
                         // シークバー
                         if musicManager.trackTime > 0 {
                             HStack(spacing: 8) {
-                                Text(formatTime(isDraggingSlider ? sliderValue : musicManager.currentPosition))
-                                    .font(.system(size: 9, design: .monospaced))
-                                    .foregroundColor(theme.subtext1)
-                                
-                                Slider(value: Binding(
-                                    get: { isDraggingSlider ? sliderValue : musicManager.currentPosition },
-                                    set: { sliderValue = $0 }
-                                ), in: 0...musicManager.trackTime, onEditingChanged: { editing in
-                                    isDraggingSlider = editing
-                                    if !editing { musicManager.seek(to: sliderValue) }
-                                })
+                                Text(
+                                    formatTime(
+                                        isDraggingSlider
+                                            ? sliderValue : musicManager.currentPosition)
+                                )
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundColor(theme.subtext1)
+
+                                Slider(
+                                    value: Binding(
+                                        get: {
+                                            isDraggingSlider
+                                                ? sliderValue : musicManager.currentPosition
+                                        },
+                                        set: { sliderValue = $0 }
+                                    ), in: 0...musicManager.trackTime,
+                                    onEditingChanged: { editing in
+                                        isDraggingSlider = editing
+                                        if !editing { musicManager.seek(to: sliderValue) }
+                                    }
+                                )
                                 .controlSize(.mini)
                                 .accentColor(theme.mauve)
-                                
+
                                 Text(formatTime(musicManager.trackTime))
                                     .font(.system(size: 9, design: .monospaced))
                                     .foregroundColor(theme.subtext1)
                             }
                         }
-                        
+
                         // コントロール
                         HStack(spacing: 24) {
                             Button(action: { musicManager.changeTrack(direction: .previous) }) {
-                                Image(systemName: "backward.fill").font(.system(size: 16)).foregroundColor(theme.text)
+                                Image(systemName: "backward.fill").font(.system(size: 16))
+                                    .foregroundColor(theme.text)
                             }.buttonStyle(.plain)
-                            
+
                             Button(action: { musicManager.pauseMusic() }) {
-                                Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(theme.green)
+                                Image(
+                                    systemName: musicManager.isPlaying ? "pause.fill" : "play.fill"
+                                )
+                                .font(.system(size: 24))
+                                .foregroundColor(theme.green)
                             }.buttonStyle(.plain)
-                            
+
                             Button(action: { musicManager.changeTrack(direction: .next) }) {
-                                Image(systemName: "forward.fill").font(.system(size: 16)).foregroundColor(theme.text)
+                                Image(systemName: "forward.fill").font(.system(size: 16))
+                                    .foregroundColor(theme.text)
                             }.buttonStyle(.plain)
                         }
                     }
                 }
             }
-            .frame(width: isHovered ? 280 : nil) // 拡大時は幅を固定して大きく見せる
-            .padding(isHovered ? 12 : 0)         // 拡大時だけ内側に余白を追加して四方に広げる
+            .frame(width: isHovered ? 350 : nil)  // 拡大時は幅を固定して大きく見せる
+            .padding(isHovered ? 12 : 0)  // 拡大時だけ内側に余白を追加して四方に広げる
             .SmoothUIModule(theme: theme)
+            .cornerRadius(20)
             .onHover { hover in
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                     isHovered = hover
                 }
             }
             .onReceive(rotationTimer) { _ in
-                if isHovered && musicManager.isPlaying {
+                if musicManager.isPlaying {
                     rotation += 2.0
                     if rotation >= 360 { rotation = 0 }
                 }
