@@ -471,7 +471,11 @@ struct StatusBarView: View {
             NetworkWidget(matrix: matrix, theme: theme)
             
             // 📊 システム情報モジュール
-            SystemWidget(matrix: matrix, theme: theme)
+            GpuWidget(matrix: matrix, theme: theme)
+            CpuWidget(matrix: matrix, theme: theme)
+            ThermalWidget(matrix: matrix, theme: theme)
+            MemoryWidget(matrix: matrix, theme: theme)
+            DiskWidget(matrix: matrix, theme: theme)
             
             // 時計モジュール
             Text(currentTime, style: .time)

@@ -25,7 +25,7 @@ struct NetworkWidget: View {
             .hyprlandModule(theme: theme)
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Network & Disk Activity")
+                    Text("Network Activity")
                         .font(.headline)
                         .foregroundColor(theme.text)
                         .padding(.bottom, 4)
@@ -43,24 +43,6 @@ struct NetworkWidget: View {
                         }
                     }
                     .font(.system(size: 11, design: .monospaced))
-                    
-                    if let disk = matrix.data.diskIOUsage {
-                        Divider().background(theme.surface2).padding(.vertical, 4)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: "internaldrive.fill").foregroundColor(theme.mauve).frame(width: 20)
-                                Text("Read:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
-                                Text("\(formatBytes(disk.readBytesPerSecond))/s").foregroundColor(theme.text)
-                            }
-                            HStack {
-                                Image(systemName: "").frame(width: 20)
-                                Text("Write:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
-                                Text("\(formatBytes(disk.writeBytesPerSecond))/s").foregroundColor(theme.text)
-                            }
-                        }
-                        .font(.system(size: 11, design: .monospaced))
-                    }
                 }
                 .padding()
                 .frame(width: 220)
