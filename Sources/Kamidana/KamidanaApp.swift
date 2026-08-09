@@ -104,6 +104,7 @@ struct StatusBarView: View {
     @StateObject private var audioVM = AudioViewModel()
 
     @State private var showWiFiPopover = false
+    @State private var showAudioPopover = false
     @State private var selectedSSID: String? = nil
     @State private var wifiPassword = ""
     @State private var connectionStatusMsg = ""
@@ -381,14 +382,55 @@ struct StatusBarView: View {
                 }
                 .buttonStyle(.plain)
                 
-                Text(String(format: "%.0f%%", audioVM.outputVolume * 100))
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(width: 30, alignment: .trailing)
-                
-                Text(audioVM.outputFormat)
-                    .font(.system(size: 9))
-                    .foregroundColor(.gray)
+                Button(action: {
+                    showAudioPopover.toggle()
+                }) {
+                    HStack(spacing: 4) {
+                        Text(String(format: "%.0f%%", audioVM.outputVolume * 100))
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 30, alignment: .trailing)
+                        
+                        Text(audioVM.outputFormat)
+                            .font(.system(size: 9))
+                            .foregroundColor(.gray)
+                    }
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showAudioPopover, arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Output Devices")
+                            .font(.headline)
+                            .padding(.bottom, 5)
+                        
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(audioVM.outputDevices) { device in
+                                    Button(action: {
+                                        audioVM.changeOutputDevice(device)
+                                    }) {
+                                        HStack {
+                                            Image(systemName: audioVM.currentOutputDevice?.id == device.id ? "checkmark.circle.fill" : "circle")
+                                                .foregroundColor(audioVM.currentOutputDevice?.id == device.id ? .blue : .gray)
+                                            Text(device.name)
+                                                .foregroundColor(.white)
+                                            Spacer()
+                                        }
+                                        .frame(width: 200)
+                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, 8)
+                                        .background(Color.white.opacity(0.05))
+                                        .cornerRadius(6)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .frame(maxHeight: 250)
+                    }
+                    .padding()
+                    .background(Color(red: 0.15, green: 0.15, blue: 0.18))
+                }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

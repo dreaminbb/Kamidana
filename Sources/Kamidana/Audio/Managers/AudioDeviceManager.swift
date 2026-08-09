@@ -17,6 +17,35 @@ public class AudioDeviceManager {
         }
     }
     
+    private func hasStreams(deviceID: AudioDeviceID, scope: AudioObjectPropertyScope) -> Bool {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyStreams,
+            mScope: scope,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var dataSize: UInt32 = 0
+        let status = AudioObjectGetPropertyDataSize(deviceID, &address, 0, nil, &dataSize)
+        return status == noErr && dataSize > 0
+    }
+    
+    /// すべてのオーディオデバイスの情報を取得します
+    public func devices() -> [AudioDevice] {
+        return getDeviceIDs().map { id in
+            let name = getDeviceName(deviceID: id)
+            let isInput = hasStreams(deviceID: id, scope: kAudioObjectPropertyScopeInput)
+            let isOutput = hasStreams(deviceID: id, scope: kAudioObjectPropertyScopeOutput)
+            return AudioDevice(id: id, uid: "", name: name, isInput: isInput, isOutput: isOutput)
+        }
+    }
+    
+    public func outputDevices() -> [AudioDevice] {
+        return devices().filter { $0.isOutput }
+    }
+    
+    public func inputDevices() -> [AudioDevice] {
+        return devices().filter { $0.isInput }
+    }
+    
     /// デフォルトの出力（スピーカー等）デバイスIDを取得します
     public func defaultOutputDeviceID() -> AudioDeviceID? {
         let result: Result<AudioDeviceID, AudioError> = AudioProperty.getProperty(
@@ -60,9 +89,36 @@ public class AudioDeviceManager {
         guard let deviceID = defaultOutputDeviceID() else { return nil }
         
         let name = getDeviceName(deviceID: deviceID)
+        let isInput = hasStreams(deviceID: deviceID, scope: kAudioObjectPropertyScopeInput)
+        let isOutput = hasStreams(deviceID: deviceID, scope: kAudioObjectPropertyScopeOutput)
         
-        // 簡単のため、isOutputはtrue固定で返します（厳密にはkAudioDevicePropertyStreamsで判定が必要）
-        return AudioDevice(id: deviceID, uid: "", name: name, isInput: false, isOutput: true)
+        return AudioDevice(id: deviceID, uid: "", name: name, isInput: isInput, isOutput: isOutput)
+    }
+    
+    public func defaultInput() -> AudioDevice? {
+        guard let deviceID = defaultInputDeviceID() else { return nil }
+        
+        let name = getDeviceName(deviceID: deviceID)
+        let isInput = hasStreams(deviceID: deviceID, scope: kAudioObjectPropertyScopeInput)
+        let isOutput = hasStreams(deviceID: deviceID, scope: kAudioObjectPropertyScopeOutput)
+        
+        return AudioDevice(id: deviceID, uid: "", name: name, isInput: isInput, isOutput: isOutput)
+    }
+    
+    public func setOutput(_ device: AudioDevice) {
+        _ = AudioProperty.setProperty(
+            objectID: AudioObjectID(kAudioObjectSystemObject),
+            selector: kAudioHardwarePropertyDefaultOutputDevice,
+            value: device.id
+        )
+    }
+    
+    public func setInput(_ device: AudioDevice) {
+        _ = AudioProperty.setProperty(
+            objectID: AudioObjectID(kAudioObjectSystemObject),
+            selector: kAudioHardwarePropertyDefaultInputDevice,
+            value: device.id
+        )
     }
     
     // MARK: - Format Info
