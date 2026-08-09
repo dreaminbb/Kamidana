@@ -471,9 +471,7 @@ struct StatusBarView: View {
             NetworkWidget(matrix: matrix, theme: theme)
             
             // 📊 システム情報モジュール
-            GpuWidget(matrix: matrix, theme: theme)
-            CpuWidget(matrix: matrix, theme: theme)
-            ThermalWidget(matrix: matrix, theme: theme)
+            CpuGpuWidget(matrix: matrix, theme: theme)
             MemoryWidget(matrix: matrix, theme: theme)
             DiskWidget(matrix: matrix, theme: theme)
             

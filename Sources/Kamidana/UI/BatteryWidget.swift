@@ -22,13 +22,15 @@ struct BatteryWidget: View {
             .hyprlandModule(theme: theme)
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Battery Information")
+                    Text("System Power & Thermal")
                         .font(.headline)
                         .foregroundColor(theme.text)
                         .padding(.bottom, 4)
                     
+                    Text("Battery").font(.subheadline).foregroundColor(theme.subtext1)
+                    
                     HStack {
-                        Image(systemName: "bolt.fill").foregroundColor(theme.yellow)
+                        Image(systemName: "bolt.fill").foregroundColor(theme.yellow).frame(width: 20)
                         if battery.isCharging {
                             Text("Charging (\(battery.timeToFull)m to full)")
                                 .foregroundColor(theme.green)
@@ -40,10 +42,9 @@ struct BatteryWidget: View {
                                 .foregroundColor(theme.text)
                         }
                     }
+                    .font(.system(size: 11, design: .monospaced))
                     
                     if let watt = battery.wattInfo {
-                        Divider().background(theme.surface2)
-                        
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text("Power:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
@@ -59,13 +60,37 @@ struct BatteryWidget: View {
                             }
                         }
                         .font(.system(size: 11, design: .monospaced))
+                        .padding(.leading, 28)
+                    }
+                    
+                    if let thermal = matrix.data.thermalState {
+                        Divider().background(theme.surface2).padding(.vertical, 4)
+                        
+                        Text("Thermal").font(.subheadline).foregroundColor(theme.subtext1)
+                        
+                        HStack {
+                            Image(systemName: "thermometer").foregroundColor(getThermalColor(thermal, theme: theme)).frame(width: 20)
+                            Text("State:").foregroundColor(theme.subtext1).frame(width: 70, alignment: .leading)
+                            Text(thermal).foregroundColor(getThermalColor(thermal, theme: theme))
+                        }
+                        .font(.system(size: 11, design: .monospaced))
                     }
                 }
                 .padding()
-                .frame(width: 220)
+                .frame(width: 240)
                 .background(theme.base)
             }
         }
     }
+    
+    private func getThermalColor(_ state: String, theme: Theme) -> Color {
+        switch state {
+        case "Normal": return theme.sapphire
+        case "Warm": return theme.yellow
+        case "Hot", "Critical": return theme.red
+        default: return theme.text
+        }
+    }
 }
+
 
