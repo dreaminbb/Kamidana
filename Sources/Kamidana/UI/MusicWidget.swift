@@ -40,23 +40,28 @@ struct MusicWidget: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(musicManager.title)
                                 .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(theme.text)
+                                .foregroundColor(Color.white) // Dynamic Island風に白文字
                                 .lineLimit(1)
                             Text(musicManager.artist)
                                 .font(.system(size: 11))
-                                .foregroundColor(theme.subtext0)
+                                .foregroundColor(Color.white.opacity(0.7))
                                 .lineLimit(1)
                         }
                         Spacer()
                     } else {
-                        // 縮小時
+                        // 縮小時 (Dynamic Island コンパクトモード)
                         Text(musicManager.title)
                             .font(.custom("Menlo", size: 10).bold())
-                            .foregroundColor(theme.text)
+                            .foregroundColor(Color.white)
                             .lineLimit(1)
-                            .frame(maxWidth: 80, alignment: .leading)
+                            .frame(maxWidth: 120, alignment: .leading) // ノッチ幅を考慮
+                        Spacer(minLength: 0)
+                        Image(systemName: musicManager.isPlaying ? "waveform" : "pause.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(theme.pink)
                     }
                 }
+                .padding(.horizontal, isHovered ? 0 : 4)
 
                 // 下段：シークバーとコントロール（拡大時のみ）
                 if isHovered {
@@ -70,7 +75,7 @@ struct MusicWidget: View {
                                             ? sliderValue : musicManager.currentPosition)
                                 )
                                 .font(.system(size: 9, design: .monospaced))
-                                .foregroundColor(theme.subtext1)
+                                .foregroundColor(Color.white.opacity(0.7))
 
                                 Slider(
                                     value: Binding(
@@ -86,11 +91,11 @@ struct MusicWidget: View {
                                     }
                                 )
                                 .controlSize(.mini)
-                                .accentColor(theme.mauve)
+                                .accentColor(theme.pink)
 
                                 Text(formatTime(musicManager.trackTime))
                                     .font(.system(size: 9, design: .monospaced))
-                                    .foregroundColor(theme.subtext1)
+                                    .foregroundColor(Color.white.opacity(0.7))
                             }
                         }
 
@@ -98,7 +103,7 @@ struct MusicWidget: View {
                         HStack(spacing: 24) {
                             Button(action: { musicManager.changeTrack(direction: .previous) }) {
                                 Image(systemName: "backward.fill").font(.system(size: 16))
-                                    .foregroundColor(theme.text)
+                                    .foregroundColor(Color.white)
                             }.buttonStyle(.plain)
 
                             Button(action: { musicManager.pauseMusic() }) {
@@ -111,18 +116,21 @@ struct MusicWidget: View {
 
                             Button(action: { musicManager.changeTrack(direction: .next) }) {
                                 Image(systemName: "forward.fill").font(.system(size: 16))
-                                    .foregroundColor(theme.text)
+                                    .foregroundColor(Color.white)
                             }.buttonStyle(.plain)
                         }
                     }
                 }
             }
-            .frame(width: isHovered ? 350 : nil)  // 拡大時は幅を固定して大きく見せる
-            .padding(isHovered ? 12 : 0)  // 拡大時だけ内側に余白を追加して四方に広げる
-            .SmoothUIModule(theme: theme)
-            .cornerRadius(20)
+            .frame(width: isHovered ? 350 : 200)  // 縮小時はノッチに合わせたサイズに
+            .frame(height: isHovered ? nil : 32)
+            .padding(isHovered ? 16 : 4)
+            .background(Color.black) // Dynamic Islandの黒色
+            .clipShape(RoundedRectangle(cornerRadius: isHovered ? 24 : 16, style: .continuous))
+            .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+            // ホバー時のアニメーション
             .onHover { hover in
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.6, blendDuration: 0)) {
                     isHovered = hover
                 }
             }

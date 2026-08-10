@@ -78,9 +78,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 struct StatusBarView: View {
-    @State private var currentTime = Date()
-    let clockTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
     // SystemMatrixを初期化
     @StateObject private var matrix = SystemMatrix(
         args: SystemMatrixArgs(
@@ -105,53 +102,85 @@ struct StatusBarView: View {
 
     // オーディオマネージャーを初期化
     @StateObject private var audioVM = AudioViewModel()
+    @StateObject private var uiSettings = UISettingsStore()
 
-    @State private var showWiFiPopover = false
-    @State private var showAudioPopover = false
-    @State private var showMicPopover = false
-    @State private var selectedSSID: String? = nil
-    @State private var wifiPassword = ""
-    @State private var connectionStatusMsg = ""
+    @State private var isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
 
     var body: some View {
         let theme = Theme.catppuccinMocha
+        let compactMode = uiSettings.resolveCompactMode(isBuiltInDisplay: isBuiltInDisplay)
 
         ZStack(alignment: .top) {
-            // 左側のウィジェット群
-            HStack(spacing: 8) {
-                LocalSendWidget(localSend: localSend, theme: theme)
+            // メインのステータスバー（左右のウィジェット）
+            HStack(spacing: compactMode ? 6 : 8) {
+                // 左側のウィジェット群
+                // LocalSendWidget(localSend: localSend, theme: theme)
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 32)
-            .padding(.leading, 10)
+                
+                Spacer(minLength: 160) // ノッチ・Dynamic Island用のスペースを確保
 
-            // 中央のウィジェット（Dynamic Island風）
-            // 上部の32pxバーと高さを合わせるためにパディングを調整
+                // 右側のウィジェット群
+                HStack(
+                    spacing: compactMode ? 6 : 8,
+                    content: {
+                        CpuWidget(matrix: matrix, theme: theme)
+                        MemoryWidget(matrix: matrix, theme: theme)
+                        BatteryWidget(matrix: matrix, theme: theme)
+                        ClockWidget(theme: theme)
+                        FoldedWidgetsButton(matrix: matrix, theme: theme)
+                    })
+            }
+            .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
+            .frame(height: compactMode ? 28 : 32)
+            .padding(.horizontal, 10)
+            
+            // Dynamic Island型のMusicWidgetを中央にオーバーレイ配置
             MusicWidget(musicManager: musicManager, theme: theme)
-                .padding(.top, 2)
-
-            // 右側のウィジェット群
-            HStack(spacing: 8) {
-                NetworkWidget(matrix: matrix, theme: theme)
-                CpuWidget(matrix: matrix, theme: theme)
-                GpuWidget(matrix: matrix, theme: theme)
-                MemoryWidget(matrix: matrix, theme: theme)
-                DiskWidget(matrix: matrix, theme: theme)
-                BatteryWidget(matrix: matrix, theme: theme)
-                ClockWidget(theme: theme)
-            }
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .frame(height: 32)
-            .padding(.trailing, 10)
+                // zIndexを高くして他のウィジェットより手前に表示
+                .zIndex(100)
         }
-        .font(.system(size: 12, weight: .semibold, design: .monospaced))
         .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
         .background(Color.clear)
         .onAppear {
             matrix.startMonitoring()
             localSend.scanNetwork()
+            isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: NSApplication.didChangeScreenParametersNotification
+            )
+        ) { _ in
+            isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
+        }
+    }
+}
+
+private struct FoldedWidgetsButton: View {
+    @ObservedObject var matrix: SystemMatrix
+    let theme: Theme
+
+    @State private var showPopover = false
+
+    var body: some View {
+        Button(action: { showPopover.toggle() }) {
+            Image(systemName: "list.bullet")
+                .foregroundColor(theme.subtext1)
+        }
+        .buttonStyle(.plain)
+        .SmoothUIModule(theme: theme)
+        .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Folded Widgets")
+                    .font(.headline)
+                    .foregroundColor(theme.text)
+                NetworkWidget(matrix: matrix, theme: theme)
+                GpuWidget(matrix: matrix, theme: theme)
+                DiskWidget(matrix: matrix, theme: theme)
+            }
+            .padding()
+            .background(theme.base)
         }
     }
 }
