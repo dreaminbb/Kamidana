@@ -118,15 +118,18 @@ struct StatusBarView: View {
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)
                 
-                Spacer() // 左寄せしつつ、MusicWidgetをカメラエッジ（ノッチ）の左端へ
+                Spacer() // 左寄せしつつ、MusicWidgetをカメラエッジへ
                 
-                // カメラエッジの一番左に配置。デフォルトは回転する画像のみ（約32x32）
+                // カメラエッジの左端に配置
                 Color.clear
                     .frame(width: 32, height: compactMode ? 28 : 32)
                     .overlay(
                         MusicWidget(musicManager: musicManager, theme: theme)
-                            // カメラの物理ノッチに被らないように、右端（カメラ横）を固定して左へ広がる
-                        , alignment: .topTrailing
+                            // 親(32x32)のフレーム制限を無視して、シークバーなどが潰れずに本来の高さ・幅で表示されるようにする
+                            .fixedSize()
+                            // .topLeadingにすることで、ホバー時に画像の位置（左端）が固定され、
+                            // 右方向へ向かってリッチなUIが広がるようになります。
+                        , alignment: .topLeading
                     )
                     .zIndex(100)
                 
