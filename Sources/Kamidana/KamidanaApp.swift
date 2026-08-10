@@ -111,45 +111,41 @@ struct StatusBarView: View {
         let compactMode = uiSettings.resolveCompactMode(isBuiltInDisplay: isBuiltInDisplay)
 
         ZStack(alignment: .top) {
-            // メインのステータスバー（左右のウィジェット）
+            // 左側のウィジェット群
             HStack(spacing: compactMode ? 6 : 8) {
-                // 左側のウィジェット群
                 // LocalSendWidget(localSend: localSend, theme: theme)
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)
                 
-                Spacer() // 左側のウィジェットを左端へ、以降を中央のノッチ寄りへ押しやる
-                
-                // カメラエッジの左端に配置
+                // カメラに埋もれないよう、左側ウィジェットの末尾に配置
                 Color.clear
                     .frame(width: 32, height: compactMode ? 28 : 32)
                     .overlay(
                         MusicWidget(musicManager: musicManager, theme: theme)
                             .fixedSize()
-                            // アルバム画像を固定して「右方向」へ展開させる
+                            // アルバム画像を左に固定し、右方向へ展開させる
                         , alignment: .topLeading
                     )
                     .zIndex(100)
-                    // 「あともう少し移動させて」の要望に合わせて、カメラエッジから少し左へ離す
-                    .padding(.trailing, 40)
-                
-                Spacer(minLength: 50) // ノッチ・カメラ用のスペースを確保
-
-                // 右側のウィジェット群
-                HStack(
-                    spacing: compactMode ? 6 : 8,
-                    content: {
-                        CpuWidget(matrix: matrix, theme: theme)
-                        MemoryWidget(matrix: matrix, theme: theme)
-                        BatteryWidget(matrix: matrix, theme: theme)
-                        ClockWidget(theme: theme)
-                        FoldedWidgetsButton(matrix: matrix, theme: theme)
-                    })
             }
-            .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
-            .frame(height: compactMode ? 28 : 32)
-            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 10)
+            
+            // 右側のウィジェット群
+            HStack(
+                spacing: compactMode ? 6 : 8,
+                content: {
+                    CpuWidget(matrix: matrix, theme: theme)
+                    MemoryWidget(matrix: matrix, theme: theme)
+                    BatteryWidget(matrix: matrix, theme: theme)
+                    ClockWidget(theme: theme)
+                    FoldedWidgetsButton(matrix: matrix, theme: theme)
+                })
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.trailing, 10)
         }
+        .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
+        .frame(height: compactMode ? 28 : 32)
         .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
         .background(Color.clear)
         .onAppear {
