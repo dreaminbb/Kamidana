@@ -59,18 +59,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // 【追加】画面の一番上に強制的に再配置する関数
     @objc func updateWindowPosition() {
-        guard let screen = NSScreen.main else { return }
-        let screenRect = screen.frame
+        // システムの画面情報更新が完了するのを待つために非同期で実行
+        DispatchQueue.main.async {
+            guard let screen = NSScreen.screens.first else { return }
+            let screenRect = screen.frame
 
-        let windowRect = NSRect(
-            x: screenRect.minX,
-            y: screenRect.maxY - barHeight,
-            width: screenRect.width,
-            height: barHeight
-        )
+            let windowRect = NSRect(
+                x: screenRect.minX,
+                y: screenRect.maxY - self.barHeight,
+                width: screenRect.width,
+                height: self.barHeight
+            )
 
-        // アニメーションなしで即座に正しい位置・サイズにスナップさせる
-        statusBarWindow.setFrame(windowRect, display: true)
+            // アニメーションなしで即座に正しい位置・サイズにスナップさせる
+            self.statusBarWindow.setFrame(windowRect, display: true)
+        }
     }
 }
 
@@ -118,9 +121,11 @@ struct StatusBarView: View {
                 Color.clear
                     .frame(width: 32, height: compactMode ? 28 : 32)
                     .overlay(
-                        MusicWidget(musicManager: musicManager, theme: theme, compactMode: compactMode)
-                            .fixedSize() // アルバム画像を左に固定し、右方向へ展開させる
-                            , alignment: .topLeading
+                        MusicWidget(
+                            musicManager: musicManager, theme: theme, compactMode: compactMode
+                        )
+                        .fixedSize()  // アルバム画像を左に固定し、右方向へ展開させる
+                        , alignment: .topLeading
                     )
                     .zIndex(100)
             }
@@ -152,10 +157,14 @@ struct StatusBarView: View {
         }
         .onReceive(
             NotificationCenter.default.publisher(
-                for: NSApplication.didChangeScreenParametersNotification
-            )
+                for: NSApplication.didChangeScreenParametersNotification)
         ) { _ in
-            isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
+            // 通知が飛んできた直後はシステム内部の画面情報(NSScreen.screens)が
+            // まだ更新されていないことがあるため、非同期で一拍遅らせて判定する
+            DispatchQueue.main.async {
+                isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
+                print("Updated isBuiltInDisplay: \(isBuiltInDisplay)")
+            }
         }
     }
 }
