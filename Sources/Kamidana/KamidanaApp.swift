@@ -2,9 +2,6 @@ import AppKit
 import CoreWLAN
 import SwiftUI
 
-// FIX:
-// - [ ] ホバーした後にホバーが戻らないでUIが全体が下に下がる
-
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: NSWindow!
@@ -116,21 +113,20 @@ struct StatusBarView: View {
                 // LocalSendWidget(localSend: localSend, theme: theme)
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)
-                
+
                 // カメラに埋もれないよう、左側ウィジェットの末尾に配置
                 Color.clear
                     .frame(width: 32, height: compactMode ? 28 : 32)
                     .overlay(
-                        MusicWidget(musicManager: musicManager, theme: theme)
-                            .fixedSize()
-                            // アルバム画像を左に固定し、右方向へ展開させる
-                        , alignment: .topLeading
+                        MusicWidget(musicManager: musicManager, theme: theme, compactMode: compactMode)
+                            .fixedSize() // アルバム画像を左に固定し、右方向へ展開させる
+                            , alignment: .topLeading
                     )
                     .zIndex(100)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 10)
-            
+
             // 右側のウィジェット群
             HStack(
                 spacing: compactMode ? 6 : 8,
@@ -140,7 +136,8 @@ struct StatusBarView: View {
                     BatteryWidget(matrix: matrix, theme: theme)
                     ClockWidget(theme: theme)
                     FoldedWidgetsButton(matrix: matrix, theme: theme)
-                })
+                }
+            )
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, 10)
         }

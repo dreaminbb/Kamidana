@@ -3,6 +3,7 @@ import SwiftUI
 struct MusicWidget: View {
     @ObservedObject var musicManager: MusicPlayingManager
     var theme: Theme = .catppuccinMocha
+    var compactMode: Bool = false // 追加: compactModeを受け取る
 
     @State private var isHovered = false
     @State private var rotation: Double = 0.0
@@ -13,6 +14,9 @@ struct MusicWidget: View {
     let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
 
     var body: some View {
+        let closedSize: CGFloat = compactMode ? 24 : 28
+        let paddingSize: CGFloat = compactMode ? 2 : 2
+        
         if !musicManager.title.isEmpty {
             VStack(spacing: isHovered ? 16 : 0) {
                 // 上段：アートワークと基本情報
@@ -30,7 +34,7 @@ struct MusicWidget: View {
                             }
                         }
                     }
-                    .frame(width: isHovered ? 64 : 28, height: isHovered ? 64 : 28)
+                    .frame(width: isHovered ? 64 : closedSize, height: isHovered ? 64 : closedSize)
                     .clipShape(Circle())
                     .rotationEffect(.degrees(rotation))
                     .overlay(Circle().stroke(theme.surface2.opacity(0.5), lineWidth: 1))
@@ -110,10 +114,10 @@ struct MusicWidget: View {
                     }
                 }
             }
-            .frame(width: isHovered ? 350 : 28)
-            .frame(height: isHovered ? nil : 28)
-            .padding(isHovered ? 16 : 2) // 縮小時は2pxのパディングで約32x32にする
-            .background(isHovered ? Color.black : Color.clear) // 縮小時は透明にして画像だけ見せる
+            .frame(width: isHovered ? 350 : closedSize)
+            .frame(height: isHovered ? nil : closedSize)
+            .padding(isHovered ? 16 : paddingSize)
+            .background(isHovered ? Color.black : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: isHovered ? 24 : 16, style: .continuous))
             .shadow(color: isHovered ? Color.black.opacity(0.3) : Color.clear, radius: 10, x: 0, y: 5)
             // ホバー時のアニメーション
