@@ -130,6 +130,7 @@ struct StatusBarView: View {
                         .zIndex(100)
                 }
             }
+            .frame(height: 32)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 10)
 
@@ -156,6 +157,7 @@ struct StatusBarView: View {
                     }
                 }
             )
+            .frame(height: 32)
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, 10)
 
@@ -169,8 +171,6 @@ struct StatusBarView: View {
         }
         .environment(\.compactMode, compactMode)
         .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
-        // 高さはコンパクトモードでも32のまま維持する（ユーザの要望）
-        .frame(height: 32)
         .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
         .background(Color.clear)
         .onAppear {
