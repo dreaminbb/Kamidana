@@ -169,9 +169,8 @@ struct StatusBarView: View {
         }
         .environment(\.compactMode, compactMode)
         .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
-        // ZStack全体の高さを制限すると下部への配置がクリップされる可能性があるため、
-        // メニューバー自体の高さ指定は各ウィジェット群（HStack）に持たせるか、十分な高さを確保する
-        .frame(minHeight: compactMode ? 28 : 32)
+        // 高さはコンパクトモードでも32のまま維持する（ユーザの要望）
+        .frame(height: 32)
         .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
         .background(Color.clear)
         .onAppear {

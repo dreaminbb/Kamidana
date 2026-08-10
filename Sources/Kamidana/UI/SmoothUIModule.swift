@@ -8,7 +8,8 @@ struct SmoothUIModuleModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(.horizontal, compactMode ? 8 : 12)
-            .padding(.vertical, compactMode ? 2 : 6)
+            // 高さは変えないため、垂直方向のパディングは6で固定
+            .padding(.vertical, 6)
             // ホバー時はsurface1、通常時はbaseの半透明
             .background(isHovered ? theme.surface1.opacity(0.8) : theme.base.opacity(0.6))
             // UltraThinMaterialを重ねてガラスのようなぼかし効果を出す

@@ -14,8 +14,9 @@ struct MusicWidget: View {
     let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        let closedSize: CGFloat = compactMode ? 24 : 28
-        let paddingSize: CGFloat = compactMode ? 2 : 2
+        // 高さは変えないため、28で固定する（コンパクトモードでもサイズ縮小しない）
+        let closedSize: CGFloat = 28
+        let paddingSize: CGFloat = 2
         
         if !musicManager.title.isEmpty {
             VStack(spacing: isHovered ? 16 : 0) {
