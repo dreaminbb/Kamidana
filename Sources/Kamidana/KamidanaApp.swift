@@ -118,15 +118,17 @@ struct StatusBarView: View {
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)
 
-                // カメラに埋もれないよう、左側ウィジェットの末尾に配置
-                Color.clear
-                    .frame(width: 32, height: compactMode ? 28 : 32)
-                    .overlay(
-                        MusicWidget(musicManager: musicManager, theme: theme)
-                        .fixedSize()  // アルバム画像を左に固定し、右方向へ展開させる
-                        , alignment: .topLeading
-                    )
-                    .zIndex(100)
+                // 通常モード（非コンパクト）の場合はカメラ左側に配置
+                if !compactMode {
+                    Color.clear
+                        .frame(width: 32, height: 32)
+                        .overlay(
+                            MusicWidget(musicManager: musicManager, theme: theme)
+                            .fixedSize()
+                            , alignment: .topLeading
+                        )
+                        .zIndex(100)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 10)
@@ -135,19 +137,41 @@ struct StatusBarView: View {
             HStack(
                 spacing: compactMode ? 6 : 8,
                 content: {
-                    CpuWidget(matrix: matrix, theme: theme)
-                    MemoryWidget(matrix: matrix, theme: theme)
-                    BatteryWidget(matrix: matrix, theme: theme)
-                    ClockWidget(theme: theme)
-                    FoldedWidgetsButton(matrix: matrix, theme: theme)
+                    if compactMode {
+                        // コンパクトモードでは一部ウィジェットをFold（折りたたみ）する
+                        CpuWidget(matrix: matrix, theme: theme)
+                        MemoryWidget(matrix: matrix, theme: theme)
+                        BatteryWidget(matrix: matrix, theme: theme)
+                        ClockWidget(theme: theme)
+                        FoldedWidgetsButton(matrix: matrix, theme: theme)
+                    } else {
+                        // 通常モードでは全て展開
+                        NetworkWidget(matrix: matrix, theme: theme)
+                        CpuWidget(matrix: matrix, theme: theme)
+                        GpuWidget(matrix: matrix, theme: theme)
+                        MemoryWidget(matrix: matrix, theme: theme)
+                        DiskWidget(matrix: matrix, theme: theme)
+                        BatteryWidget(matrix: matrix, theme: theme)
+                        ClockWidget(theme: theme)
+                    }
                 }
             )
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, 10)
+
+            // コンパクトモードの場合のみ、音楽ウィジェットを下の中央（ノッチの下）に配置
+            if compactMode {
+                MusicWidget(musicManager: musicManager, theme: theme)
+                    .fixedSize()
+                    .padding(.top, 40) // ノッチ（約32px）を回避して少し下に配置
+                    .zIndex(100)
+            }
         }
         .environment(\.compactMode, compactMode)
         .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
-        .frame(height: compactMode ? 28 : 32)
+        // ZStack全体の高さを制限すると下部への配置がクリップされる可能性があるため、
+        // メニューバー自体の高さ指定は各ウィジェット群（HStack）に持たせるか、十分な高さを確保する
+        .frame(minHeight: compactMode ? 28 : 32)
         .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
         .background(Color.clear)
         .onAppear {
