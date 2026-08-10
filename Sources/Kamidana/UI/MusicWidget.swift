@@ -53,6 +53,17 @@ struct MusicWidget: View {
                                 .lineLimit(1)
                         }
                         Spacer()
+                    } else if !compactMode {
+                        // 通常モード（非ホバー時）：タイトルと波形アイコンを表示
+                        Text(musicManager.title)
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(Color.white)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        Image(systemName: musicManager.isPlaying ? "waveform" : "pause.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(theme.pink)
+                            .padding(.trailing, 4)
                     }
                 }
 
@@ -115,12 +126,12 @@ struct MusicWidget: View {
                     }
                 }
             }
-            .frame(width: isHovered ? 350 : closedSize)
+            .frame(width: isHovered ? 350 : (compactMode ? closedSize : 160))
             .frame(height: isHovered ? nil : closedSize)
             .padding(isHovered ? 16 : paddingSize)
-            .background(isHovered ? Color.black : Color.clear)
+            .background((isHovered || !compactMode) ? Color.black : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: isHovered ? 24 : 16, style: .continuous))
-            .shadow(color: isHovered ? Color.black.opacity(0.3) : Color.clear, radius: 10, x: 0, y: 5)
+            .shadow(color: (isHovered || !compactMode) ? Color.black.opacity(0.3) : Color.clear, radius: 10, x: 0, y: 5)
             // ホバー時のアニメーション
             .onHover { hover in
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.6, blendDuration: 0)) {
