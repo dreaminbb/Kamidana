@@ -126,10 +126,12 @@ struct StatusBarView: View {
                     .overlay(
                         MusicWidget(musicManager: musicManager, theme: theme)
                             .fixedSize()
-                            // カメラ（右側）に埋もれないように、右端を軸にして「左方向」へ広げる
-                        , alignment: .topTrailing
+                            // アルバム画像を固定して「右方向」へ展開させる
+                        , alignment: .topLeading
                     )
                     .zIndex(100)
+                    // 「あともう少し移動させて」の要望に合わせて、カメラエッジから少し左へ離す
+                    .padding(.trailing, 40)
                 
                 Spacer(minLength: 50) // ノッチ・カメラ用のスペースを確保
 
