@@ -30,7 +30,7 @@ struct MusicWidget: View {
                             }
                         }
                     }
-                    .frame(width: isHovered ? 64 : 20, height: isHovered ? 64 : 20)
+                    .frame(width: isHovered ? 64 : 28, height: isHovered ? 64 : 28)
                     .clipShape(Circle())
                     .rotationEffect(.degrees(rotation))
                     .overlay(Circle().stroke(theme.surface2.opacity(0.5), lineWidth: 1))
@@ -48,20 +48,8 @@ struct MusicWidget: View {
                                 .lineLimit(1)
                         }
                         Spacer()
-                    } else {
-                        // 縮小時 (Dynamic Island コンパクトモード)
-                        Text(musicManager.title)
-                            .font(.custom("Menlo", size: 10).bold())
-                            .foregroundColor(Color.white)
-                            .lineLimit(1)
-                            .frame(maxWidth: 120, alignment: .leading) // ノッチ幅を考慮
-                        Spacer(minLength: 0)
-                        Image(systemName: musicManager.isPlaying ? "waveform" : "pause.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(theme.pink)
                     }
                 }
-                .padding(.horizontal, isHovered ? 0 : 4)
 
                 // 下段：シークバーとコントロール（拡大時のみ）
                 if isHovered {
@@ -122,12 +110,12 @@ struct MusicWidget: View {
                     }
                 }
             }
-            .frame(width: isHovered ? 350 : 200)  // 縮小時はノッチに合わせたサイズに
-            .frame(height: isHovered ? nil : 32)
-            .padding(isHovered ? 16 : 4)
-            .background(Color.black) // Dynamic Islandの黒色
+            .frame(width: isHovered ? 350 : 28)
+            .frame(height: isHovered ? nil : 28)
+            .padding(isHovered ? 16 : 2) // 縮小時は2pxのパディングで約32x32にする
+            .background(isHovered ? Color.black : Color.clear) // 縮小時は透明にして画像だけ見せる
             .clipShape(RoundedRectangle(cornerRadius: isHovered ? 24 : 16, style: .continuous))
-            .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+            .shadow(color: isHovered ? Color.black.opacity(0.3) : Color.clear, radius: 10, x: 0, y: 5)
             // ホバー時のアニメーション
             .onHover { hover in
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.6, blendDuration: 0)) {

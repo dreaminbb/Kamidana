@@ -118,7 +118,19 @@ struct StatusBarView: View {
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)
                 
-                Spacer(minLength: 160) // ノッチ・Dynamic Island用のスペースを確保
+                Spacer() // 左寄せしつつ、MusicWidgetをカメラエッジ（ノッチ）の左端へ
+                
+                // カメラエッジの一番左に配置。デフォルトは回転する画像のみ（約32x32）
+                Color.clear
+                    .frame(width: 32, height: compactMode ? 28 : 32)
+                    .overlay(
+                        MusicWidget(musicManager: musicManager, theme: theme)
+                            // カメラの物理ノッチに被らないように、右端（カメラ横）を固定して左へ広がる
+                        , alignment: .topTrailing
+                    )
+                    .zIndex(100)
+                
+                Spacer(minLength: 160) // ノッチ・カメラ用のスペースを確保
 
                 // 右側のウィジェット群
                 HStack(
@@ -134,11 +146,6 @@ struct StatusBarView: View {
             .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
             .frame(height: compactMode ? 28 : 32)
             .padding(.horizontal, 10)
-            
-            // Dynamic Island型のMusicWidgetを中央にオーバーレイ配置
-            MusicWidget(musicManager: musicManager, theme: theme)
-                // zIndexを高くして他のウィジェットより手前に表示
-                .zIndex(100)
         }
         .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
         .background(Color.clear)
