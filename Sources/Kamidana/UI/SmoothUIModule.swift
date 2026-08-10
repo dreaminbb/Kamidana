@@ -2,19 +2,20 @@ import SwiftUI
 
 struct SmoothUIModuleModifier: ViewModifier {
     var theme: Theme
+    @Environment(\.compactMode) var compactMode: Bool // 環境変数からコンパクトモードを受け取る
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
         content
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, compactMode ? 8 : 12)
+            .padding(.vertical, compactMode ? 2 : 6)
             // ホバー時はsurface1、通常時はbaseの半透明
             .background(isHovered ? theme.surface1.opacity(0.8) : theme.base.opacity(0.6))
             // UltraThinMaterialを重ねてガラスのようなぼかし効果を出す
             .background(.ultraThinMaterial)
-            .cornerRadius(12)
+            .cornerRadius(compactMode ? 8 : 12)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: compactMode ? 8 : 12)
                     // ホバー時は薄くボーダーを光らせる
                     .stroke(isHovered ? theme.surface2 : theme.surface0, lineWidth: 1)
             )

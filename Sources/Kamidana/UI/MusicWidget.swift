@@ -3,7 +3,7 @@ import SwiftUI
 struct MusicWidget: View {
     @ObservedObject var musicManager: MusicPlayingManager
     var theme: Theme = .catppuccinMocha
-    var compactMode: Bool = false // 追加: compactModeを受け取る
+    @Environment(\.compactMode) var compactMode: Bool
 
     @State private var isHovered = false
     @State private var rotation: Double = 0.0

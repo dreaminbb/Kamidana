@@ -109,6 +109,7 @@ struct StatusBarView: View {
     var body: some View {
         let theme = Theme.catppuccinMocha
         let compactMode = uiSettings.resolveCompactMode(isBuiltInDisplay: isBuiltInDisplay)
+        let _ = print("👉 UI再描画: isBuiltInDisplay=\(isBuiltInDisplay), compactMode=\(compactMode)")
 
         ZStack(alignment: .top) {
             // 左側のウィジェット群
@@ -121,9 +122,7 @@ struct StatusBarView: View {
                 Color.clear
                     .frame(width: 32, height: compactMode ? 28 : 32)
                     .overlay(
-                        MusicWidget(
-                            musicManager: musicManager, theme: theme, compactMode: compactMode
-                        )
+                        MusicWidget(musicManager: musicManager, theme: theme)
                         .fixedSize()  // アルバム画像を左に固定し、右方向へ展開させる
                         , alignment: .topLeading
                     )
@@ -146,6 +145,7 @@ struct StatusBarView: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, 10)
         }
+        .environment(\.compactMode, compactMode)
         .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
         .frame(height: compactMode ? 28 : 32)
         .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
