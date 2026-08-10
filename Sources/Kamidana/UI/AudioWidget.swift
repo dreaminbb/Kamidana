@@ -28,9 +28,11 @@ struct AudioWidget: View {
                             .foregroundColor(theme.text)
                             .frame(width: 30, alignment: .trailing)
 
-                        Text(audioVM.outputFormat)
-                            .font(.system(size: 9))
-                            .foregroundColor(theme.subtext0)
+                        if isHovered {
+                            Text(audioVM.outputFormat)
+                                .font(.system(size: 9))
+                                .foregroundColor(theme.subtext0)
+                        }
                     }
                 }
                 .buttonStyle(.plain)
@@ -103,9 +105,11 @@ struct AudioWidget: View {
                             .foregroundColor(theme.text)
                             .frame(width: 30, alignment: .trailing)
 
-                        Text(audioVM.inputFormat)
-                            .font(.system(size: 9))
-                            .foregroundColor(theme.subtext0)
+                        if isHovered {
+                            Text(audioVM.inputFormat)
+                                .font(.system(size: 9))
+                                .foregroundColor(theme.subtext0)
+                        }
                     }
                 }
                 .buttonStyle(.plain)
