@@ -117,6 +117,18 @@ struct StatusBarView: View {
                 // LocalSendWidget(localSend: localSend, theme: theme)
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)
+
+                // コンパクトモード（内蔵画面）の場合はオーディオウィジェットの右からカメラの中央へ向けて配置
+                if compactMode {
+                    Color.clear
+                        .frame(width: 32, height: 32)
+                        .overlay(
+                            MusicWidget(musicManager: musicManager, theme: theme)
+                                .fixedSize()
+                            , alignment: .topLeading
+                        )
+                        .zIndex(100)
+                }
             }
             .frame(height: 32)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -149,13 +161,13 @@ struct StatusBarView: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, 10)
 
-            // 中央の音楽ウィジェット（モードによって高さを変える）
-            MusicWidget(musicManager: musicManager, theme: theme)
-                .fixedSize()
-                // コンパクトモード（内蔵画面）の場合はノッチを避けて下（top: 40）へ、
-                // 通常モード（外部画面）の場合はノッチがないため、最上部中央（top: 2）に配置する
-                .padding(.top, compactMode ? 40 : 2)
-                .zIndex(100)
+            // 通常モード（外部画面）の場合のみ、画面の真ん中の一番上に配置
+            if !compactMode {
+                MusicWidget(musicManager: musicManager, theme: theme)
+                    .fixedSize()
+                    .padding(.top, 2)
+                    .zIndex(100)
+            }
         }
         .environment(\.compactMode, compactMode)
         .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
