@@ -5,7 +5,7 @@ import SwiftUI
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: NSWindow!
-    let barHeight: CGFloat = 160  // バーの高さは共通で使うので外に出す
+    let barHeight: CGFloat = 260  // メニュー展開などに対応できるよう、高さを160から260に拡大
 
     static func main() {
         let app = NSApplication.shared
@@ -174,7 +174,7 @@ struct StatusBarView: View {
         }
         .environment(\.compactMode, compactMode)
         .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
-        .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: 260, alignment: .top)
         .background(Color.clear)
         .onAppear {
             matrix.startMonitoring()

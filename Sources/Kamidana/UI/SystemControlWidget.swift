@@ -5,7 +5,7 @@ struct SystemControlWidget: View {
     let systemController = SystemController()
 
     @State private var isHovered = false
-    @Environment(\.compactMode) var compactMode: Bool // 👈 他のウィジェットとパディングを合わせるために追加
+    @Environment(\.compactMode) var compactMode: Bool  // 👈 他のウィジェットとパディングを合わせるために追加
 
     var body: some View {
         // ベースのアイコン（他のWiFiUIなどと全く同じレイアウト・高さになります）
@@ -13,7 +13,7 @@ struct SystemControlWidget: View {
             Image(systemName: "apple.logo")
                 .foregroundColor(theme.mauve)
                 .font(.system(size: 14))
-                .frame(width: 20, alignment: .center) // 🌟 幅を20pxに広げて中央揃えを強制
+                .frame(width: 20, alignment: .center)  // 🌟 幅を20pxに広げて中央揃えを強制
         }
         .SmoothUIModule(theme: theme)  // 👈 これで他のUIと位置・サイズが完全に一致します
         // ホバー時に展開するメニューは「背景（裏側）」として配置します
@@ -23,11 +23,25 @@ struct SystemControlWidget: View {
                     VStack(alignment: .leading, spacing: 4) {
                         // 🌟 ボトルの首（細い部分）：
                         Color.clear
-                            .frame(width: compactMode ? 36 : 44, height: 28) // ベース幅(20 + 左右padding)に合わせる
+                            .frame(width: compactMode ? 36 : 44, height: 28)  // ベース幅(20 + 左右padding)に合わせる
 
                         // 🌟 ボトルの胴体（太く展開する部分）：
                         VStack(alignment: .leading, spacing: 12) {
 
+                            Button(action: {
+                                let _ = systemController.showAboutThisMac()
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "laptopcomputer")
+                                        .foregroundColor(theme.teal)  // ユーザーが追加したテーマ色を維持
+                                        .font(.system(size: 14, weight: .bold))
+                                        .frame(width: 20, alignment: .center)
+
+                                    Text("About this Mac")
+                                        .foregroundColor(theme.text)
+                                }
+                            }
+                            .buttonStyle(.plain)
                             // shutdown
                             Button(action: {
                                 let _ = systemController.shutdownSystem()
@@ -36,7 +50,7 @@ struct SystemControlWidget: View {
                                     Image(systemName: "power")
                                         .foregroundColor(theme.red)
                                         .font(.system(size: 14, weight: .bold))
-                                        .frame(width: 20, alignment: .center) // 🌟 電源アイコンを中心に20pxの枠で揃える
+                                        .frame(width: 20, alignment: .center)  // 🌟 電源アイコンを中心に20pxの枠で揃える
 
                                     Text("Shutdown")
                                         .foregroundColor(theme.text)
@@ -52,7 +66,7 @@ struct SystemControlWidget: View {
                                     Image(systemName: "arrow.triangle.2.circlepath")
                                         .foregroundColor(theme.peach)
                                         .font(.system(size: 14, weight: .bold))
-                                        .frame(width: 20, alignment: .center) // 🌟 他もすべて20pxの枠に収めて中央揃え
+                                        .frame(width: 20, alignment: .center)  // 🌟 他もすべて20pxの枠に収めて中央揃え
 
                                     Text("Reboot")
                                         .foregroundColor(theme.text)
@@ -68,7 +82,7 @@ struct SystemControlWidget: View {
                                     Image(systemName: "rectangle.portrait.and.arrow.right")
                                         .foregroundColor(theme.blue)
                                         .font(.system(size: 14, weight: .bold))
-                                        .frame(width: 20, alignment: .center) // 🌟 ここが横長なので広めの20px枠が必要
+                                        .frame(width: 20, alignment: .center)  // 🌟 ここが横長なので広めの20px枠が必要
 
                                     Text("Logout")
                                         .foregroundColor(theme.text)
@@ -82,7 +96,7 @@ struct SystemControlWidget: View {
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "lock")
-                                        .foregroundColor(theme.pink) // ユーザーが追加したテーマ色を維持
+                                        .foregroundColor(theme.pink)  // ユーザーが追加したテーマ色を維持
                                         .font(.system(size: 14, weight: .bold))
                                         .frame(width: 20, alignment: .center)
 
@@ -104,9 +118,9 @@ struct SystemControlWidget: View {
                         )
                         .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
-                    // 🌟 fixedSize()をつけることで、アイコンの幅に制限されずテキストに合わせて展開
+                    //  fixedSize()をつけることで、アイコンの幅に制限されずテキストに合わせて展開
                     .fixedSize()
-                    // 🌟 ホームボタン（左上）を起点として、下へ伸びる形のアニメーション
+                    // ホームボタン（左上）を起点として、下へ伸びる形のアニメーション
                     .transition(.scale(scale: 0.01, anchor: .topLeading).combined(with: .opacity))
                 }
             }, alignment: .topLeading

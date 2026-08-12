@@ -2,7 +2,8 @@ import AppKit
 import Foundation
 
 // アプリの強制終了
-// About this Mac  NOTE: fastfetchコマンドを実行するのは超クールかもしれない
+// NOTE: fastfetchコマンドを実行するのは超クールかもしれない
+
 // brew or nixのアップデート利用可能なパッケージ
 // システムモニター || ビルドインのターミナルでbtopを起動
 
@@ -24,7 +25,7 @@ class SystemController {
     static let logoutScript = "tell application \"System Events\" to log out"
     static let screenLockScript =
         #"tell application "System Events" to keystroke "q" using {command down, control down}"#
-    static let urlString = "x-apple.systempreferences:com.apple.SystemProfiler.AboutExtension"
+    static let aboutThisMacAppPath = "/System/Library/CoreServices/Applications/About This Mac.app"
 
     static func runAppleScript(_ script: String) -> Result<Bool, SystemControlError> {
 
@@ -60,19 +61,15 @@ class SystemController {
 
     func showAboutThisMac() -> Result<Bool, SystemControlError> {
 
-        guard let url = URL(string: SystemController.urlString) else {
-            return .failure(.scriptFailed("Failed to open 'About this Mac URL'"))
-        }
-
+        let url = URL(fileURLWithPath: SystemController.aboutThisMacAppPath)
         let result = NSWorkspace.shared.open(url)
 
         if result {
-            print("'About this Mac URL has been opened'")
+            print("'About this Mac' has been opened")
             return .success(true)
-
         } else {
-            print("failed to open 'About this Mac' URL")
-            return .failure(.scriptFailed("Failed to open 'About this Mac URL'"))
+            print("failed to open 'About this Mac'")
+            return .failure(.scriptFailed("Failed to open 'About this Mac'"))
         }
 
     }

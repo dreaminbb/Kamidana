@@ -1,4 +1,4 @@
-# Compact UI
+r# Compact UI
 
 内蔵ディスプレイ時のコンパクト表示は `UISettingsStore` で管理します。
 
