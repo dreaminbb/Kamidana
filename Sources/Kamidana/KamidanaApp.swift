@@ -114,6 +114,9 @@ struct StatusBarView: View {
         ZStack(alignment: .top) {
             // 左側のウィジェット群
             HStack(spacing: compactMode ? 6 : 8) {
+                // System Control
+                SystemControlWidget(theme: theme)
+
                 // LocalSendWidget(localSend: localSend, theme: theme)
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)

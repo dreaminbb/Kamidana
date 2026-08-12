@@ -1,16 +1,16 @@
-import SwiftUI
 import CoreWLAN
+import SwiftUI
 
 struct WiFiWidget: View {
     @ObservedObject var netManager: NetworkManager
     var theme: Theme
-    
+
     @State private var showPopover = false
     @State private var selectedSSID: String? = nil
     @State private var wifiPassword = ""
     @State private var connectionStatusMsg = ""
     @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: {
             showPopover.toggle()
@@ -22,14 +22,18 @@ struct WiFiWidget: View {
                 Image(
                     systemName: netManager.currentConnection == "WIFI"
                         ? "wifi"
-                        : (netManager.currentConnection == "LAN" ? "network" : "wifi.slash"))
+                        : (netManager.currentConnection == "LAN" ? "network" : "wifi.slash")
+                )
+                .foregroundColor(theme.flamingo)
             }
             .foregroundColor(
                 netManager.currentConnection != "OFF" ? theme.text : theme.subtext0)
         }
         .buttonStyle(.plain)
         .SmoothUIModule(theme: theme)
-        .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
+        .onHover { hover in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
+        }
         .popover(isPresented: $showPopover, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
@@ -88,7 +92,8 @@ struct WiFiWidget: View {
                                                 connectionStatusMsg = ""
                                             }
                                         case .failure(let error):
-                                            connectionStatusMsg = "❌ 失敗: \(error.localizedDescription)"
+                                            connectionStatusMsg =
+                                                "❌ 失敗: \(error.localizedDescription)"
                                         }
                                     }
                                 }
@@ -126,17 +131,21 @@ struct WiFiWidget: View {
                                         if netManager.isKnownNetwork(ssid: ssid) {
                                             connectionStatusMsg = "自動接続中: \(ssid)..."
                                             DispatchQueue.global(qos: .userInitiated).async {
-                                                let result = netManager.connectWIFI(ssid: ssid, password: nil)
+                                                let result = netManager.connectWIFI(
+                                                    ssid: ssid, password: nil)
                                                 DispatchQueue.main.async {
                                                     switch result {
                                                     case .success(_):
                                                         connectionStatusMsg = "✅ 接続しました！"
-                                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                                        DispatchQueue.main.asyncAfter(
+                                                            deadline: .now() + 1.0
+                                                        ) {
                                                             showPopover = false
                                                             connectionStatusMsg = ""
                                                         }
                                                     case .failure(let error):
-                                                        connectionStatusMsg = "❌ 失敗: \(error.localizedDescription)"
+                                                        connectionStatusMsg =
+                                                            "❌ 失敗: \(error.localizedDescription)"
                                                     }
                                                 }
                                             }
