@@ -16,10 +16,10 @@ struct BatteryWidget: View {
                         systemName: batteryIconName(
                             capacity: battery.currentCapacity, isCharging: battery.isCharging)
                     )
-                    .foregroundColor(battery.isCharging ? theme.green : theme.text)
+                    .foregroundColor(battery.isCharging ? theme.success : theme.textPrimary)
 
                     Text("\(battery.currentCapacity)%")
-                        .foregroundColor(theme.text)
+                        .foregroundColor(theme.textPrimary)
                 }
             }
             .buttonStyle(.plain)
@@ -32,23 +32,23 @@ struct BatteryWidget: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("System Power & Thermal")
                         .font(.headline)
-                        .foregroundColor(theme.text)
+                        .foregroundColor(theme.textPrimary)
                         .padding(.bottom, 4)
 
-                    Text("Battery").font(.subheadline).foregroundColor(theme.subtext1)
+                    Text("Battery").font(.subheadline).foregroundColor(theme.textSecondary)
 
                     HStack {
-                        Image(systemName: "bolt.fill").foregroundColor(theme.yellow).frame(
+                        Image(systemName: "bolt.fill").foregroundColor(theme.caution).frame(
                             width: 20)
                         if battery.isCharging {
                             Text("Charging (\(battery.timeToFull)m to full)")
-                                .foregroundColor(theme.green)
+                                .foregroundColor(theme.success)
                         } else if battery.timeToEmpty > 0 {
                             Text("Discharging (\(battery.timeToEmpty)m remaining)")
-                                .foregroundColor(theme.peach)
+                                .foregroundColor(theme.warning)
                         } else {
                             Text("Fully Charged")
-                                .foregroundColor(theme.text)
+                                .foregroundColor(theme.textPrimary)
                         }
                     }
                     .font(.system(size: 11, design: .monospaced))
@@ -56,22 +56,22 @@ struct BatteryWidget: View {
                     if let watt = battery.wattInfo {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("Power:").foregroundColor(theme.subtext1).frame(
+                                Text("Power:").foregroundColor(theme.textSecondary).frame(
                                     width: 70, alignment: .leading)
                                 Text(String(format: "%.1f W", watt.activeWatts)).foregroundColor(
-                                    theme.text)
+                                    theme.textPrimary)
                             }
                             HStack {
-                                Text("Voltage:").foregroundColor(theme.subtext1).frame(
+                                Text("Voltage:").foregroundColor(theme.textSecondary).frame(
                                     width: 70, alignment: .leading)
                                 Text(String(format: "%.1f V", watt.voltage)).foregroundColor(
-                                    theme.text)
+                                    theme.textPrimary)
                             }
                             HStack {
-                                Text("Amperage:").foregroundColor(theme.subtext1).frame(
+                                Text("Amperage:").foregroundColor(theme.textSecondary).frame(
                                     width: 70, alignment: .leading)
                                 Text(String(format: "%.0f mA", watt.amperage)).foregroundColor(
-                                    theme.text)
+                                    theme.textPrimary)
                             }
                         }
                         .font(.system(size: 11, design: .monospaced))
@@ -79,15 +79,15 @@ struct BatteryWidget: View {
                     }
 
                     if let thermal = matrix.data.thermalState {
-                        Divider().background(theme.surface2).padding(.vertical, 4)
+                        Divider().background(theme.surfaceBorder).padding(.vertical, 4)
 
-                        Text("Thermal").font(.subheadline).foregroundColor(theme.subtext1)
+                        Text("Thermal").font(.subheadline).foregroundColor(theme.textSecondary)
 
                         HStack {
                             Image(systemName: "thermometer").foregroundColor(
                                 getThermalColor(thermal, theme: theme)
                             ).frame(width: 20)
-                            Text("State:").foregroundColor(theme.subtext1).frame(
+                            Text("State:").foregroundColor(theme.textSecondary).frame(
                                 width: 70, alignment: .leading)
                             Text(thermal).foregroundColor(getThermalColor(thermal, theme: theme))
                         }
@@ -96,17 +96,17 @@ struct BatteryWidget: View {
                 }
                 .padding()
                 .frame(width: 240)
-                .background(theme.base)
+                .background(theme.background)
             }
         }
     }
 
     private func getThermalColor(_ state: String, theme: Theme) -> Color {
         switch state {
-        case "Normal": return theme.sapphire
-        case "Warm": return theme.yellow
-        case "Hot", "Critical": return theme.red
-        default: return theme.text
+        case "Normal": return theme.info
+        case "Warm": return theme.caution
+        case "Hot", "Critical": return theme.danger
+        default: return theme.textPrimary
         }
     }
 

@@ -11,9 +11,9 @@ struct DiskWidget: View {
         if let diskSpace = matrix.data.diskSpace {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
-                    Image(systemName: "internaldrive.fill").foregroundColor(theme.peach)
+                    Image(systemName: "internaldrive.fill").foregroundColor(theme.warning)
                     Text(diskSpace)
-                        .foregroundColor(theme.peach)
+                        .foregroundColor(theme.warning)
                 }
             }
             .buttonStyle(.plain)
@@ -27,52 +27,52 @@ struct DiskWidget: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Disk Details")
                             .font(.headline)
-                            .foregroundColor(theme.text)
+                            .foregroundColor(theme.textPrimary)
                             .padding(.bottom, 4)
                         
                         if let diskIO = matrix.data.diskIOUsage {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("I/O Speed").font(.subheadline).foregroundColor(theme.subtext1)
+                                Text("I/O Speed").font(.subheadline).foregroundColor(theme.textSecondary)
                                 HStack {
-                                    Image(systemName: "arrow.down.circle").foregroundColor(theme.sapphire).frame(width: 20)
-                                    Text("Read:").foregroundColor(theme.subtext1).frame(width: 50, alignment: .leading)
-                                    Text("\(formatBytes(diskIO.readBytesPerSecond))/s").foregroundColor(theme.text)
+                                    Image(systemName: "arrow.down.circle").foregroundColor(theme.info).frame(width: 20)
+                                    Text("Read:").foregroundColor(theme.textSecondary).frame(width: 50, alignment: .leading)
+                                    Text("\(formatBytes(diskIO.readBytesPerSecond))/s").foregroundColor(theme.textPrimary)
                                 }
                                 HStack {
-                                    Image(systemName: "arrow.up.circle").foregroundColor(theme.maroon).frame(width: 20)
-                                    Text("Write:").foregroundColor(theme.subtext1).frame(width: 50, alignment: .leading)
-                                    Text("\(formatBytes(diskIO.writeBytesPerSecond))/s").foregroundColor(theme.text)
+                                    Image(systemName: "arrow.up.circle").foregroundColor(theme.warning).frame(width: 20)
+                                    Text("Write:").foregroundColor(theme.textSecondary).frame(width: 50, alignment: .leading)
+                                    Text("\(formatBytes(diskIO.writeBytesPerSecond))/s").foregroundColor(theme.textPrimary)
                                 }
                             }
                             .font(.system(size: 11, design: .monospaced))
                         }
                         
                         if let topDisk = matrix.data.topDisk, !topDisk.isEmpty {
-                            Divider().background(theme.surface2)
+                            Divider().background(theme.surfaceBorder)
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Top I/O Processes").font(.subheadline).foregroundColor(theme.subtext1)
+                                Text("Top I/O Processes").font(.subheadline).foregroundColor(theme.textSecondary)
                                 ForEach(topDisk.prefix(5)) { proc in
                                     HStack {
                                         if let icon = proc.icon {
                                             Image(nsImage: icon).resizable().frame(width: 12, height: 12)
                                         }
-                                        Text(proc.name).foregroundColor(theme.text).frame(width: 120, alignment: .leading).lineLimit(1)
+                                        Text(proc.name).foregroundColor(theme.textPrimary).frame(width: 120, alignment: .leading).lineLimit(1)
                                         Spacer()
                                         let totalIO = proc.diskReadBytesPerSec + proc.diskWriteBytesPerSec
-                                        Text("\(formatBytes(totalIO))/s").foregroundColor(theme.peach)
+                                        Text("\(formatBytes(totalIO))/s").foregroundColor(theme.warning)
                                     }
                                     .font(.system(size: 11, design: .monospaced))
                                 }
                             }
                         } else {
-                            Text("Loading processes...").foregroundColor(theme.subtext0).font(.system(size: 11))
+                            Text("Loading processes...").foregroundColor(theme.textTertiary).font(.system(size: 11))
                         }
                     }
                     .padding()
                     .frame(width: 250)
                 }
                 .frame(maxHeight: 300)
-                .background(theme.base)
+                .background(theme.background)
             }
         }
     }

@@ -24,10 +24,10 @@ struct WiFiWidget: View {
                         ? "wifi"
                         : (netManager.currentConnection == "LAN" ? "network" : "wifi.slash")
                 )
-                .foregroundColor(theme.flamingo)
+                .foregroundColor(theme.accent)
             }
             .foregroundColor(
-                netManager.currentConnection != "OFF" ? theme.text : theme.subtext0)
+                netManager.currentConnection != "OFF" ? theme.textPrimary : theme.textTertiary)
         }
         .buttonStyle(.plain)
         .SmoothUIModule(theme: theme)
@@ -39,7 +39,7 @@ struct WiFiWidget: View {
                 HStack {
                     Text("Wi-Fi Networks")
                         .font(.headline)
-                        .foregroundColor(theme.text)
+                        .foregroundColor(theme.textPrimary)
                     Spacer()
                     Button(action: {
                         netManager.scanForNetworks()
@@ -55,7 +55,7 @@ struct WiFiWidget: View {
                     VStack(spacing: 12) {
                         Text("\(ssid) に接続")
                             .font(.subheadline)
-                            .foregroundColor(theme.text)
+                            .foregroundColor(theme.textPrimary)
 
                         SecureField("パスワード", text: $wifiPassword)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -65,7 +65,7 @@ struct WiFiWidget: View {
                             Text(connectionStatusMsg)
                                 .font(.caption)
                                 .foregroundColor(
-                                    connectionStatusMsg.contains("成功") ? theme.green : theme.red
+                                    connectionStatusMsg.contains("成功") ? theme.success : theme.danger
                                 )
                         }
 
@@ -107,7 +107,7 @@ struct WiFiWidget: View {
                     .padding(.horizontal, 10)
                 } else if netManager.availableNetworks.isEmpty {
                     Text("ネットワークを検索中...")
-                        .foregroundColor(theme.subtext0)
+                        .foregroundColor(theme.textTertiary)
                         .frame(width: 250, alignment: .center)
                         .padding()
                 } else {
@@ -118,9 +118,9 @@ struct WiFiWidget: View {
                                     .font(.caption)
                                     .foregroundColor(
                                         connectionStatusMsg.contains("✅")
-                                            ? theme.green
+                                            ? theme.success
                                             : (connectionStatusMsg.contains("❌")
-                                                ? theme.red : theme.yellow)
+                                                ? theme.danger : theme.caution)
                                     )
                                     .padding(.bottom, 5)
                             }
@@ -157,19 +157,19 @@ struct WiFiWidget: View {
                                     }
                                 }) {
                                     HStack {
-                                        Image(systemName: "wifi").foregroundColor(theme.text)
+                                        Image(systemName: "wifi").foregroundColor(theme.textPrimary)
                                         Text(network.ssid ?? "Hidden")
                                             .lineLimit(1)
-                                            .foregroundColor(theme.text)
+                                            .foregroundColor(theme.textPrimary)
                                         Spacer()
                                         Text("\(network.rssiValue) dBm")
                                             .font(.caption)
-                                            .foregroundColor(theme.subtext0)
+                                            .foregroundColor(theme.textTertiary)
                                     }
                                     .frame(width: 230)
                                     .padding(.vertical, 4)
                                     .padding(.horizontal, 8)
-                                    .background(theme.surface0)
+                                    .background(theme.surface)
                                     .cornerRadius(6)
                                 }
                                 .buttonStyle(.plain)
@@ -180,7 +180,7 @@ struct WiFiWidget: View {
                 }
             }
             .padding()
-            .background(theme.base)
+            .background(theme.background)
         }
     }
 }

@@ -25,7 +25,7 @@ struct ClockWidget: View {
             Text(timeText)
         }
         .fontWeight(.bold)
-        .foregroundColor(theme.text)
+        .foregroundColor(theme.textPrimary)
         .SmoothUIModule(theme: theme)
         .onReceive(clockTimer) { input in
             currentTime = input

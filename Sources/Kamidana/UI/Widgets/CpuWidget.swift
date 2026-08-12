@@ -21,11 +21,11 @@ struct CpuWidget: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("CPU Details")
                             .font(.headline)
-                            .foregroundColor(theme.text)
+                            .foregroundColor(theme.textPrimary)
                             .padding(.bottom, 4)
                         
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("CPU Cores").font(.subheadline).foregroundColor(theme.subtext1)
+                            Text("CPU Cores").font(.subheadline).foregroundColor(theme.textSecondary)
                             HStack(spacing: 4) {
                                 ForEach(0..<cpu.perCore.count, id: \.self) { i in
                                     GeometryReader { geo in
@@ -37,24 +37,24 @@ struct CpuWidget: View {
                                         }
                                     }
                                     .frame(width: 8, height: 30)
-                                    .background(theme.surface0)
+                                    .background(theme.surface)
                                     .cornerRadius(2)
                                 }
                             }
                         }
                         
                         if let topCPU = matrix.data.topCPU, !topCPU.isEmpty {
-                            Divider().background(theme.surface2)
+                            Divider().background(theme.surfaceBorder)
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Top Processes").font(.subheadline).foregroundColor(theme.subtext1)
+                                Text("Top Processes").font(.subheadline).foregroundColor(theme.textSecondary)
                                 ForEach(topCPU.prefix(5)) { proc in
                                     HStack {
                                         if let icon = proc.icon {
                                             Image(nsImage: icon).resizable().frame(width: 12, height: 12)
                                         }
-                                        Text(proc.name).foregroundColor(theme.text).frame(width: 140, alignment: .leading).lineLimit(1)
+                                        Text(proc.name).foregroundColor(theme.textPrimary).frame(width: 140, alignment: .leading).lineLimit(1)
                                         Spacer()
-                                        Text(String(format: "%.1f%%", proc.cpuUsage)).foregroundColor(theme.red)
+                                        Text(String(format: "%.1f%%", proc.cpuUsage)).foregroundColor(theme.danger)
                                     }
                                     .font(.system(size: 11, design: .monospaced))
                                 }
@@ -65,14 +65,14 @@ struct CpuWidget: View {
                     .frame(width: 250)
                 }
                 .frame(maxHeight: 350)
-                .background(theme.base)
+                .background(theme.background)
             }
         }
     }
     
     private func getCPUColor(_ usage: Float, theme: Theme) -> Color {
-        if usage < 30.0 { return theme.green }
-        if usage < 70.0 { return theme.yellow }
-        return theme.red
+        if usage < 30.0 { return theme.success }
+        if usage < 70.0 { return theme.caution }
+        return theme.danger
     }
 }

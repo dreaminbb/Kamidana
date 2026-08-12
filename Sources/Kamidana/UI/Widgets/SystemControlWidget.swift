@@ -11,7 +11,7 @@ struct SystemControlWidget: View {
         // ベースのアイコン（他のWiFiUIなどと全く同じレイアウト・高さになります）
         HStack(spacing: 4) {
             Image(systemName: "apple.logo")
-                .foregroundColor(theme.mauve)
+                .foregroundColor(theme.secondary)
                 .font(.system(size: 14))
                 .frame(width: 20, alignment: .center)  // 🌟 幅を20pxに広げて中央揃えを強制
         }
@@ -33,12 +33,12 @@ struct SystemControlWidget: View {
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "laptopcomputer")
-                                        .foregroundColor(theme.teal)  // ユーザーが追加したテーマ色を維持
+                                        .foregroundColor(theme.info)  // ユーザーが追加したテーマ色を維持
                                         .font(.system(size: 14, weight: .bold))
                                         .frame(width: 20, alignment: .center)
 
                                     Text("About this Mac")
-                                        .foregroundColor(theme.text)
+                                        .foregroundColor(theme.textPrimary)
                                 }
                             }
                             .buttonStyle(.plain)
@@ -49,12 +49,12 @@ struct SystemControlWidget: View {
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "bed.double.fill")
-                                        .foregroundColor(theme.sapphire)
+                                        .foregroundColor(theme.info)
                                         .font(.system(size: 14, weight: .bold))
                                         .frame(width: 20, alignment: .center)  // 🌟 電源アイコンを中心に20pxの枠で揃える
 
                                     Text("Sleep")
-                                        .foregroundColor(theme.text)
+                                        .foregroundColor(theme.textPrimary)
                                 }
                             }
                             .buttonStyle(.plain)
@@ -65,12 +65,12 @@ struct SystemControlWidget: View {
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "power")
-                                        .foregroundColor(theme.red)
+                                        .foregroundColor(theme.danger)
                                         .font(.system(size: 14, weight: .bold))
                                         .frame(width: 20, alignment: .center)  // 🌟 電源アイコンを中心に20pxの枠で揃える
 
                                     Text("Shutdown")
-                                        .foregroundColor(theme.text)
+                                        .foregroundColor(theme.textPrimary)
                                 }
                             }
                             .buttonStyle(.plain)
@@ -81,12 +81,12 @@ struct SystemControlWidget: View {
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "arrow.triangle.2.circlepath")
-                                        .foregroundColor(theme.peach)
+                                        .foregroundColor(theme.warning)
                                         .font(.system(size: 14, weight: .bold))
                                         .frame(width: 20, alignment: .center)  // 🌟 他もすべて20pxの枠に収めて中央揃え
 
                                     Text("Reboot")
-                                        .foregroundColor(theme.text)
+                                        .foregroundColor(theme.textPrimary)
                                 }
                             }
                             .buttonStyle(.plain)
@@ -97,12 +97,12 @@ struct SystemControlWidget: View {
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "rectangle.portrait.and.arrow.right")
-                                        .foregroundColor(theme.blue)
+                                        .foregroundColor(theme.primary)
                                         .font(.system(size: 14, weight: .bold))
                                         .frame(width: 20, alignment: .center)  // 🌟 ここが横長なので広めの20px枠が必要
 
                                     Text("Logout")
-                                        .foregroundColor(theme.text)
+                                        .foregroundColor(theme.textPrimary)
                                 }
                             }
                             .buttonStyle(.plain)
@@ -113,12 +113,12 @@ struct SystemControlWidget: View {
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "lock")
-                                        .foregroundColor(theme.pink)  // ユーザーが追加したテーマ色を維持
+                                        .foregroundColor(theme.accent)  // ユーザーが追加したテーマ色を維持
                                         .font(.system(size: 14, weight: .bold))
                                         .frame(width: 20, alignment: .center)
 
                                     Text("Screen Lock")
-                                        .foregroundColor(theme.text)
+                                        .foregroundColor(theme.textPrimary)
                                 }
                             }
                             .buttonStyle(.plain)
@@ -127,11 +127,11 @@ struct SystemControlWidget: View {
                         .padding(.leading, compactMode ? 8 : 12)
                         .padding(.trailing, 16)
                         .padding(.vertical, 12)
-                        .background(theme.base)
+                        .background(theme.background)
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(theme.surface1, lineWidth: 1)
+                                .stroke(theme.surfaceHighlight, lineWidth: 1)
                         )
                         .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
                     }

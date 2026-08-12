@@ -204,7 +204,7 @@ private struct FoldedWidgetsButton: View {
     var body: some View {
         Button(action: { showPopover.toggle() }) {
             Image(systemName: "list.bullet")
-                .foregroundColor(theme.subtext1)
+                .foregroundColor(theme.textSecondary)
         }
         .buttonStyle(.plain)
         .SmoothUIModule(theme: theme)
@@ -212,13 +212,13 @@ private struct FoldedWidgetsButton: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Folded Widgets")
                     .font(.headline)
-                    .foregroundColor(theme.text)
+                    .foregroundColor(theme.textPrimary)
                 NetworkWidget(matrix: matrix, theme: theme)
                 GpuWidget(matrix: matrix, theme: theme)
                 DiskWidget(matrix: matrix, theme: theme)
             }
             .padding()
-            .background(theme.base)
+            .background(theme.background)
         }
     }
 }

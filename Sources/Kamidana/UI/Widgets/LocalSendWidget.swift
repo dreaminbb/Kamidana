@@ -8,9 +8,9 @@ struct LocalSendWidget: View {
         if !localSend.discoveredDevices.isEmpty {
             HStack(spacing: 4) {
                 Image(systemName: "paperplane.circle.fill")
-                    .foregroundColor(theme.blue)
+                    .foregroundColor(theme.primary)
                 Text("\(localSend.discoveredDevices.count) Devices")
-                    .foregroundColor(theme.text)
+                    .foregroundColor(theme.textPrimary)
             }
             .SmoothUIModule(theme: theme)
         }

@@ -11,14 +11,14 @@ struct SmoothUIModuleModifier: ViewModifier {
             // 高さは変えないため、垂直方向のパディングは6で固定
             .padding(.vertical, 6)
             // ホバー時はsurface1、通常時はbaseの半透明
-            .background(isHovered ? theme.surface1.opacity(0.8) : theme.base.opacity(0.6))
+            .background(isHovered ? theme.surfaceHighlight.opacity(0.8) : theme.background.opacity(0.6))
             // UltraThinMaterialを重ねてガラスのようなぼかし効果を出す
             .background(.ultraThinMaterial)
             .cornerRadius(compactMode ? 8 : 12)
             .overlay(
                 RoundedRectangle(cornerRadius: compactMode ? 8 : 12)
                     // ホバー時は薄くボーダーを光らせる
-                    .stroke(isHovered ? theme.surface2 : theme.surface0, lineWidth: 1)
+                    .stroke(isHovered ? theme.surfaceBorder : theme.surface, lineWidth: 1)
             )
             // ホバー時のアニメーション
             .animation(.easeInOut(duration: 0.2), value: isHovered)

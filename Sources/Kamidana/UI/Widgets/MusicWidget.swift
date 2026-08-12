@@ -30,15 +30,15 @@ struct MusicWidget: View {
                                 .aspectRatio(contentMode: .fill)
                         } else {
                             ZStack {
-                                theme.surface0
-                                Image(systemName: "music.note").foregroundColor(theme.pink)
+                                theme.surface
+                                Image(systemName: "music.note").foregroundColor(theme.accent)
                             }
                         }
                     }
                     .frame(width: isHovered ? 64 : closedSize, height: isHovered ? 64 : closedSize)
                     .clipShape(Circle())
                     .rotationEffect(.degrees(rotation))
-                    .overlay(Circle().stroke(theme.surface2.opacity(0.5), lineWidth: 1))
+                    .overlay(Circle().stroke(theme.surfaceBorder.opacity(0.5), lineWidth: 1))
 
                     // テキスト情報
                     if isHovered {
@@ -62,7 +62,7 @@ struct MusicWidget: View {
                         Spacer(minLength: 0)
                         Image(systemName: musicManager.isPlaying ? "waveform" : "pause.fill")
                             .font(.system(size: 10))
-                            .foregroundColor(theme.pink)
+                            .foregroundColor(theme.accent)
                             .padding(.trailing, 4)
                     }
                 }
@@ -95,7 +95,7 @@ struct MusicWidget: View {
                                     }
                                 )
                                 .controlSize(.mini)
-                                .accentColor(theme.pink)
+                                .accentColor(theme.accent)
 
                                 Text(formatTime(musicManager.trackTime))
                                     .font(.system(size: 9, design: .monospaced))
@@ -115,7 +115,7 @@ struct MusicWidget: View {
                                     systemName: musicManager.isPlaying ? "pause.fill" : "play.fill"
                                 )
                                 .font(.system(size: 24))
-                                .foregroundColor(theme.green)
+                                .foregroundColor(theme.success)
                             }.buttonStyle(.plain)
 
                             Button(action: { musicManager.changeTrack(direction: .next) }) {

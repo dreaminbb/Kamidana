@@ -12,14 +12,14 @@ struct NetworkWidget: View {
             Button(action: { showPopover.toggle() }) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 3) {
-                        Image(systemName: "arrow.up.right").foregroundColor(theme.sapphire)
+                        Image(systemName: "arrow.up.right").foregroundColor(theme.info)
                         Text(formatBytes(net.uploadBytesPerSecond) + "/s")
-                            .foregroundColor(theme.text)
+                            .foregroundColor(theme.textPrimary)
                     }
                     HStack(spacing: 3) {
-                        Image(systemName: "arrow.down.right").foregroundColor(theme.teal)
+                        Image(systemName: "arrow.down.right").foregroundColor(theme.info)
                         Text(formatBytes(net.downloadBytesPerSecond) + "/s")
-                            .foregroundColor(theme.text)
+                            .foregroundColor(theme.textPrimary)
                     }
                 }
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
@@ -34,31 +34,31 @@ struct NetworkWidget: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Network Activity")
                         .font(.headline)
-                        .foregroundColor(theme.text)
+                        .foregroundColor(theme.textPrimary)
                         .padding(.bottom, 4)
 
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Image(systemName: "network").foregroundColor(theme.blue).frame(
+                            Image(systemName: "network").foregroundColor(theme.primary).frame(
                                 width: 20)
-                            Text("Upload:").foregroundColor(theme.subtext1).frame(
+                            Text("Upload:").foregroundColor(theme.textSecondary).frame(
                                 width: 70, alignment: .leading)
                             Text("\(formatBytes(net.uploadBytesPerSecond))/s").foregroundColor(
-                                theme.sapphire)
+                                theme.info)
                         }
                         HStack {
                             Image(systemName: "").frame(width: 20)
-                            Text("Download:").foregroundColor(theme.subtext1).frame(
+                            Text("Download:").foregroundColor(theme.textSecondary).frame(
                                 width: 70, alignment: .leading)
                             Text("\(formatBytes(net.downloadBytesPerSecond))/s").foregroundColor(
-                                theme.teal)
+                                theme.info)
                         }
                         .font(.system(size: 11, design: .monospaced))
                     }
                 }
                 .padding()
                 .frame(width: 220)
-                .background(theme.base)
+                .background(theme.background)
             }
         }
     }

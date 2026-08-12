@@ -11,9 +11,9 @@ struct MemoryWidget: View {
         if let mem = matrix.data.memoryMB {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
-                    Image(systemName: "memorychip").foregroundColor(theme.mauve)
+                    Image(systemName: "memorychip").foregroundColor(theme.secondary)
                     Text(String(format: "%.1f GB", Double(mem) / 1024.0))
-                        .foregroundColor(theme.mauve)
+                        .foregroundColor(theme.secondary)
                 }
             }
             .buttonStyle(.plain)
@@ -27,33 +27,33 @@ struct MemoryWidget: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Memory Details")
                             .font(.headline)
-                            .foregroundColor(theme.text)
+                            .foregroundColor(theme.textPrimary)
                             .padding(.bottom, 4)
                         
                         if let topMem = matrix.data.topMemory, !topMem.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Top Processes").font(.subheadline).foregroundColor(theme.subtext1)
+                                Text("Top Processes").font(.subheadline).foregroundColor(theme.textSecondary)
                                 ForEach(topMem.prefix(5)) { proc in
                                     HStack {
                                         if let icon = proc.icon {
                                             Image(nsImage: icon).resizable().frame(width: 12, height: 12)
                                         }
-                                        Text(proc.name).foregroundColor(theme.text).frame(width: 140, alignment: .leading).lineLimit(1)
+                                        Text(proc.name).foregroundColor(theme.textPrimary).frame(width: 140, alignment: .leading).lineLimit(1)
                                         Spacer()
-                                        Text(formatBytes(proc.memoryBytes)).foregroundColor(theme.mauve)
+                                        Text(formatBytes(proc.memoryBytes)).foregroundColor(theme.secondary)
                                     }
                                     .font(.system(size: 11, design: .monospaced))
                                 }
                             }
                         } else {
-                            Text("Loading processes...").foregroundColor(theme.subtext0).font(.system(size: 11))
+                            Text("Loading processes...").foregroundColor(theme.textTertiary).font(.system(size: 11))
                         }
                     }
                     .padding()
                     .frame(width: 250)
                 }
                 .frame(maxHeight: 250)
-                .background(theme.base)
+                .background(theme.background)
             }
         }
     }
