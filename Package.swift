@@ -8,7 +8,10 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "Kamidana", targets: ["Kamidana"]),
+        .executable(name: "Kamidana", targets: ["Kamidana"])
+    ],
+    dependencies: [
+        .package(url: "https://github.com/migueldeicaza/SwiftTerm", from: "1.0.0")
     ],
     targets: [
         .executableTarget(
@@ -19,6 +22,6 @@ let package = Package(
             name: "KamidanaTests",
             dependencies: ["Kamidana"],
             path: "Tests/KamidanaTests"
-        )
+        ),
     ]
 )
