@@ -25,6 +25,8 @@ class SystemController {
     static let logoutScript = "tell application \"System Events\" to log out"
     static let screenLockScript =
         #"tell application "System Events" to keystroke "q" using {command down, control down}"#
+
+    static let sleepScript = "tell application \"System Events\" to sleep"
     static let aboutThisMacAppPath = "/System/Library/CoreServices/Applications/About This Mac.app"
 
     static func runAppleScript(_ script: String) -> Result<Bool, SystemControlError> {
@@ -50,6 +52,10 @@ class SystemController {
 
     func rebootSystem() -> Result<Bool, SystemControlError> {
         return SystemController.runAppleScript(SystemController.rebootScript)
+    }
+
+    func sleepSystem() -> Result<Bool, SystemControlError> {
+        return SystemController.runAppleScript(SystemController.sleepScript)
     }
 
     func logoutSystem() -> Result<Bool, SystemControlError> {

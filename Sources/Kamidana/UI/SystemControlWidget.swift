@@ -42,6 +42,23 @@ struct SystemControlWidget: View {
                                 }
                             }
                             .buttonStyle(.plain)
+
+                            // sleep
+                            Button(action: {
+                                let _ = systemController.sleepSystem()
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "bed.double.fill")
+                                        .foregroundColor(theme.sapphire)
+                                        .font(.system(size: 14, weight: .bold))
+                                        .frame(width: 20, alignment: .center)  // 🌟 電源アイコンを中心に20pxの枠で揃える
+
+                                    Text("Sleep")
+                                        .foregroundColor(theme.text)
+                                }
+                            }
+                            .buttonStyle(.plain)
+
                             // shutdown
                             Button(action: {
                                 let _ = systemController.shutdownSystem()
