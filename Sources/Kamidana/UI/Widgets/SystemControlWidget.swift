@@ -6,6 +6,37 @@ struct SystemControlWidget: View {
 
     @State private var isHovered = false
     @Environment(\.compactMode) var compactMode: Bool  // 👈 他のウィジェットとパディングを合わせるために追加
+    @Environment(\.openWindow) private var openWindow
+
+    func openBtopTerminalWindow() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1500, height: 1000),
+            styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+
+        // 💡 半透明・クールな見た目にするための重要設定
+        window.titlebarAppearsTransparent = true  // タイトルバーを透明化
+        window.titleVisibility = .hidden  // タイトル文字を隠す
+        window.backgroundColor = .clear  // ウィンドウ自体の背景色を透明に
+        window.isOpaque = false  // 透過を許可（これがないとすりガラス効果が出ません）
+        window.center()  // 画面の中央に配置
+
+        // 4. SwiftUIのViewをAppKitのウィンドウにはめ込む
+        // ここで半透明やすりガラスの装飾をつけます
+        let terminalUI = TerminalView(executable: "/opt/homebrew/bin/btop", theme: theme)
+            .background(theme.background.opacity(0.8))
+            .background(.ultraThinMaterial)  // すりガラス効果
+
+        // NSHostingView が SwiftUI と AppKit(NSWindow) を繋ぐ橋渡し役になります
+        window.contentView = NSHostingView(rootView: terminalUI)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+
+        // 5. ウィンドウを一番手前に表示してフォーカスを当てる
+        window.makeKeyAndOrderFront(nil)
+
+    }
 
     var body: some View {
         // ベースのアイコン（他のWiFiUIなどと全く同じレイアウト・高さになります）
@@ -28,100 +59,38 @@ struct SystemControlWidget: View {
                         // 🌟 ボトルの胴体（太く展開する部分）：
                         VStack(alignment: .leading, spacing: 12) {
 
-                            Button(action: {
+                            menuButton(
+                                icon: "laptopcomputer", color: theme.info, text: "About this Mac"
+                            ) {
                                 let _ = systemController.showAboutThisMac()
-                            }) {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "laptopcomputer")
-                                        .foregroundColor(theme.info)  // ユーザーが追加したテーマ色を維持
-                                        .font(.system(size: 14, weight: .bold))
-                                        .frame(width: 20, alignment: .center)
-
-                                    Text("About this Mac")
-                                        .foregroundColor(theme.textPrimary)
-                                }
                             }
-                            .buttonStyle(.plain)
 
-                            // sleep
-                            Button(action: {
+                            menuButton(icon: "bed.double.fill", color: theme.info, text: "Sleep") {
                                 let _ = systemController.sleepSystem()
-                            }) {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "bed.double.fill")
-                                        .foregroundColor(theme.info)
-                                        .font(.system(size: 14, weight: .bold))
-                                        .frame(width: 20, alignment: .center)  // 🌟 電源アイコンを中心に20pxの枠で揃える
-
-                                    Text("Sleep")
-                                        .foregroundColor(theme.textPrimary)
-                                }
                             }
-                            .buttonStyle(.plain)
 
-                            // shutdown
-                            Button(action: {
+                            menuButton(icon: "power", color: theme.danger, text: "Shutdown") {
                                 let _ = systemController.shutdownSystem()
-                            }) {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "power")
-                                        .foregroundColor(theme.danger)
-                                        .font(.system(size: 14, weight: .bold))
-                                        .frame(width: 20, alignment: .center)  // 🌟 電源アイコンを中心に20pxの枠で揃える
-
-                                    Text("Shutdown")
-                                        .foregroundColor(theme.textPrimary)
-                                }
                             }
-                            .buttonStyle(.plain)
 
-                            // reboot
-                            Button(action: {
+                            menuButton(
+                                icon: "arrow.triangle.2.circlepath", color: theme.warning,
+                                text: "Reboot"
+                            ) {
                                 let _ = systemController.rebootSystem()
-                            }) {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "arrow.triangle.2.circlepath")
-                                        .foregroundColor(theme.warning)
-                                        .font(.system(size: 14, weight: .bold))
-                                        .frame(width: 20, alignment: .center)  // 🌟 他もすべて20pxの枠に収めて中央揃え
-
-                                    Text("Reboot")
-                                        .foregroundColor(theme.textPrimary)
-                                }
                             }
-                            .buttonStyle(.plain)
 
-                            // logout
-                            Button(action: {
+                            menuButton(
+                                icon: "rectangle.portrait.and.arrow.right", color: theme.primary,
+                                text: "Logout"
+                            ) {
                                 let _ = systemController.logoutSystem()
-                            }) {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                                        .foregroundColor(theme.primary)
-                                        .font(.system(size: 14, weight: .bold))
-                                        .frame(width: 20, alignment: .center)  // 🌟 ここが横長なので広めの20px枠が必要
-
-                                    Text("Logout")
-                                        .foregroundColor(theme.textPrimary)
-                                }
                             }
-                            .buttonStyle(.plain)
 
-                            // screen lock
-                            Button(action: {
+                            menuButton(icon: "lock", color: theme.accent, text: "Screen Lock") {
                                 let _ = systemController.lockScreen()
-                            }) {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "lock")
-                                        .foregroundColor(theme.accent)  // ユーザーが追加したテーマ色を維持
-                                        .font(.system(size: 14, weight: .bold))
-                                        .frame(width: 20, alignment: .center)
-
-                                    Text("Screen Lock")
-                                        .foregroundColor(theme.textPrimary)
-                                }
                             }
-                            .buttonStyle(.plain)
+
                         }
                         // 🌟 左側のパディングをSmoothUIModule（ホームボタン側）のパディングと完全に同じ値にすることで縦軸を揃える！
                         .padding(.leading, compactMode ? 8 : 12)
@@ -148,5 +117,23 @@ struct SystemControlWidget: View {
             }
         }
         .zIndex(100)  // 展開時に他のウィジェットの下に隠れないようにする
+    }
+
+    // 🌟 ボタンのデザインを共通化してコードをスッキリさせる（コンパイラのエラーも防げます）
+    private func menuButton(icon: String, color: Color, text: String, action: @escaping () -> Void)
+        -> some View
+    {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .font(.system(size: 14, weight: .bold))
+                    .frame(width: 20, alignment: .center)
+
+                Text(text)
+                    .foregroundColor(theme.textPrimary)
+            }
+        }
+        .buttonStyle(.plain)
     }
 }

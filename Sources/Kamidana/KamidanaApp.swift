@@ -5,7 +5,7 @@ import SwiftUI
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: NSWindow!
-    let barHeight: CGFloat = 260  // メニュー展開などに対応できるよう、高さを160から260に拡大
+    let barHeight: CGFloat = 600  // アイランド展開に対応できるよう、高さを大きく拡大
 
     static func main() {
         let app = NSApplication.shared
@@ -126,9 +126,8 @@ struct StatusBarView: View {
                     Color.clear
                         .frame(width: 32, height: 32)
                         .overlay(
-                            MusicWidget(musicManager: musicManager, theme: theme)
-                                .fixedSize()
-                            , alignment: .topLeading
+                            KamidanaIsland(theme: theme, musicManager: musicManager)
+                                .fixedSize(), alignment: .topLeading
                         )
                         .zIndex(100)
                 }
@@ -166,7 +165,7 @@ struct StatusBarView: View {
 
             // 通常モード（外部画面）の場合のみ、画面の真ん中の一番上に配置
             if !compactMode {
-                MusicWidget(musicManager: musicManager, theme: theme)
+                KamidanaIsland(theme: theme, musicManager: musicManager)
                     .fixedSize()
                     .padding(.top, 2)
                     .zIndex(100)
@@ -174,7 +173,7 @@ struct StatusBarView: View {
         }
         .environment(\.compactMode, compactMode)
         .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
-        .frame(maxWidth: .infinity, maxHeight: 260, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: 600, alignment: .top)
         .background(Color.clear)
         .onAppear {
             matrix.startMonitoring()

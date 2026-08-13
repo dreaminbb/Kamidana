@@ -16,6 +16,9 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Kamidana",
+            dependencies: [
+                .product(name: "SwiftTerm", package: "SwiftTerm")
+            ],
             path: "Sources/Kamidana"
         ),
         .testTarget(
