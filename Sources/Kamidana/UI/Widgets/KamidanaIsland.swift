@@ -17,14 +17,17 @@ struct KamidanaIsland: View {
     @State private var isHovered = false
     @State private var selectedTab: IslandTab = .music
 
-    @State private var islandSize: windowSizeRequirements = windowSizeRequirements( width: nil, height: nil)
+    @State private var rotation: Double = 0.0
+    @State private var islandSize: windowSizeRequirements = windowSizeRequirements(
+        width: nil, height: nil)
 
-    static let defaultHoveredSize = CGSize(width: 600 , height: 400)
+    let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
+    static let defaultHoveredSize = CGSize(width: 600, height: 300)
 
     // 🌟 アプローチ1: サイズを計算して返す関数
     private func getIslandSize() -> CGSize {
         if !isHovered { return CGSize(width: 180, height: 32) }
-        
+
         // Tabによるサイズ変更が必要な場合はここで計算できます
         if selectedTab == .btop {
             // もしTerminalタブの時だけサイズを変えたい場合はここで返す
@@ -76,14 +79,9 @@ struct KamidanaIsland: View {
                 Group {
                     switch selectedTab {
                     case .music:
-                        VStack {
-                            Spacer()
-                            // 既存のMusicWidgetをとりあえず大きく表示（あとでカスタムも可能）
-                            MusicWidget(musicManager: musicManager, theme: theme)
-                                .scaleEffect(1.2)
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        // アイランド全体に広がるように修正したMusicWidgetを直接配置
+                        MusicWidget(musicManager: musicManager, theme: theme)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     case .btop:
                         // 【重要】TerminalViewをここに埋め込む
@@ -96,18 +94,44 @@ struct KamidanaIsland: View {
 
             } else {
                 // 🌟 普段の小さなUI（折りたたみ時）
-                HStack {
-                    Image(systemName: "circle.grid.2x2.fill")
-                        .foregroundColor(theme.primary)
-                    Text(musicManager.title.isEmpty ? "Kamidana Island" : musicManager.title)
+                HStack(spacing: 0) {
+                    if !musicManager.title.isEmpty, let artwork = musicManager.artwork {
+                        // 音楽再生中はアートワークを表示
+                        Image(nsImage: artwork)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .onReceive(rotationTimer) { _ in
+                                if musicManager.isPlaying {
+                                    rotation += 1.5
+                                    if rotation >= 360 { rotation = 0 }
+                                }
+                            }
+                            .rotationEffect(.degrees(rotation))
+                            .frame(width: 24, height: 24)
+                            .clipShape(Circle())
+                            .padding(.leading, 10)
+
+                        // TODO: ここにオーディオビジュライザーを入れる
+
+                    } else {
+                        // 音楽がない時やアートワークがない時はデフォルトアイコン
+                        Image(systemName: "circle.grid.2x2.fill")
+                            .foregroundColor(theme.primary)
+                    }
+
+                    Spacer()
+                    Text(musicManager.title.isEmpty ? "" : musicManager.title)
                         .lineLimit(1)
                         .truncationMode(.tail)
+
+                    Spacer()
                 }
                 .foregroundColor(theme.textPrimary)
+                .padding(.leading, 3)
             }
         }
         // ホバー状態に応じて Island 自体のサイズをダイナミックに変更する！
-        .frame(width: getIslandSize().width, height: getIslandSize().height) // 関数を呼び出して渡す
+        .frame(width: getIslandSize().width, height: getIslandSize().height)  // 関数を呼び出して渡す
         .background(theme.background.opacity(0.8))
         .background(.ultraThinMaterial)
         .cornerRadius(isHovered ? 24 : 16)

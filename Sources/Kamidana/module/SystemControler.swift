@@ -2,10 +2,7 @@ import AppKit
 import Foundation
 
 // アプリの強制終了
-// NOTE: fastfetchコマンドを実行するのは超クールかもしれない
-
 // brew or nixのアップデート利用可能なパッケージ
-// システムモニター || ビルドインのターミナルでbtopを起動
 
 enum SystemControlError: Error, LocalizedError {
     case scriptFailed(String)
