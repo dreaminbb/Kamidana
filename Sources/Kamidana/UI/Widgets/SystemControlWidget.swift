@@ -60,34 +60,34 @@ struct SystemControlWidget: View {
                         VStack(alignment: .leading, spacing: 12) {
 
                             menuButton(
-                                icon: "laptopcomputer", color: theme.info, text: "About this Mac"
+                                icon: .laptop, color: theme.info, text: "About this Mac"
                             ) {
                                 let _ = systemController.showAboutThisMac()
                             }
 
-                            menuButton(icon: "bed.double.fill", color: theme.info, text: "Sleep") {
+                            menuButton(icon: .bed, color: theme.info, text: "Sleep") {
                                 let _ = systemController.sleepSystem()
                             }
 
-                            menuButton(icon: "power", color: theme.danger, text: "Shutdown") {
+                            menuButton(icon: .power, color: theme.danger, text: "Shutdown") {
                                 let _ = systemController.shutdownSystem()
                             }
 
                             menuButton(
-                                icon: "arrow.triangle.2.circlepath", color: theme.warning,
+                                icon: .arrowClockwise, color: theme.warning,
                                 text: "Reboot"
                             ) {
                                 let _ = systemController.rebootSystem()
                             }
 
                             menuButton(
-                                icon: "rectangle.portrait.and.arrow.right", color: theme.primary,
+                                icon: .exit, color: theme.primary,
                                 text: "Logout"
                             ) {
                                 let _ = systemController.logoutSystem()
                             }
 
-                            menuButton(icon: "lock", color: theme.accent, text: "Screen Lock") {
+                            menuButton(icon: .lock, color: theme.accent, text: "Screen Lock") {
                                 let _ = systemController.lockScreen()
                             }
 
@@ -120,12 +120,14 @@ struct SystemControlWidget: View {
     }
 
     // 🌟 ボタンのデザインを共通化してコードをスッキリさせる（コンパイラのエラーも防げます）
-    private func menuButton(icon: String, color: Color, text: String, action: @escaping () -> Void)
+    private func menuButton(
+        icon: NerdFontIconType, color: Color, text: String, action: @escaping () -> Void
+    )
         -> some View
     {
         Button(action: action) {
             HStack(spacing: 10) {
-                NerdFontIcon(.list)
+                NerdFontIcon(icon)
                     .foregroundColor(color)
                     .font(.system(size: 14, weight: .bold))
                     .frame(width: 20, alignment: .center)

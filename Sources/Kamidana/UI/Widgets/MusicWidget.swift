@@ -21,14 +21,15 @@ struct MusicWidget: View {
                 artworkView(size: 180)
 
                 // 右側：曲情報、コントロール群、シークバー
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(spacing: 24) {
 
                     // 1. タイトルとアーティスト
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(spacing: 8) {
                         Text(musicManager.title)
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(theme.textPrimary)
                             .lineLimit(2)
+                            .multilineTextAlignment(.center)
                         Text(musicManager.artist)
                             .font(.system(size: 18))
                             .foregroundColor(theme.textSecondary)
@@ -38,20 +39,17 @@ struct MusicWidget: View {
                     // 2. スキップ・停止（再生/一時停止）ボタン
                     HStack(spacing: 40) {
                         Button(action: { musicManager.changeTrack(direction: .previous) }) {
-                            NerdFontIcon(.backward)
-                                .font(.system(size: 28))
+                            NerdFontIcon(.backward, size: 35)
                                 .foregroundColor(theme.textPrimary)
                         }.buttonStyle(.plain)
 
                         Button(action: { musicManager.pauseMusic() }) {
-                            NerdFontIcon(musicManager.isPlaying ? .pause : .play)
-                                .font(.system(size: 44))
+                            NerdFontIcon(musicManager.isPlaying ? .pause : .play, size: 35)
                                 .foregroundColor(theme.success)
                         }.buttonStyle(.plain)
 
                         Button(action: { musicManager.changeTrack(direction: .next) }) {
-                            NerdFontIcon(.forward)
-                                .font(.system(size: 28))
+                            NerdFontIcon(.forward, size: 35)
                                 .foregroundColor(theme.textPrimary)
                         }.buttonStyle(.plain)
                     }

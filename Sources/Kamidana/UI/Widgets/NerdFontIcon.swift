@@ -1,44 +1,49 @@
 import SwiftUI
 
-public enum NerdFontIconType: String {
-    case bluetooth = "\u{f00af}"
-    case bluetoothSlash = "\u{f00b0}"
-    case wifi = "\u{f0928}"
-    case wifiSlash = "\u{f092f}"
-    case network = "\u{f0318}"
-    case battery = "\u{f240}"
-    case batteryEmpty = "\u{f244}"
-    case batteryQuarter = "\u{f243}"
-    case batteryHalf = "\u{f242}"
-    case batteryThreeQuarters = "\u{f241}"
-    case batteryCharging = "\u{f0084}"
-    case cpu = "\u{f4bc}"
-    case memory = "\u{f035b}"
-    case gpu = "\u{f08ae}"
-    case disk = "\u{f02ca}"
-    case arrowUpRight = "\u{f06f6}"
-    case arrowDownRight = "\u{f06f4}"
-    case arrowUpCircle = "\u{f01b}"
-    case arrowDownCircle = "\u{f01a}"
-    case clock = "\u{f0954}"
-    case music = "\u{f001}"
-    case play = "\u{f04b}"
-    case pause = "\u{f04c}"
-    case forward = "\u{f051}"
-    case backward = "\u{f04a}"
-    case speaker = "\u{f027}"
-    case speakerWave = "\u{f028}"
-    case mic = "\u{ec1c}"
-    case micSlash = "\u{f131}"
-    case appleLogo = "\u{f179}"
-    case paperplane = "\u{f01d8}"
-    case thermometer = "\u{f02cb}"
-    case link = "\u{f0337}"
-    case linkPlus = "\u{f0338}"
-    case arrowClockwise = "\u{f002d}"
-    case bolt = "\u{f00e7}"
-    case grid = "\u{f00a}"
-    case list = "\u{f03a}"
+public enum NerdFontIconType {
+    case bluetooth
+    case bluetoothSlash
+    case wifi
+    case wifiSlash
+    case network
+    case battery
+    case batteryEmpty
+    case batteryQuarter
+    case batteryHalf
+    case batteryThreeQuarters
+    case batteryCharging
+    case cpu
+    case memory
+    case gpu
+    case disk
+    case arrowUpRight
+    case arrowDownRight
+    case arrowUpCircle
+    case arrowDownCircle
+    case clock
+    case music
+    case play
+    case pause
+    case forward
+    case backward
+    case speaker
+    case speakerWave
+    case mic
+    case micSlash
+    case appleLogo
+    case paperplane
+    case thermometer
+    case link
+    case linkPlus
+    case arrowClockwise
+    case bolt
+    case grid
+    case list
+    case bed
+    case laptop
+    case power
+    case exit
+    case lock
 }
 
 public struct NerdFontIcon: View {
@@ -66,7 +71,8 @@ public struct NerdFontIcon: View {
 
     public var body: some View {
         let keyName = String(describing: type)
-        let displayIcon = NerdFontManager.shared.icon(for: keyName) ?? type.rawValue
+        // TOMLから値を読み込む。未定義の場合は"?"で表示してデバッグしやすくする
+        let displayIcon = NerdFontManager.shared.icon(for: keyName) ?? "?"
 
         Text(displayIcon)
             // フォントの種類は環境に合わせて変更できるようにする
