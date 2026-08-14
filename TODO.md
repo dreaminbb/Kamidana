@@ -93,3 +93,11 @@
 
 ## ADD
 - [ ] IS IT POSSIBLE TO ADD PERFECT BLUETOOTH MANAGER IN APP LEVEL?
+
+## ESSENTIAL
+- [ ] カレンダー
+- [ ] CAVA UI
+- [ ] 天気
+
+- [ ] IP表示
+- [ ] 設定管理
