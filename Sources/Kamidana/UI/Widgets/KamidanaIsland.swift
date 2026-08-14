@@ -115,7 +115,7 @@ struct KamidanaIsland: View {
 
                     } else {
                         // 音楽がない時やアートワークがない時はデフォルトアイコン
-                        Image(systemName: "circle.grid.2x2.fill")
+                        NerdFontIcon(.grid)
                             .foregroundColor(theme.primary)
                     }
 

@@ -19,10 +19,10 @@ struct WiFiWidget: View {
             }
         }) {
             HStack(spacing: 4) {
-                Image(
-                    systemName: netManager.currentConnection == "WIFI"
-                        ? "wifi"
-                        : (netManager.currentConnection == "LAN" ? "network" : "wifi.slash")
+                NerdFontIcon(
+                    netManager.currentConnection == "WIFI"
+                        ? .wifi
+                        : (netManager.currentConnection == "LAN" ? .network : .wifiSlash)
                 )
                 .foregroundColor(theme.accent)
             }
@@ -44,7 +44,7 @@ struct WiFiWidget: View {
                     Button(action: {
                         netManager.scanForNetworks()
                     }) {
-                        Image(systemName: "arrow.clockwise")
+                        NerdFontIcon(.arrowClockwise)
                     }
                     .buttonStyle(.plain)
                 }
@@ -157,7 +157,7 @@ struct WiFiWidget: View {
                                     }
                                 }) {
                                     HStack {
-                                        Image(systemName: "wifi").foregroundColor(theme.textPrimary)
+                                        NerdFontIcon(.wifi).foregroundColor(theme.textPrimary)
                                         Text(network.ssid ?? "Hidden")
                                             .lineLimit(1)
                                             .foregroundColor(theme.textPrimary)

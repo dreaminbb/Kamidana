@@ -117,9 +117,9 @@ class MusicPlayingManager: ObservableObject {
         // Spotifyのdurationはミリ秒なので秒に変換
         trackTime = (Double(parts[6]) ?? 0.0) / 1000.0
 
-        print(
-            "🎵 [Spotify] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
-        )
+        // print(
+        //     "🎵 [Spotify] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
+        // )
 
         // アートワークURLから画像をダウンロード（バックグラウンド）
         let artworkURLString = parts[3]
@@ -169,9 +169,9 @@ class MusicPlayingManager: ObservableObject {
         currentPosition = Double(parts[4]) ?? 0.0
         trackTime = Double(parts[5]) ?? 0.0
 
-        print(
-            "🎵 [Music] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
-        )
+        // print(
+        //     "🎵 [Music] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
+        // )
 
         // Music.appのアートワークはAppleScriptで直接データとして取得
         loadMusicAppArtwork()

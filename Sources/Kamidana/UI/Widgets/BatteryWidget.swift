@@ -12,8 +12,8 @@ struct BatteryWidget: View {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 6) {
                     // コンパクト表示
-                    Image(
-                        systemName: batteryIconName(
+                    NerdFontIcon(
+                        batteryIconName(
                             capacity: battery.currentCapacity, isCharging: battery.isCharging)
                     )
                     .foregroundColor(battery.isCharging ? theme.success : theme.textPrimary)
@@ -38,7 +38,7 @@ struct BatteryWidget: View {
                     Text("Battery").font(.subheadline).foregroundColor(theme.textSecondary)
 
                     HStack {
-                        Image(systemName: "bolt.fill").foregroundColor(theme.caution).frame(
+                        NerdFontIcon(.bolt).foregroundColor(theme.caution).frame(
                             width: 20)
                         if battery.isCharging {
                             Text("Charging (\(battery.timeToFull)m to full)")
@@ -84,7 +84,7 @@ struct BatteryWidget: View {
                         Text("Thermal").font(.subheadline).foregroundColor(theme.textSecondary)
 
                         HStack {
-                            Image(systemName: "thermometer").foregroundColor(
+                            NerdFontIcon(.thermometer).foregroundColor(
                                 getThermalColor(thermal, theme: theme)
                             ).frame(width: 20)
                             Text("State:").foregroundColor(theme.textSecondary).frame(
@@ -110,18 +110,16 @@ struct BatteryWidget: View {
         }
     }
 
-    private func batteryIconName(capacity: Int64, isCharging: Bool) -> String {
-        let level: String
-        print("capacity: \(capacity)  is charging \(isCharging)")
-        switch (capacity, isCharging) {
-        case (..<13, _): level = "0"
-        case (..<38, _): level = "25"
-        case (..<63, _): level = "50"
-        case (..<88, _): level = "75"
-        case (100, true): level = "100percent"
-        default: level = "100"
+    private func batteryIconName(capacity: Int64, isCharging: Bool) -> NerdFontIconType {
+        if isCharging {
+            return .batteryCharging
         }
-
-        return isCharging ? "battery.\(level).bolt" : "battery.\(level)"
+        switch capacity {
+        case ..<13: return .batteryEmpty
+        case ..<38: return .batteryQuarter
+        case ..<63: return .batteryHalf
+        case ..<88: return .batteryThreeQuarters
+        default: return .battery
+        }
     }
 }

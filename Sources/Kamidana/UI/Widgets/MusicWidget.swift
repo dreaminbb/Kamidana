@@ -38,19 +38,19 @@ struct MusicWidget: View {
                     // 2. スキップ・停止（再生/一時停止）ボタン
                     HStack(spacing: 40) {
                         Button(action: { musicManager.changeTrack(direction: .previous) }) {
-                            Image(systemName: "backward.fill")
+                            NerdFontIcon(.backward)
                                 .font(.system(size: 28))
                                 .foregroundColor(theme.textPrimary)
                         }.buttonStyle(.plain)
 
                         Button(action: { musicManager.pauseMusic() }) {
-                            Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
+                            NerdFontIcon(musicManager.isPlaying ? .pause : .play)
                                 .font(.system(size: 44))
                                 .foregroundColor(theme.success)
                         }.buttonStyle(.plain)
 
                         Button(action: { musicManager.changeTrack(direction: .next) }) {
-                            Image(systemName: "forward.fill")
+                            NerdFontIcon(.forward)
                                 .font(.system(size: 28))
                                 .foregroundColor(theme.textPrimary)
                         }.buttonStyle(.plain)
@@ -115,7 +115,7 @@ struct MusicWidget: View {
         } else {
             // 音楽が再生されていない時のUI
             VStack(spacing: 16) {
-                Image(systemName: "music.note")
+                NerdFontIcon(.music)
                     .font(.system(size: 48))
                     .foregroundColor(theme.textSecondary)
                 Text("No Music Playing")
@@ -137,7 +137,7 @@ struct MusicWidget: View {
             } else {
                 ZStack {
                     theme.surface
-                    Image(systemName: "music.note")
+                    NerdFontIcon(.music)
                         .font(.system(size: size / 3))
                         .foregroundColor(theme.accent)
                 }

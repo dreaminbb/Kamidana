@@ -175,7 +175,7 @@ class SystemMatrix: ObservableObject {
             // 取得完了後、メインスレッドでUIに反映
             DispatchQueue.main.async {
                 self.data = newData
-                DebugRichConsole.printSystemMatrix(newData)
+                // DebugRichConsole.printSystemMatrix(newData)
             }
         }
     }

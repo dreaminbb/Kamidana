@@ -11,7 +11,7 @@ struct MemoryWidget: View {
         if let mem = matrix.data.memoryMB {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
-                    Image(systemName: "memorychip").foregroundColor(theme.secondary)
+                    NerdFontIcon(.memory).foregroundColor(theme.secondary)
                     Text(String(format: "%.1f GB", Double(mem) / 1024.0))
                         .foregroundColor(theme.secondary)
                 }

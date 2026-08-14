@@ -3,11 +3,11 @@ import SwiftUI
 struct AudioWidget: View {
     @ObservedObject var audioVM: AudioViewModel
     var theme: Theme
-    
+
     @State private var showAudioPopover = false
     @State private var showMicPopover = false
     @State private var isHovered = false
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // 出力 (スピーカー)
@@ -44,7 +44,7 @@ struct AudioWidget: View {
                             .padding(.bottom, 5)
 
                         HStack {
-                            Image(systemName: "speaker.fill").foregroundColor(theme.textTertiary)
+                            NerdFontIcon(.speaker).foregroundColor(theme.textTertiary)
                                 .font(.system(size: 10))
                             Slider(
                                 value: Binding(
@@ -52,7 +52,7 @@ struct AudioWidget: View {
                                     set: { audioVM.setOutputVolume($0) }), in: 0.0...1.0
                             )
                             .frame(width: 150).accentColor(theme.primary)
-                            Image(systemName: "speaker.wave.3.fill").foregroundColor(
+                            NerdFontIcon(.speakerWave).foregroundColor(
                                 theme.textTertiary
                             ).font(.system(size: 10))
                         }
@@ -93,7 +93,7 @@ struct AudioWidget: View {
             // 入力 (マイク)
             HStack(spacing: 6) {
                 Button(action: { audioVM.toggleInputMute() }) {
-                    Image(systemName: audioVM.isInputMuted ? "mic.slash.fill" : "mic.fill")
+                    NerdFontIcon(audioVM.isInputMuted ? .micSlash : .mic)
                         .foregroundColor(audioVM.isInputMuted ? theme.danger : theme.warning)
                 }
                 .buttonStyle(.plain)
@@ -121,7 +121,7 @@ struct AudioWidget: View {
                             .padding(.bottom, 5)
 
                         HStack {
-                            Image(systemName: "mic.fill").foregroundColor(theme.textTertiary).font(
+                            NerdFontIcon(.mic).foregroundColor(theme.textTertiary).font(
                                 .system(size: 10))
                             Slider(
                                 value: Binding(
@@ -129,9 +129,7 @@ struct AudioWidget: View {
                                     set: { audioVM.setInputVolume($0) }), in: 0.0...1.0
                             )
                             .frame(width: 150).accentColor(theme.warning)
-                            Image(systemName: "mic.and.signal.meter.fill").foregroundColor(
-                                theme.textTertiary
-                            ).font(.system(size: 10))
+                            NerdFontIcon(.mic, size: 10).foregroundColor(theme.textTertiary)
                         }
                         .padding(.bottom, 5)
 
@@ -168,6 +166,8 @@ struct AudioWidget: View {
             }
         }
         .SmoothUIModule(theme: theme)
-        .onHover { hover in withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover } }
+        .onHover { hover in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
+        }
     }
 }

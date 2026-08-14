@@ -103,17 +103,17 @@ struct StatusBarView: View {
     // オーディオマネージャーを初期化
     @StateObject private var audioVM = AudioViewModel()
     @StateObject private var uiSettings = UISettingsStore()
+    @StateObject private var bluetooth = BluetoothManager()
 
     @State private var isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
 
     var body: some View {
         let theme = Theme.catppuccinMocha
         let compactMode = uiSettings.resolveCompactMode(isBuiltInDisplay: isBuiltInDisplay)
-        let _ = print("👉 UI再描画: isBuiltInDisplay=\(isBuiltInDisplay), compactMode=\(compactMode)")
 
         ZStack(alignment: .top) {
             // 左側のウィジェット群
-            HStack(spacing: compactMode ? 6 : 8) {
+            HStack(alignment: .top, spacing: compactMode ? 6 : 8) {
                 // System Control
                 SystemControlWidget(theme: theme)
 
@@ -132,12 +132,13 @@ struct StatusBarView: View {
                         .zIndex(100)
                 }
             }
-            .frame(height: 32)
+            .frame(height: 35)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 10)
 
             // 右側のウィジェット群
             HStack(
+                alignment: .top,
                 spacing: compactMode ? 6 : 8,
                 content: {
                     if compactMode {
@@ -154,12 +155,13 @@ struct StatusBarView: View {
                         GpuWidget(matrix: matrix, theme: theme)
                         MemoryWidget(matrix: matrix, theme: theme)
                         DiskWidget(matrix: matrix, theme: theme)
+                        BluetoothWidget(bluetooth: bluetooth, theme: theme)
                         BatteryWidget(matrix: matrix, theme: theme)
                         ClockWidget(theme: theme)
                     }
                 }
             )
-            .frame(height: 32)
+            .frame(height: 35)
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, 10)
 
@@ -188,7 +190,7 @@ struct StatusBarView: View {
             // まだ更新されていないことがあるため、非同期で一拍遅らせて判定する
             DispatchQueue.main.async {
                 isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
-                print("Updated isBuiltInDisplay: \(isBuiltInDisplay)")
+                // print("Updated isBuiltInDisplay: \(isBuiltInDisplay)")
             }
         }
     }
@@ -202,7 +204,7 @@ private struct FoldedWidgetsButton: View {
 
     var body: some View {
         Button(action: { showPopover.toggle() }) {
-            Image(systemName: "list.bullet")
+            NerdFontIcon(.list)
                 .foregroundColor(theme.textSecondary)
         }
         .buttonStyle(.plain)

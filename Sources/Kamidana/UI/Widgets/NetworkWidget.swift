@@ -10,14 +10,14 @@ struct NetworkWidget: View {
     var body: some View {
         if let net = matrix.data.internetUsage {
             Button(action: { showPopover.toggle() }) {
-                VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 2) {
                     HStack(spacing: 3) {
-                        Image(systemName: "arrow.up.right").foregroundColor(theme.info)
+                        NerdFontIcon(.arrowUpRight).foregroundColor(theme.info)
                         Text(formatBytes(net.uploadBytesPerSecond) + "/s")
                             .foregroundColor(theme.textPrimary)
                     }
                     HStack(spacing: 3) {
-                        Image(systemName: "arrow.down.right").foregroundColor(theme.info)
+                        NerdFontIcon(.arrowDownRight).foregroundColor(theme.info)
                         Text(formatBytes(net.downloadBytesPerSecond) + "/s")
                             .foregroundColor(theme.textPrimary)
                     }
@@ -39,7 +39,7 @@ struct NetworkWidget: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Image(systemName: "network").foregroundColor(theme.primary).frame(
+                            NerdFontIcon(.network).foregroundColor(theme.primary).frame(
                                 width: 20)
                             Text("Upload:").foregroundColor(theme.textSecondary).frame(
                                 width: 70, alignment: .leading)

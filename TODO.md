@@ -87,5 +87,9 @@
 - [ ] 作る！！！！
 
 ## FIX
-- [ ]  回線速度UIにローカルIP、DNS、パケットロスを表示
+- [ ] 回線速度UIにローカルIP、DNS、パケットロスを表示
 - [ ] 既に再生した事ある曲の画像をキャッシュして、初めて流す曲はそこから取得
+- [ ] 全画面モードで表示、非表示
+
+## ADD
+- [ ] IS IT POSSIBLE TO ADD PERFECT BLUETOOTH MANAGER IN APP LEVEL?

@@ -13,7 +13,7 @@ struct CpuGpuWidget: View {
             VStack(alignment: .leading, spacing: 2) {
                 if let cpu = matrix.data.cpuUsage {
                     HStack(spacing: 4) {
-                        Image(systemName: "cpu").foregroundColor(getCPUColor(cpu.total, theme: theme))
+                        NerdFontIcon(.cpu).foregroundColor(getCPUColor(cpu.total, theme: theme))
                         Text(String(format: "%5.1f%%", cpu.total))
                             .foregroundColor(getCPUColor(cpu.total, theme: theme))
                     }
@@ -47,7 +47,7 @@ struct CpuGpuWidget: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("CPU").font(.subheadline).foregroundColor(theme.textSecondary)
                             HStack {
-                                Image(systemName: "cpu").foregroundColor(getCPUColor(cpu.total, theme: theme)).frame(width: 20)
+                                NerdFontIcon(.cpu).foregroundColor(getCPUColor(cpu.total, theme: theme)).frame(width: 20)
                                 Text("Total:").foregroundColor(theme.textSecondary).frame(width: 80, alignment: .leading)
                                 Text(String(format: "%.1f%%", cpu.total)).foregroundColor(theme.textPrimary)
                             }

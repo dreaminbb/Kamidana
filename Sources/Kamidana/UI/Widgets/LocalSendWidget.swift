@@ -7,7 +7,7 @@ struct LocalSendWidget: View {
     var body: some View {
         if !localSend.discoveredDevices.isEmpty {
             HStack(spacing: 4) {
-                Image(systemName: "paperplane.circle.fill")
+                NerdFontIcon(.paperplane)
                     .foregroundColor(theme.primary)
                 Text("\(localSend.discoveredDevices.count) Devices")
                     .foregroundColor(theme.textPrimary)

@@ -11,7 +11,7 @@ struct DiskWidget: View {
         if let diskSpace = matrix.data.diskSpace {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
-                    Image(systemName: "internaldrive.fill").foregroundColor(theme.warning)
+                    NerdFontIcon(.disk).foregroundColor(theme.warning)
                     Text(diskSpace)
                         .foregroundColor(theme.warning)
                 }
@@ -34,12 +34,12 @@ struct DiskWidget: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("I/O Speed").font(.subheadline).foregroundColor(theme.textSecondary)
                                 HStack {
-                                    Image(systemName: "arrow.down.circle").foregroundColor(theme.info).frame(width: 20)
+                                    NerdFontIcon(.arrowDownCircle).foregroundColor(theme.info).frame(width: 20)
                                     Text("Read:").foregroundColor(theme.textSecondary).frame(width: 50, alignment: .leading)
                                     Text("\(formatBytes(diskIO.readBytesPerSecond))/s").foregroundColor(theme.textPrimary)
                                 }
                                 HStack {
-                                    Image(systemName: "arrow.up.circle").foregroundColor(theme.warning).frame(width: 20)
+                                    NerdFontIcon(.arrowUpCircle).foregroundColor(theme.warning).frame(width: 20)
                                     Text("Write:").foregroundColor(theme.textSecondary).frame(width: 50, alignment: .leading)
                                     Text("\(formatBytes(diskIO.writeBytesPerSecond))/s").foregroundColor(theme.textPrimary)
                                 }

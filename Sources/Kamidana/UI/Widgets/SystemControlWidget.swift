@@ -41,7 +41,7 @@ struct SystemControlWidget: View {
     var body: some View {
         // ベースのアイコン（他のWiFiUIなどと全く同じレイアウト・高さになります）
         HStack(spacing: 4) {
-            Image(systemName: "apple.logo")
+            NerdFontIcon(.appleLogo)
                 .foregroundColor(theme.secondary)
                 .font(.system(size: 14))
                 .frame(width: 20, alignment: .center)  // 🌟 幅を20pxに広げて中央揃えを強制
@@ -125,7 +125,7 @@ struct SystemControlWidget: View {
     {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: icon)
+                NerdFontIcon(.list)
                     .foregroundColor(color)
                     .font(.system(size: 14, weight: .bold))
                     .frame(width: 20, alignment: .center)

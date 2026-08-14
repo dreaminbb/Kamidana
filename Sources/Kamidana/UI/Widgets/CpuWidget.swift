@@ -10,7 +10,7 @@ struct CpuWidget: View {
         if let cpu = matrix.data.cpuUsage {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
-                    Image(systemName: "cpu").foregroundColor(getCPUColor(cpu.total, theme: theme))
+                    NerdFontIcon(.cpu).foregroundColor(getCPUColor(cpu.total, theme: theme))
                     Text(String(format: "%5.1f%%", cpu.total)).foregroundColor(getCPUColor(cpu.total, theme: theme))
                 }
             }
