@@ -1,26 +1,26 @@
 # Logging (Rich Console / Debug)
 
-Kamidana のリッチなコンソール出力は `DebugRichConsole` に集約されています。  
-このツールはデバッグ専用です（`DEBUG` ビルドのみデフォルト有効）。
+Rich console outputs in Kamidana are centralized in `DebugRichConsole`.  
+This tool is intended exclusively for debugging (enabled by default only in `DEBUG` builds).
 
-## 使い方
+## Usage
 
-任意のファイルから以下のように呼び出します。
+Call it from any file as shown below:
 
 ```swift
 DebugRichConsole.printSystemMatrix(newData)
 ```
 
-## 有効/無効の切り替え
+## Toggling Enabled/Disabled
 
-出力の有効化は `DebugRichConsole.isEnabled` で制御します。
+Output is controlled via `DebugRichConsole.isEnabled`.
 
 ```swift
-DebugRichConsole.isEnabled = true   // 出力する
-DebugRichConsole.isEnabled = false  // 出力しない
+DebugRichConsole.isEnabled = true   // Enable output
+DebugRichConsole.isEnabled = false  // Disable output
 ```
 
-## 追加の方針
+## Guidelines for Additions
 
-新しいログ表示を増やす場合は、`print(...)` を各所に散らさず `DebugRichConsole` に実装してください。  
-バイト表示は `DebugRichConsole.formatBytes(_:)` を共通利用します。
+When adding new log outputs, implement them in `DebugRichConsole` rather than scattering `print(...)` statements across the codebase.  
+For byte formatting, use the shared `DebugRichConsole.formatBytes(_:)` method.

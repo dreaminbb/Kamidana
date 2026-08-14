@@ -1,28 +1,28 @@
 # Audio Module Specification
 
-CoreAudio (HAL) を利用して以下の機能を提供する。
+Provides the following features using CoreAudio (HAL).
 
-## 機能一覧
+## Feature List
 
-- スピーカー音量の取得
-- スピーカー音量の変更
-- スピーカーミュートの取得
-- スピーカーミュートの切り替え
-- マイク入力レベルの取得
-- マイク入力レベルの変更
-- マイクミュートの取得
-- マイクミュートの切り替え（対応デバイスのみ）
-- 入力デバイス一覧取得
-- 出力デバイス一覧取得
-- デフォルト入力デバイス変更
-- デフォルト出力デバイス変更
-- デバイス接続・切断の監視
-- 音量変更の監視
-- ミュート状態変更の監視
+- Get speaker volume
+- Set speaker volume
+- Get speaker mute status
+- Toggle speaker mute
+- Get microphone input level
+- Set microphone input level
+- Get microphone mute status
+- Toggle microphone mute (supported devices only)
+- Get input device list
+- Get output device list
+- Set default input device
+- Set default output device
+- Monitor device connection / disconnection
+- Monitor volume changes
+- Monitor mute state changes
 
 ---
 
-# 使用フレームワーク
+# Frameworks Used
 
 - CoreAudio
 - AudioHardware (HAL)
@@ -33,24 +33,24 @@ CoreAudio (HAL) を利用して以下の機能を提供する。
 
 ## AudioObject
 
-| API | 用途 |
+| API | Purpose |
 |------|------|
-| `AudioObjectGetPropertyData` | プロパティ取得 |
-| `AudioObjectSetPropertyData` | プロパティ変更 |
-| `AudioObjectAddPropertyListenerBlock` | 変更通知登録 |
-| `AudioObjectRemovePropertyListenerBlock` | 通知解除 |
+| `AudioObjectGetPropertyData` | Get property |
+| `AudioObjectSetPropertyData` | Set property |
+| `AudioObjectAddPropertyListenerBlock` | Register property change notification |
+| `AudioObjectRemovePropertyListenerBlock` | Unregister property change notification |
 
 ---
 
-# 使用するProperty
+# Properties Used
 
-## デバイス一覧
+## Device List
 
 ```swift
 kAudioHardwarePropertyDevices
 ```
 
-取得型
+Return Type
 
 ```swift
 [AudioDeviceID]
@@ -58,13 +58,13 @@ kAudioHardwarePropertyDevices
 
 ---
 
-## デフォルト出力
+## Default Output
 
 ```swift
 kAudioHardwarePropertyDefaultOutputDevice
 ```
 
-取得型
+Return Type
 
 ```swift
 AudioDeviceID
@@ -72,13 +72,13 @@ AudioDeviceID
 
 ---
 
-## デフォルト入力
+## Default Input
 
 ```swift
 kAudioHardwarePropertyDefaultInputDevice
 ```
 
-取得型
+Return Type
 
 ```swift
 AudioDeviceID
@@ -86,13 +86,13 @@ AudioDeviceID
 
 ---
 
-## デバイス名
+## Device Name
 
 ```swift
 kAudioObjectPropertyName
 ```
 
-取得型
+Return Type
 
 ```swift
 CFString
@@ -106,7 +106,7 @@ CFString
 kAudioDevicePropertyDeviceUID
 ```
 
-取得型
+Return Type
 
 ```swift
 CFString
@@ -114,7 +114,7 @@ CFString
 
 ---
 
-## Input / Output判定
+## Input / Output Determination
 
 ```swift
 kAudioDevicePropertyStreams
@@ -129,39 +129,39 @@ kAudioObjectPropertyScopeOutput
 
 ---
 
-## 音量
+## Volume
 
 ```swift
 kAudioDevicePropertyVolumeScalar
 ```
 
-型
+Type
 
 ```swift
 Float32
 ```
 
-値
+Value
 
 ```
-0.0〜1.0
+0.0 - 1.0
 ```
 
 ---
 
-## ミュート
+## Mute
 
 ```swift
 kAudioDevicePropertyMute
 ```
 
-型
+Type
 
 ```swift
 UInt32
 ```
 
-値
+Value
 
 ```
 0 = OFF
@@ -172,7 +172,7 @@ UInt32
 
 # Property Listener
 
-監視対象
+Monitored Properties
 
 ```swift
 kAudioHardwarePropertyDevices
@@ -186,7 +186,7 @@ kAudioDevicePropertyVolumeScalar
 kAudioDevicePropertyMute
 ```
 
-利用API
+API Used
 
 ```swift
 AudioObjectAddPropertyListenerBlock
@@ -194,7 +194,7 @@ AudioObjectAddPropertyListenerBlock
 
 ---
 
-# データモデル
+# Data Models
 
 ## AudioDevice
 
@@ -235,19 +235,19 @@ struct AudioState {
 
 ---
 
-# Manager構成
+# Manager Structure
 
 ## AudioDeviceManager
 
-責務
+Responsibilities
 
-- デバイス一覧取得
-- デフォルト入力取得
-- デフォルト出力取得
-- デフォルト入力変更
-- デフォルト出力変更
+- Get device list
+- Get default input device
+- Get default output device
+- Set default input device
+- Set default output device
 
-主な関数
+Main Methods
 
 ```swift
 func devices() -> [AudioDevice]
@@ -265,14 +265,14 @@ func setOutput(_ device: AudioDevice)
 
 ## AudioVolumeManager
 
-責務
+Responsibilities
 
-- 音量取得
-- 音量変更
-- ミュート取得
-- ミュート変更
+- Get volume
+- Set volume
+- Get mute status
+- Set mute status
 
-主な関数
+Main Methods
 
 ```swift
 func outputVolume() -> AudioVolume
@@ -292,13 +292,13 @@ func setInputMute(_ muted: Bool)
 
 ## AudioListener
 
-責務
+Responsibilities
 
-- CoreAudio Property Listener登録
-- 通知の管理
-- SwiftUIへの通知
+- Register CoreAudio Property Listeners
+- Manage notifications
+- Notify SwiftUI
 
-主な関数
+Main Methods
 
 ```swift
 func start()
@@ -312,7 +312,7 @@ func stop()
 
 ## AudioViewModel
 
-保持する状態
+State Properties
 
 ```swift
 @Published var devices
@@ -326,15 +326,15 @@ func stop()
 @Published var inputVolume
 ```
 
-責務
+Responsibilities
 
-- UIとのバインディング
-- Managerの呼び出し
-- Listenerからの更新反映
+- UI binding
+- Invoke managers
+- Apply updates from listeners
 
 ---
 
-# ディレクトリ構成
+# Directory Structure
 
 ```text
 Audio/
@@ -359,14 +359,14 @@ Audio/
 
 ---
 
-# 将来的な拡張
+# Future Enhancements
 
-- 左右チャンネル個別音量
-- サンプルレート変更
-- ビット深度変更
-- Audio Aggregate Device対応
-- AirPlay対応
-- Bluetoothデバイス情報取得
-- Audio MIDI Setupとの同期
-- 入出力VUメーター
-- 仮想オーディオデバイス対応（BlackHole・Loopbackなど）
+- Individual left / right channel volume control
+- Sample rate modification
+- Bit depth modification
+- Audio Aggregate Device support
+- AirPlay support
+- Retrieve Bluetooth device information
+- Synchronization with Audio MIDI Setup
+- Input / output VU meter
+- Virtual audio device support (BlackHole, Loopback, etc.)

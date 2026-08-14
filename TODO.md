@@ -1,103 +1,104 @@
-## アプリ機能
+## App Features
 
-### バグ修正
+### Bug Fixes
 
-### システムモニター
+### System Monitor
 
 #### CPU
-- [x] 使用率のグラフ (※ パーセンテージでの全体/コア表示を実装完了)
-- [x] コア単位での使用率
-- [x] クロック数
-- [x] 使用しているトッププロセス (アイコン取得込みで実装完了)
+- [x] Usage graph (* Percentage-based overall/per-core display implemented)
+- [x] Per-core usage rate
+- [x] Clock speed
+- [x] Top processes by usage (implemented with icon retrieval)
 
-#### メモリー
-- [x] アプリ、確保、圧縮、空きのメモリー量の取得、表示 (※全体の使用済みメモリ計算を実装完了)
-- [x] 使用しているトッププロセス (アイコン取得込みで実装完了)
+#### Memory
+- [x] Retrieve and display App, Wired, Compressed, and Free memory amounts (* Overall used memory calculation implemented)
+- [x] Top processes by usage (implemented with icon retrieval)
 
-#### DISK
-- [x] 使用率のグラフ
-- [x] 空き容量
-- [x] 使用しているトッププロセス (アイコン取得込みで実装完了)
-- [x] ディスクI/O速度（Read/Write MB/s）
+#### Disk
+- [x] Usage graph
+- [x] Free space
+- [x] Top processes by usage (implemented with icon retrieval)
+- [x] Disk I/O speed (Read/Write MB/s)
 
-#### ネットワーク
-- [x] 通信速度（上り・下り Mbps）のリアルタイム表示
+#### Network
+- [x] Real-time display of network speed (Up/Down Mbps)
 
-#### バッテリー＆電源
-- [x] バッテリー残量（%）の表示
-- [x] 充電状態（AC / バッテリー）と残り時間の表示
-- [x] 消費電力・充電電力のワット数(W)取得
+#### Battery & Power
+- [x] Battery level (%) display
+- [x] Charging status (AC / Battery) and remaining time display
+- [x] Power consumption / charging wattage (W) retrieval
 
-#### GPU＆ハードウェアセンサー
-- [x] GPU使用率の取得・表示
-- [x] Macの温度（サーマルステータス）の取得・表示
+#### GPU & Hardware Sensors
+- [x] GPU usage retrieval and display
+- [x] Mac temperature (thermal status) retrieval and display
 
-### ユーティリティ・OS操作機能
+### Utilities & OS Operations
 
-#### ネットワーク系 (Wifi/Bluetooth)
-- [x] Wifiの接続、切り替え
-    - [x] ローカルIPの表示
-    - [x] 周辺のWi-Fiリスト表示機能 (ポップオーバーUI実装完了)
-    - [x] 新規接続の機能 (CoreWLANによるパスワード接続実装完了)
-    - [x] 接続、切断機能
+#### Networking (Wi-Fi / Bluetooth)
+- [x] Wi-Fi connection and switching
+    - [x] Local IP display
+    - [x] Nearby Wi-Fi list display (popover UI implemented)
+    - [x] New connection feature (CoreWLAN password connection implemented)
+    - [x] Connect / disconnect feature
 
-#### メディア＆オーディオ
-- [x] 再生中の楽曲情報の表示（Apple Music, Spotify等）
-- [x] 再生・停止・スキップのコントロール機能
-- [x] スピーカー音量 / マイク入力レベルの表示とミュート切替
-- [x] オーディオのインプット、アウトプットの変更
+#### Media & Audio
+- [x] Display playing track info (Apple Music, Spotify, etc.)
+- [x] Play / pause / skip controls
+- [x] Speaker volume / microphone input level display and mute toggle
+- [x] Change audio input / output
 
-#### 日常ツール
-- [ ] 時計 / カレンダー表示（※現在時刻表示は実装完了）
-- [ ] カフェイン機能（クリック中はMacをスリープさせない機能）
+#### Daily Tools
+- [ ] Clock / Calendar display (* Current time display implemented)
+- [ ] Caffeinate feature (prevent Mac from sleeping when enabled)
 
-#### システム
-- [x] スリープ、再起動、シャットダウン、ログアウト
-- [ ] 全画面にした時に表示するorしないを設定　
-- [x] このMacについて
-- [ ] 現在のアプリを強制終了
+#### System
+- [x] Sleep, restart, shutdown, logout
+- [ ] Setting to show or hide in fullscreen
+- [x] About This Mac
+- [ ] Force quit current app
 
-### 通知
-- [ ] ユーザーが取得した通知を表示できる様にする
-- [ ] UIをクリックしたら情報の表示をできる様にする
+### Notifications
+- [ ] Enable displaying notifications received by user
+- [ ] Show information when UI is clicked
 
-### 天気
-- [ ] APIプロバイダーからお天気情報を取得
-- [ ] 表示する地域の天気をその場で、入力して変更可能に
+### Weather
+- [ ] Fetch weather information from API provider
+- [ ] Allow on-the-fly change of displayed location's weather by input
 
-### OS連携＆コアシステム
-- [ ] MacBookビルドインモニターになった場合にUIを自動調節
-- [ ] 表示するモニターを決めれる
-- [ ] ログイン時に起動するか（Launch at login）
-- [ ] 権限リクエストUI（プロセス情報やOS制御に必要なAccessibility/Root権限の取得フロー）
-- [x] スリープ復帰時やモニター変更時の描画位置ズレ修正（常駐バーとしてのUI固定化）
+### OS Integration & Core System
+- [ ] Auto-adjust UI when using MacBook built-in monitor
+- [ ] Choose which monitor to display on
+- [ ] Launch at login option
+- [ ] Permission request UI (Accessibility/Root permission acquisition flow required for process info and OS control)
+- [x] Fix rendering position shift upon waking from sleep or changing monitors (fix UI as persistent bar)
 
-### 設定＆アーキテクチャ
-- [ ] 設定を変更できる簡易アプリの作成
-- [ ] [#サーバー]のテンプレートのダウンロードボタン
-- [ ] 表示するUIの設定
-- [ ] テーマファイルのフォーマット定義（JSON/YAML/Luaなど、カスタマイズ用の仕様策定）
-- [ ] アプリの自動アップデート機能（Sparkle等の導入）
+### Settings & Architecture
+- [ ] Create a simple app to modify settings
+- [ ] Download button for [#Server] templates
+- [ ] Settings for displayed UI
+- [ ] Define theme file format (specifications for customization such as JSON/YAML/Lua)
+- [ ] App auto-update feature (introduce Sparkle, etc.)
 
-### IDEA
-- [ ] ターマーの作成
-- [ ] Ghostty,Tmux,starshipなどのアプリのテーマを一括で管理+壁紙の変更
+### Ideas
+- [ ] Create timer
+- [ ] Manage themes for apps like Ghostty, Tmux, Starship in batch + change wallpaper
 
-## ウェブサイト
-- [ ] 作る！！！！
+## Website
+- [ ] Build it!
 
-## FIX
-- [ ] 回線速度UIにローカルIP、DNS、パケットロスを表示
-- [ ] 既に再生した事ある曲の画像をキャッシュして、初めて流す曲はそこから取得
-- [ ] 全画面モードで表示、非表示
+## Fixes
+- [ ] Display local IP, DNS, and packet loss in network speed UI
+- [ ] Cache artwork of previously played songs, fetch from cache for newly played songs
+- [ ] Show / hide in fullscreen mode
 
-## ADD
-- [ ] IS IT POSSIBLE TO ADD PERFECT BLUETOOTH MANAGER IN APP LEVEL?
+## Additions
+- [ ] Is it possible to add a complete Bluetooth manager at the app level?
 
-## ESSENTIAL
-- [ ] カレンダー
+## Essential
+- [ ] Calendar
 - [ ] CAVA UI
-- [ ] 天気
+- [ ] Weather
+- [ ] Make system display UI collapsible; collapse only specified icons
 
-- [ ] IP表示
-- [ ] 設定管理
+- [ ] IP display
+- [ ] Settings management

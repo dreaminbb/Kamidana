@@ -18,5 +18,7 @@
 	<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>
 	<key>NSLocationUsageDescription</key>
 	<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>周辺のBluetoothデバイスを検索して接続状態を表示するために使用します。</string>
 </dict>
 </plist>

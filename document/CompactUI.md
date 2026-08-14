@@ -1,34 +1,34 @@
-r# Compact UI
+# Compact UI
 
-内蔵ディスプレイ時のコンパクト表示は `UISettingsStore` で管理します。
+Compact display for built-in displays is managed by `UISettingsStore`.
 
-## 設定変数
+## Configuration Variables
 
 - `displayModePolicy`
-  - `.auto`: built-in 判定時のみ compact
-  - `.alwaysCompact`: 常に compact
-  - `.alwaysRegular`: 常に通常表示
+  - `.auto`: compact only when built-in display is detected
+  - `.alwaysCompact`: always compact
+  - `.alwaysRegular`: always regular display
 - `collapsedWidgets`
-  - compact 時に折りたたむウィジェットの集合
-  - 初期値: `disk`, `gpu`
+  - Set of widgets to collapse in compact mode
+  - Default value: `disk`, `gpu`
 
-## 保存先
+## Storage Location
 
-`UserDefaults` の以下キーに永続化されます。
+Persisted in the following keys in `UserDefaults`:
 
 - `ui.displayModePolicy`
 - `ui.collapsedWidgets`
 
-## 判定ロジック
+## Detection Logic
 
 - `DisplayDetector.isBuiltInMainDisplay()`
-  - `NSScreen.main` から `NSScreenNumber` を取得
-  - `CGDisplayIsBuiltin` で built-in 判定
+  - Retrieve `NSScreenNumber` from `NSScreen.main`
+  - Determine built-in display status using `CGDisplayIsBuiltin`
 
-## UI挙動
+## UI Behavior
 
-- compact 判定時はフォントと間隔を縮小
-- 右側は **CPU / Memory のみ常時表示**
-- その他（Network / GPU / Disk / Battery / Clock）は `list.bullet` アイコン配下に折りたたみ
-- Audio codec は常時表示せず、popover 内でのみ表示
-- Music は左側グループに置き、Wi-Fiの左に表示
+- Reduce font size and spacing when compact mode is active
+- On the right side, **only CPU / Memory are always displayed**
+- Others (Network / GPU / Disk / Battery / Clock) are collapsed under the `list.bullet` icon
+- Audio codec is not always displayed; it is shown only inside the popover
+- Music is placed in the left group and displayed to the left of Wi-Fi

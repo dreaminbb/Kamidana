@@ -7,10 +7,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: NSWindow!
     let barHeight: CGFloat = 600  // アイランド展開に対応できるよう、高さを大きく拡大
 
+    static let sharedDelegate = AppDelegate()
+
     static func main() {
         let app = NSApplication.shared
-        let delegate = AppDelegate()
-        app.delegate = delegate
+        app.delegate = sharedDelegate
         app.run()
     }
 
@@ -19,7 +20,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 最初のウィンドウ作成
         statusBarWindow = NSWindow(
-            contentRect: .zero,  // あとで updateWindowPosition で計算するため最初はzero
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -39,6 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusBarWindow.makeKeyAndOrderFront(nil)
         statusBarWindow.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
 
         // 【追加】ディスプレイの設定変更（抜き差しや解像度変更）を監視
         NotificationCenter.default.addObserver(
@@ -132,9 +134,10 @@ struct StatusBarView: View {
                         .zIndex(100)
                 }
             }
-            .frame(height: 35)
+            .frame(height: 40)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 10)
+            .padding(.top, 5)
 
             // 右側のウィジェット群
             HStack(
@@ -161,20 +164,21 @@ struct StatusBarView: View {
                     }
                 }
             )
-            .frame(height: 35)
+            .frame(height: 40)
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, 10)
+            .padding(.top, 5)
 
             // 通常モード（外部画面）の場合のみ、画面の真ん中の一番上に配置
             if !compactMode {
                 KamidanaIsland(theme: theme, musicManager: musicManager)
                     .fixedSize()
-                    .padding(.top, 2)
+                    .padding(.top, 7)
                     .zIndex(100)
             }
         }
         .environment(\.compactMode, compactMode)
-        .font(.system(size: compactMode ? 11 : 12, weight: .semibold, design: .monospaced))
+        .font(.system(size: compactMode ? 13 : 14, weight: .semibold, design: .monospaced))
         .frame(maxWidth: .infinity, maxHeight: 600, alignment: .top)
         .background(Color.clear)
         .onAppear {
