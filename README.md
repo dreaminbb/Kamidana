@@ -93,9 +93,9 @@ nerdfont.toml       # Icon character mappings
 
 ## Contributing
 
-Contributions are welcome! If you'd like to help:
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct, development setup, and pull request process.
 
-1. Check the [Issues](../../issues) for tasks tagged `good first issue` or `help wanted`
+1. Check the [Issues](../../issues) and [Project Board](https://github.com/users/dreaminbb/projects/11) for tasks tagged `good first issue` or `help wanted`
 2. Fork the repo and create a feature branch
 3. Submit a Pull Request
 

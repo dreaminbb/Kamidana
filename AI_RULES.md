@@ -1,31 +1,116 @@
-# AI 開発アシスタント用ガイドライン (AI Rules)
+# AI Assistant Development Guidelines (AI Rules)
 
-Kamidana (神棚) プロジェクトにおいて、AIアシスタントがコードを生成・編集する際に遵守すべきルールです。
+These rules and guidelines must be strictly adhered to by all AI assistants generating, modifying, or reviewing code in the **Kamidana** project.
 
-## 1. プロジェクトのコンテキスト
-- **プロジェクト名**: Kamidana (神棚)
-- **概要**: macOS向けのカスタマイズ可能で美しいトップバー（メニューバー）UIアプリ。
-- **特徴**: ネイティブアプリのような自然な操作感、外部アプリ用APIのサポート、設定ファイルによる柔軟なGUIカスタマイズ。
+---
 
-## 2. コーディング規約・スタイル
-- **言語・フレームワーク**: macOSアプリの標準的な開発手法（Swift, SwiftUI, AppKit など）に準拠すること。
-- **可読性・保守性**: 複雑すぎるロジックを避け、シンプルで他の開発者にも読みやすいコードを心掛けること。
-- **既存コードの尊重**: ユーザーからの明示的な指示がない限り、既存のコメントやドキュメント文字列（Docstring）を削除・改変しないこと。
-- **堅牢性**: クラッシュを防ぐため、オプショナル値の安全なアンラップや、適切なエラーハンドリング（`do-catch` 等）を必ず実装すること。
+## 0. [MANDATORY] Pre-Implementation Documentation Review
+Before writing or modifying any code, designing UI components, or implementing new features, the AI assistant **MUST read and follow all relevant documents in the `document/` directory** to understand the architecture, design principles, and project standards.
 
-## 3. 振る舞い・コミュニケーション
-- **使用言語**: ユーザーとの対話や説明は、基本的に「日本語」で行うこと。
-- **簡潔さ**: レスポンスは簡潔にまとめ、不必要に冗長な説明を避けること。
-- **推測の排除**: ユーザーの意図が不明確な場合や、大規模・破壊的な変更を伴う場合は、独断で進めずに必ず質問して確認すること。
-- **質問**: ユーザーからの質問に対して、コードを修正したり実装をいきなり行わない事
+Key Reference Documents:
+- [`document/UI_DESIGN.md`](document/UI_DESIGN.md): UI architecture, Compact Mode, Island specifications, and widget design principles.
+- [`document/Logging.md`](document/Logging.md): Logging standards and guidelines.
+- [`document/CompactUI.md`](document/CompactUI.md): Compact Mode implementation guidelines.
+- [`document/Audio.md`](document/Audio.md): CoreAudio / AudioDeviceManager specifications.
+- [`document/SwiftTermUsage.md`](document/SwiftTermUsage.md): Embedded terminal integration details.
 
-## 4. ファイル編集の原則
-- 必要な部分のみをピンポイントで修正・編集すること。
-- 依頼されていない無関係なファイルやコードのフォーマット変更は行わないこと。
+---
 
-## 5. ユーザーのコーディングスキル向上を支援するメンタリング（超重要）
-ユーザーはAIにコード作成を丸投げし、自らの実装力や思考力が低下することを危惧しています。AIは単なる「コード出力機」ではなく「ペアプログラミングの先輩・メンター」として以下の振る舞いを徹底してください。
-- **ヒントとフローの提示を優先**: 質問に対し、いきなり完全な完成コードを出力するのではなく、まずは「実装の流れ（日本語でのロジック）」や「使うべきAPI・フレームワークのヒント」を提示し、ユーザーが自分で考える余白を残すこと。
-- **思考を促す**: ユーザーが中途半端なコードを提示してきた場合、残りを全自動で書くのではなく「どこで詰まっているか」「次にどうすべきだと思うか」を問いかけること。
-- **公式リファレンスの活用を促す**: 新しい関数やAPIを提示する際は、公式ドキュメント（Apple Developer等）の検索キーワードや参照を促し、自ら調べる癖をつけるようサポートすること。
-- **「写経」を前提とした解説**: コードを提示する際は、思考停止のコピペを防ぐため、重要な演算子や特有の処理について「なぜこう書くのか」という背景の解説を必ず添え、ユーザーが自分でタイピングしながら理解できるようにすること。
+## 1. OSS Architectural Foundation & Development Consistency
+Kamidana is built as a collaborative, open-source status bar engine inspired by YASB. To support long-term scalability and external contributors:
+
+1. **Foundational Architecture Over Quick-Wins**:
+   - Always prioritize decoupled, configuration-driven infrastructure (e.g., config parsers, dynamic widget registries, modular manager services) over hardcoding one-off features directly into views.
+   - Adding features through ad-hoc hardcoding in `StatusBarView` introduces technical debt and causes merge conflicts for OSS contributors. Build the proper architectural foundation first.
+2. **Strict Consistency Across Features**:
+   - All widgets must strictly adhere to the same design tokens, lifecycle patterns, and modular modifier standards (`.SmoothUIModule(theme:)`, monospaced dynamic metrics, `NerdFontIcon` constructor sizing).
+   - Ensure new code is modular, reusable, and self-contained so other developers can follow existing patterns as reference implementations.
+3. **Objective Technical Honesty (Anti-Sycophancy)**:
+   - When evaluating roadmaps, architecture, or priority trade-offs, provide grounded, objective technical reasoning. Never compromise on architectural integrity or switch technical stances merely to appease the user.
+
+---
+
+## 2. Core AI Constraints & Code Quality Standards
+To maintain high code quality, readability, and portability as an open-source project:
+
+1. **English Only**:
+   - All source code, identifiers, comments (`//`, `///`), docstrings, commit messages, and log messages **must be written in English**.
+2. **Strictly No Emojis**:
+   - **Do not include emojis** in source comments, `print` statements, error logs, or code identifiers.
+3. **No Hardcoded User Paths**:
+   - Never write absolute paths tied to a specific user environment (e.g., `/Users/username/...`). Always use dynamic path resolution (`Bundle.main.resourcePath`, `Bundle.main.bundlePath`, `FileManager.default`, or relative fallbacks).
+4. **Icon Usage Standard (`NerdFontIcon`)**:
+   - Do not use SF Symbols or raw emojis directly in widgets. Use `NerdFontIcon` mapped in [`nerdfont.toml`](nerdfont.toml).
+   - **Always pass size directly to the constructor**: Use `NerdFontIcon(.<icon>, size: xx)`. Do **NOT** set the icon size using chained `.font(.system(size: xx))` or `.frame(...)` modifiers.
+     ```swift
+     // Recommended
+     NerdFontIcon(.music, size: 18)
+     NerdFontIcon(.appleLogo, size: 14)
+
+     // Prohibited
+     NerdFontIcon(.music).font(.system(size: 18))
+     ```
+5. **Clean & Silent Logging**:
+   - Avoid noisy, continuous print statements inside timer callbacks or periodic polling loops.
+6. **Robustness & Crash Prevention**:
+   - Always implement safe unwrapping of optionals and proper error handling (`do-catch`).
+   - Be mindful of AppKit delegate lifecycles (e.g., preventing premature deallocation of `weak` references like `NSApplication.shared.delegate`).
+
+---
+
+## 3. Architecture & System Design Rules
+
+### View & Model Separation
+- Keep SwiftUI `View` bodies purely declarative and lightweight.
+- Move heavy data fetching, system polling, process inspection, and C-API bindings (CoreAudio, CoreWLAN, IOBluetooth, mach kernel APIs) into dedicated manager classes conforming to `ObservableObject`.
+- Place backend managers in `Sources/Kamidana/module/` or `Sources/Kamidana/Audio/`.
+
+### Threading & UI Safety
+- **Main Thread UI Updates**: Any mutation to `@Published` properties that drives UI re-renders must occur on the main thread (`DispatchQueue.main.async` or `@MainActor`).
+- **Background Execution**: Perform heavy system inspection, process monitoring, disk I/O calculations, and shell commands on background queues (`DispatchQueue.global(qos: .utility)` or `.userInitiated`). Never block the main thread.
+
+### Widget Consistency & Theming
+- **Module Wrapper**: All standalone status bar widgets must be wrapped with `.SmoothUIModule(theme:)` to ensure uniform frosted glass backgrounds (`.ultraThinMaterial`), corner radiuses, padding, and hover states.
+- **Semantic Colors**: Never hardcode colors (`Color.red`, raw RGB/Hex values). Always use semantic tokens from the active `Theme` instance (e.g., `theme.textPrimary`, `theme.textSecondary`, `theme.accent`, `theme.surface`, `theme.warning`, `theme.caution`).
+- **Layout Stability**: Use `.monospaced` or `.monospacedDigit()` for real-time dynamic numerical values (CPU %, RAM usage, network speeds, clock) to prevent UI jitter and width fluctuations.
+
+---
+
+## 4. Function & Identifier Naming Conventions
+
+Follow the official **Swift API Design Guidelines**:
+
+### Functions & Methods
+- **Action Verbs for Mutating / Imperative Operations**: Name methods starting with clear verbs describing the action:
+  - `startMonitoring()`, `stopMonitoring()`
+  - `fetchAvailableNetworks()`, `scanForDevices()`
+  - `toggleMute()`, `changeTrack(direction:)`, `seek(to:)`
+  - `updateWindowPosition()`
+- **Noun Phrases for Non-Mutating Accessors / Formatters**:
+  - `formattedBandwidth(bytes:) -> String`
+  - `resolveConfigPath() -> String?`
+
+### Properties & Variables
+- **Boolean Properties**: Must read as assertions. Prefix with `is`, `has`, `can`, or `should`:
+  - `isPlaying`, `isHovered`, `isBluetoothOn`, `isInputMuted`
+  - `hasBattery`, `canExpand`
+- **State & Observable Objects**:
+  - `@StateObject private var netManager = NetworkManager()`
+  - `@ObservedObject var musicManager: MusicPlayingManager`
+
+### Types & Protocols
+- **Types (Classes, Structs, Enums)**: Use UpperCamelCase (PascalCase) with descriptive nouns:
+  - `BluetoothManager`, `SystemMatrix`, `NerdFontIconType`
+- **Protocols**:
+  - Use nouns for what something is: `AudioListener`
+  - Use `-able` or `-ible` suffixes for describing capabilities: `Themeable`, `ConfigurableWidget`
+- **Enum Cases**: Use lowerCamelCase:
+  - `.bluetooth`, `.appleLogo`, `.batteryHalf`, `.arrowClockwise`
+
+---
+
+## 5. Communication & File Editing Principles
+- **Response Language**: Communicate with the user in Japanese (or user's preferred language), while keeping all codebase artifacts in English.
+- **Conciseness**: Keep responses clear, concise, and focused. Avoid unnecessary fluff.
+- **Pinpoint Edits**: Make surgical, minimal edits only to relevant sections of files. Do not modify unrelated files.
+- **No Assumptions**: If the user's intent is ambiguous or involves destructive refactoring, confirm with the user before proceeding.
