@@ -32,7 +32,7 @@ public class AudioViewModel: ObservableObject {
         }
         listener.start()
         
-        // 音量変更の外部からの変更を検知するためのポーリング（より安全）
+        // Polling to detect external volume changes (safer)
         timer = Timer.publish(every: 1.0, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
@@ -86,7 +86,7 @@ public class AudioViewModel: ObservableObject {
     
     public func changeOutputDevice(_ device: AudioDevice) {
         deviceManager.setOutput(device)
-        // 変更直後に再取得
+        // Refetch immediately after change
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.fetchInitialState()
         }
@@ -104,7 +104,7 @@ public class AudioViewModel: ObservableObject {
     
     public func changeInputDevice(_ device: AudioDevice) {
         deviceManager.setInput(device)
-        // 変更直後に再取得
+        // Refetch immediately after change
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.fetchInitialState()
         }

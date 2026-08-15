@@ -62,7 +62,7 @@ struct BluetoothWidget: View {
                 Divider()
                     .background(theme.surfaceHighlight)
 
-                // 設定画面を開くボタン
+                // Open settings button
                 SettingsRowButton(theme: theme) {
                     bluetooth.openBluetoothSettings()
                 }

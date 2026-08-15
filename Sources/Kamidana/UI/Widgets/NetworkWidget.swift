@@ -63,7 +63,7 @@ struct NetworkWidget: View {
         }
     }
 
-    // バイト数を綺麗にフォーマットするヘルパー関数
+    // Helper function to format byte counts cleanly
     private func formatBytes(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useKB, .useBytes]

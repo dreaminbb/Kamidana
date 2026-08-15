@@ -10,20 +10,20 @@ struct MusicWidget: View {
     @State private var sliderValue: Double = 0.0
     @State private var dragUUID = UUID()
 
-    // 回転アニメーション用のタイマー
+    // Timer for rotation animation
     let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
 
     var body: some View {
         if !musicManager.title.isEmpty {
-            // アイランドの領域全体を贅沢に使うUI
+            // UI utilizing full island area
             HStack(alignment: .center, spacing: 40) {
-                // 左側：特大サイズのアートワーク
+                // Left: Large artwork
                 artworkView(size: 180)
 
-                // 右側：曲情報、コントロール群、シークバー
+                // Right: Track info, controls, and seek bar
                 VStack(spacing: 24) {
 
-                    // 1. タイトルとアーティスト
+                    // 1. Title and artist
                     VStack(spacing: 8) {
                         Text(musicManager.title)
                             .font(.system(size: 28, weight: .bold))
@@ -36,7 +36,7 @@ struct MusicWidget: View {
                             .lineLimit(1)
                     }
 
-                    // 2. スキップ・停止（再生/一時停止）ボタン
+                    // 2. Skip and play/pause controls
                     HStack(spacing: 40) {
                         Button(action: { musicManager.changeTrack(direction: .previous) }) {
                             NerdFontIcon(.backward, size: 35)
@@ -55,7 +55,7 @@ struct MusicWidget: View {
                     }
                     .padding(.top, 8)
 
-                    // 3. シークバーと時間（スキップ停止の下）
+                    // 3. Seek bar and time display (below playback controls)
                     if musicManager.trackTime > 0 {
                         HStack(spacing: 12) {
                             Text(
@@ -81,8 +81,8 @@ struct MusicWidget: View {
                                     } else {
                                         musicManager.seek(to: sliderValue)
                                         let currentUUID = dragUUID
-                                        // 🌟 AppleScriptでプレイヤーの時間が実際に更新されるまでのタイムラグを考慮し、
-                                        // すぐに元の時間に引き戻されないよう、状態の解除を1秒遅延させます
+                                        // Delay clearing drag state by 1 second to account for time lag
+                                        // before AppleScript updates player position, preventing slider snapback
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                                             if self.dragUUID == currentUUID {
                                                 isDraggingSlider = false
@@ -111,7 +111,7 @@ struct MusicWidget: View {
                 }
             }
         } else {
-            // 音楽が再生されていない時のUI
+            // UI when no music is playing
             VStack(spacing: 16) {
                 NerdFontIcon(.music)
                     .font(.system(size: 48))
@@ -124,7 +124,7 @@ struct MusicWidget: View {
         }
     }
 
-    // アートワーク部分
+    // Artwork view
     @ViewBuilder
     private func artworkView(size: CGFloat) -> some View {
         Group {
@@ -147,7 +147,7 @@ struct MusicWidget: View {
         .overlay(Circle().stroke(theme.surfaceBorder.opacity(0.5), lineWidth: 2))
     }
 
-    // 秒数を mm:ss 形式にフォーマットするユーティリティ
+    // Utility to format seconds into mm:ss format
     private func formatTime(_ time: Double) -> String {
         guard !time.isNaN && !time.isInfinite else { return "0:00" }
         let totalSeconds = Int(time)

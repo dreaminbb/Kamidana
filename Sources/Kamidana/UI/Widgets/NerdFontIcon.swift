@@ -50,16 +50,16 @@ public struct NerdFontIcon: View {
     public let type: NerdFontIconType
     public let size: CGFloat
 
-    // NerdFont特有のフォントのずれ（ベースラインや位置）を補正するパラメータ
+    // Parameters to correct font misalignment (baseline and position) specific to Nerd Fonts
     public let xOffset: CGFloat
     public let yOffset: CGFloat
 
-    /// NerdFontアイコンを表示するコンポーネント
+    /// Component that displays a Nerd Font icon
     /// - Parameters:
-    ///   - type: 表示するアイコンの種類
-    ///   - size: アイコンのフォントサイズおよび確保するフレームの大きさ (デフォルト: 16)
-    ///   - xOffset: X軸の微調整 (デフォルト: 0)
-    ///   - yOffset: Y軸の微調整 (デフォルト: 0)
+    ///   - type: Type of icon to display
+    ///   - size: Font size of the icon and size of the reserved frame (default: 16)
+    ///   - xOffset: Fine-tuning along the X axis (default: 0)
+    ///   - yOffset: Fine-tuning along the Y axis (default: 0)
     public init(
         _ type: NerdFontIconType, size: CGFloat = 16, xOffset: CGFloat = 0, yOffset: CGFloat = 0
     ) {
@@ -71,21 +71,21 @@ public struct NerdFontIcon: View {
 
     public var body: some View {
         let keyName = String(describing: type)
-        // TOMLから値を読み込む。未定義の場合は"?"で表示してデバッグしやすくする
+        // Read value from TOML. If undefined, display "?" for easier debugging
         let displayIcon = NerdFontManager.shared.icon(for: keyName) ?? "?"
 
         Text(displayIcon)
-            // フォントの種類は環境に合わせて変更できるようにする
-            // 多くの環境で `Symbols Nerd Font` 等が使われるため、必要に応じてフォント名を指定
-            // もしNerd Fontがシステムにインストールされていない場合はシステムフォントがフォールバックされる
+            // Allow font type to be changed depending on the environment
+            // In many environments, fonts like `Symbols Nerd Font` are used, so specify the font name as needed
+            // If Nerd Font is not installed on the system, system font is used as a fallback
             .font(.custom("JetBrainsMono Nerd Font Mono", size: size))
             .lineLimit(1)
             .minimumScaleFactor(1.0)
-            // テキストのベースラインや行間の余白によるレイアウトの崩れを防ぐため、フレームを固定サイズにする
+            // Use a fixed frame size to prevent layout breakage due to text baselines and line spacing margins
             .frame(width: size, height: size, alignment: .center)
-            // 位置の微調整
+            // Fine-tune position
             .offset(x: xOffset, y: yOffset)
-            // 他のUI要素のレイアウト計算に影響を与えないように固定サイズ化
+            // Fix size to prevent affecting layout calculations of other UI elements
             .fixedSize()
     }
 }

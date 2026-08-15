@@ -9,7 +9,7 @@ class MusicPlayingManager: ObservableObject {
         case spotify
     }
 
-    // UI側でリアルタイムに画面を書き換えるための変数
+    // Variables for real-time UI updates
     @Published var title: String = ""
     @Published var artist: String = ""
     @Published var album: String = ""
@@ -19,7 +19,7 @@ class MusicPlayingManager: ObservableObject {
     @Published var currentPosition: Double = 0
     @Published var trackTime: Double = 0
 
-    // 定期取得用のタイマー
+    // Timer for periodic fetching
     private var timer: AnyCancellable?
 
     init() {
@@ -27,7 +27,7 @@ class MusicPlayingManager: ObservableObject {
     }
 
     private func startMonitoring() {
-        print("🎵 start music monitoring (AppleScript)")
+        print("[MusicManager] Start music monitoring (AppleScript)")
 
         timer = Timer.publish(every: 2.0, on: .main, in: .common)
             .autoconnect()
@@ -35,7 +35,7 @@ class MusicPlayingManager: ObservableObject {
                 self?.fetchNowPlaying()
             }
 
-        // Viewの初期化中に同期的に@Publishedを更新するとSwiftUIがクラッシュするため非同期化
+        // Dispatch asynchronously to prevent SwiftUI crash from synchronously updating @Published during view initialization
         DispatchQueue.main.async { [weak self] in
             self?.fetchNowPlaying()
         }
@@ -53,7 +53,7 @@ class MusicPlayingManager: ObservableObject {
 
     }
 
-    // MARK: - メインの取得処理
+    // MARK: - Main Fetch Process
 
     private func fetchNowPlaying() {
 
@@ -72,15 +72,15 @@ class MusicPlayingManager: ObservableObject {
             }
 
         }
-        // どちらも再生していなければ空にする
+        // Clear info if neither app is playing
         clearInfo()
     }
 
-    // MARK: - Spotify からの取得
+    // MARK: - Fetch from Spotify
 
-    /// Spotifyから再生情報を取得する。成功したら true を返す。
+    /// Fetch playback information from Spotify. Returns true on success.
     private func fetchFromSpotify() -> Bool {
-        // Spotifyが起動しているか & 再生中/一時停止中かを確認するスクリプト
+        // Script to check if Spotify is running and whether it is playing/paused
         let checkScript = """
             tell application "System Events"
                 if not (exists process "Spotify") then return "NOT_RUNNING"
@@ -114,16 +114,16 @@ class MusicPlayingManager: ObservableObject {
         album = parts[2]
         isPlaying = (parts[4] == "playing")
         currentPosition = Double(parts[5]) ?? 0.0
-        // Spotifyのdurationはミリ秒なので秒に変換
+        // Spotify duration is in milliseconds, convert to seconds
         trackTime = (Double(parts[6]) ?? 0.0) / 1000.0
 
         // print(
-        //     "🎵 [Spotify] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
+        //     "[Spotify] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
         // )
 
-        // アートワークURLから画像をダウンロード（バックグラウンド）
+        // Download artwork image from URL (in background)
         let artworkURLString = parts[3]
-        // 無駄なトラフィックを防ぐために、曲が変わった際にのみ取得する
+        // Fetch only when the song changes to avoid unnecessary network traffic
         if previousTitle != title {
             loadArtwork(from: artworkURLString)
 
@@ -133,9 +133,9 @@ class MusicPlayingManager: ObservableObject {
         return true
     }
 
-    // MARK: - Music.app からの取得
+    // MARK: - Fetch from Music.app
 
-    /// Music.appから再生情報を取得する。成功したら true を返す。
+    /// Fetch playback information from Music.app. Returns true on success.
     private func fetchFromMusicApp() -> Bool {
         let checkScript = """
             tell application "System Events"
@@ -170,18 +170,18 @@ class MusicPlayingManager: ObservableObject {
         trackTime = Double(parts[5]) ?? 0.0
 
         // print(
-        //     "🎵 [Music] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
+        //     "[Music] title: \(title) | artist: \(artist) | album: \(album) | playing: \(isPlaying)"
         // )
 
-        // Music.appのアートワークはAppleScriptで直接データとして取得
+        // Music.app artwork is fetched directly as raw data via AppleScript
         loadMusicAppArtwork()
 
         return true
     }
 
-    // MARK: - アートワーク取得
+    // MARK: - Fetch Artwork
 
-    /// Spotify: URLから画像をダウンロードする
+    /// Spotify: Download image from URL
     private func loadArtwork(from urlString: String) {
         guard let url = URL(string: urlString) else {
             artwork = nil
@@ -198,7 +198,7 @@ class MusicPlayingManager: ObservableObject {
         }.resume()
     }
 
-    /// Music.app: AppleScriptで画像データを直接取得する
+    /// Music.app: Fetch raw image data directly using AppleScript
     private func loadMusicAppArtwork() {
         let script = """
             tell application "Music"
@@ -211,7 +211,7 @@ class MusicPlayingManager: ObservableObject {
             end tell
             """
 
-        // AppleScriptの実行結果からデータを取り出す
+        // Extract data from AppleScript execution result
         let appleScript = NSAppleScript(source: script)
         var errorInfo: NSDictionary?
         let result = appleScript?.executeAndReturnError(&errorInfo)
@@ -223,23 +223,23 @@ class MusicPlayingManager: ObservableObject {
         }
     }
 
-    // MARK: - ユーティリティ
+    // MARK: - Utilities
 
-    /// AppleScriptを実行し、結果を文字列として返す
+    /// Execute AppleScript and return the result as a string
     private func runAppleScript(_ source: String) -> String? {
         let appleScript = NSAppleScript(source: source)
         var errorInfo: NSDictionary?
         let result = appleScript?.executeAndReturnError(&errorInfo)
 
         if let error = errorInfo {
-            print("⚠️ AppleScript error: \(error)")
+            print("[AppleScript] Error: \(error)")
             return nil
         }
 
         return result?.stringValue
     }
 
-    /// 再生情報をクリアする
+    /// Clear playback information
     private func clearInfo() {
         if !title.isEmpty || isPlaying {
             title = ""
@@ -314,8 +314,8 @@ class MusicPlayingManager: ObservableObject {
 
     public func pauseMusic() {
         let appName = currentPrimaryAppStr()
-        // SpotifyとMusicの両方で playpause コマンドが使用可能です
-        // これにより再生中は一時停止し、一時停止中は再生します
+        // The playpause command is supported by both Spotify and Music.
+        // This toggles between play and pause.
         let pauseScript = """
                         tell application "System Events"
                             if not (exists process "\(appName)") then return "NOT_RUNNING"
@@ -327,13 +327,13 @@ class MusicPlayingManager: ObservableObject {
             """
 
         if let result = runAppleScript(pauseScript), result == "SUCCESS" {
-            // UIを即座に反映させるために手動で状態を更新するか、
-            // 次回のタイマー処理(2秒ごと)に任せます。
+            // State can be updated manually for immediate UI reflection,
+            // or handled by the next timer cycle (every 2 seconds).
             return
         }
     }
     
-    // MARK: - シーク（再生位置の変更）
+    // MARK: - Seek (Change playback position)
     public func seek(to seconds: Double) {
         let appName = currentPrimaryAppStr()
         let script = """

@@ -5,7 +5,7 @@ public class AudioDeviceManager {
     
     public init() {}
     
-    /// 接続されているすべてのオーディオデバイスのIDを取得します
+    /// Get IDs of all connected audio devices
     private func getDeviceIDs() -> [AudioDeviceID] {
         let result: Result<[AudioDeviceID], AudioError> = AudioProperty.getArrayProperty(
             objectID: AudioObjectID(kAudioObjectSystemObject),
@@ -28,7 +28,7 @@ public class AudioDeviceManager {
         return status == noErr && dataSize > 0
     }
     
-    /// すべてのオーディオデバイスの情報を取得します
+    /// Get information of all audio devices
     public func devices() -> [AudioDevice] {
         return getDeviceIDs().map { id in
             let name = getDeviceName(deviceID: id)
@@ -46,7 +46,7 @@ public class AudioDeviceManager {
         return devices().filter { $0.isInput }
     }
     
-    /// デフォルトの出力（スピーカー等）デバイスIDを取得します
+    /// Get default output (speaker, etc.) device ID
     public func defaultOutputDeviceID() -> AudioDeviceID? {
         let result: Result<AudioDeviceID, AudioError> = AudioProperty.getProperty(
             objectID: AudioObjectID(kAudioObjectSystemObject),
@@ -59,7 +59,7 @@ public class AudioDeviceManager {
         }
     }
     
-    /// デフォルトの入力（マイク等）デバイスIDを取得します
+    /// Get default input (microphone, etc.) device ID
     public func defaultInputDeviceID() -> AudioDeviceID? {
         let result: Result<AudioDeviceID, AudioError> = AudioProperty.getProperty(
             objectID: AudioObjectID(kAudioObjectSystemObject),
@@ -72,7 +72,7 @@ public class AudioDeviceManager {
         }
     }
     
-    /// 特定のデバイスIDの名前を取得します
+    /// Get name of specified device ID
     public func getDeviceName(deviceID: AudioDeviceID) -> String {
         let result = AudioProperty.getStringProperty(
             objectID: deviceID,
@@ -84,7 +84,7 @@ public class AudioDeviceManager {
         }
     }
     
-    /// 現在のデフォルト出力デバイスを AudioDevice モデルとして取得します
+    /// Get current default output device as AudioDevice model
     public func defaultOutput() -> AudioDevice? {
         guard let deviceID = defaultOutputDeviceID() else { return nil }
         
@@ -123,7 +123,7 @@ public class AudioDeviceManager {
     
     // MARK: - Format Info
     
-    /// 特定のデバイスの物理的なフォーマット（ビット深度、サンプルレート、コーデックなど）を取得します
+    /// Get physical format (bit depth, sample rate, codec, etc.) of specified device
     public func getPhysicalFormat(deviceID: AudioDeviceID, scope: AudioObjectPropertyScope) -> AudioFormatInfo? {
         let result: Result<AudioStreamBasicDescription, AudioError> = AudioProperty.getProperty(
             objectID: deviceID,

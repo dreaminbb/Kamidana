@@ -15,7 +15,7 @@ struct ClockWidget: View {
 
     private var timeText: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"  // ←時刻フォーマット
+        formatter.dateFormat = "HH:mm"  // Time format
         return formatter.string(from: currentTime)
     }
     var body: some View {

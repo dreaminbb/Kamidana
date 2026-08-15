@@ -1,7 +1,7 @@
 import Foundation
 import Network
 
-// LocalSendで見つかったデバイスを表現する構造体
+// Structure representing a device discovered via LocalSend
 struct LocalSendDevice: Identifiable, Equatable {
     let id = UUID()
     let ip: String
@@ -20,7 +20,7 @@ class LocalSendManager: ObservableObject {
     
     private let localSendPort: NWEndpoint.Port = 53317
     
-    // 自分のデバイス情報
+    // Local device information
     private let myAlias = "Kamidana (Mac)"
     private let myFingerprint = UUID().uuidString
     
@@ -33,14 +33,14 @@ class LocalSendManager: ObservableObject {
         broadcastConnection?.cancel()
     }
     
-    /// ローカルネットワーク上のLocalSendデバイスを探すためのアナウンス（UDPブロードキャスト）を送信する
+    /// Send an announcement (UDP broadcast) to discover LocalSend devices on the local network
     func scanNetwork() {
-        print("🔍 LocalSend: Scanning network for devices...")
+        print("[LocalSend] Scanning network for devices...")
         discoveredDevices.removeAll()
         
         let endpoint = NWEndpoint.hostPort(host: "255.255.255.255", port: localSendPort)
         let parameters = NWParameters.udp
-        // ブロードキャストを許可
+        // Allow broadcast
         parameters.allowLocalEndpointReuse = true
         
         broadcastConnection = NWConnection(to: endpoint, using: parameters)
@@ -72,14 +72,14 @@ class LocalSendManager: ObservableObject {
         
         broadcastConnection?.send(content: data, completion: .contentProcessed({ error in
             if let error = error {
-                print("❌ LocalSend: Failed to send broadcast: \(error)")
+                print("[LocalSend] Failed to send broadcast: \(error)")
             } else {
-                print("✅ LocalSend: Announce sent.")
+                print("[LocalSend] Announce sent.")
             }
         }))
     }
     
-    /// 他のLocalSendデバイスからの返答やアナウンスを受け取るためのUDPリスナー
+    /// UDP listener for receiving responses and announcements from other LocalSend devices
     private func startListener() {
         do {
             let parameters = NWParameters.udp
@@ -92,9 +92,9 @@ class LocalSendManager: ObservableObject {
             }
             
             listener?.start(queue: .global(qos: .background))
-            print("🎧 LocalSend: UDP Listener started on port \(localSendPort)")
+            print("[LocalSend] UDP Listener started on port \(localSendPort)")
         } catch {
-            print("❌ LocalSend: Failed to start UDP listener: \(error)")
+            print("[LocalSend] Failed to start UDP listener: \(error)")
         }
     }
     
@@ -107,14 +107,14 @@ class LocalSendManager: ObservableObject {
             if let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let alias = dict["alias"] as? String,
                let fingerprint = dict["fingerprint"] as? String,
-               fingerprint != self.myFingerprint { // 自分のブロードキャストは無視
+               fingerprint != self.myFingerprint { // Ignore own broadcast
                 
-                // IPアドレスを抽出
+                // Extract IP address
                 var ipAddress = "Unknown"
                 if case .hostPort(let host, _) = connection.endpoint {
-                    // host (NWEndpoint.Host) を文字列に変換
+                    // Convert host (NWEndpoint.Host) to string
                     ipAddress = String(describing: host)
-                    // IPv6などで "%en0" のようなインターフェイス名がつく場合があるためクリーニング
+                    // Clean up interface scope identifier (e.g. "%en0" in IPv6)
                     if let interfaceIndex = ipAddress.firstIndex(of: "%") {
                         ipAddress = String(ipAddress[..<interfaceIndex])
                     }
@@ -127,10 +127,10 @@ class LocalSendManager: ObservableObject {
                 let newDevice = LocalSendDevice(ip: ipAddress, alias: alias, deviceModel: model, deviceType: type, fingerprint: fingerprint, port: port)
                 
                 DispatchQueue.main.async {
-                    // 重複チェック
+                    // Check for duplicates
                     if !self.discoveredDevices.contains(where: { $0.fingerprint == newDevice.fingerprint }) {
                         self.discoveredDevices.append(newDevice)
-                        print("📱 LocalSend Device Found: \(alias) (\(model))")
+                        print("[LocalSend] Device Found: \(alias) (\(model))")
                     }
                 }
             }

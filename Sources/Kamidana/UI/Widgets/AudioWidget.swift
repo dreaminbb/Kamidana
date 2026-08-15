@@ -10,7 +10,7 @@ struct AudioWidget: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // 出力 (スピーカー)
+            // Output (Speaker)
             HStack(spacing: 6) {
                 Button(action: { audioVM.toggleOutputMute() }) {
                     Image(
@@ -44,17 +44,16 @@ struct AudioWidget: View {
                             .padding(.bottom, 5)
 
                         HStack {
-                            NerdFontIcon(.speaker).foregroundColor(theme.textTertiary)
-                                .font(.system(size: 10))
+                            NerdFontIcon(.speaker, size: 10).foregroundColor(theme.textTertiary)
                             Slider(
                                 value: Binding(
                                     get: { audioVM.outputVolume },
                                     set: { audioVM.setOutputVolume($0) }), in: 0.0...1.0
                             )
                             .frame(width: 150).accentColor(theme.primary)
-                            NerdFontIcon(.speakerWave).foregroundColor(
+                            NerdFontIcon(.speakerWave, size: 10).foregroundColor(
                                 theme.textTertiary
-                            ).font(.system(size: 10))
+                            )
                         }
                         .padding(.bottom, 5)
 
@@ -90,7 +89,7 @@ struct AudioWidget: View {
                 }
             }
 
-            // 入力 (マイク)
+            // Input (Microphone)
             HStack(spacing: 6) {
                 Button(action: { audioVM.toggleInputMute() }) {
                     NerdFontIcon(audioVM.isInputMuted ? .micSlash : .mic)
@@ -121,8 +120,7 @@ struct AudioWidget: View {
                             .padding(.bottom, 5)
 
                         HStack {
-                            NerdFontIcon(.mic).foregroundColor(theme.textTertiary).font(
-                                .system(size: 10))
+                            NerdFontIcon(.mic, size: 10).foregroundColor(theme.textTertiary)
                             Slider(
                                 value: Binding(
                                     get: { audioVM.inputVolume },

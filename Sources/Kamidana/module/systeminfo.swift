@@ -4,7 +4,7 @@ import Foundation
 import IOKit
 import IOKit.ps
 
-// ユーザーが設定できる表示項目（JSON等から変換可能）
+// Display items configurable by the user (can be parsed from JSON, etc.)
 struct SystemMatrixArgs: Codable {
     var cpu: Bool = false
     var memory: Bool = false
@@ -12,11 +12,11 @@ struct SystemMatrixArgs: Codable {
     var internet: Bool = false
     var power: Bool = false
     var gpu: Bool = false
-    var thermal: Bool = false  // 追加：サーマル・ファン設定
-    var battery: Bool = false  // 追加：バッテリー設定
+    var thermal: Bool = false  // Thermal / Fan settings
+    var battery: Bool = false  // Battery settings
 }
 
-// 取得したシステムデータを一括で保持する構造体
+// Structure holding all fetched system matrix data
 struct SystemMatrixData {
     var cpuUsage: CPUUsageInfo?
     var memoryMB: UInt64?
@@ -26,33 +26,33 @@ struct SystemMatrixData {
     var gpuUsage: GPUUsageInfo?
     var powerUsage: PowerUsageInfo?
     var internetUsage: NetworkUsageInfo?
-    var thermalState: String?  // 追加：Macの温度状態
-    var batteryUsage: BatteryUsageInfo? // 追加：バッテリー情報
-    var topCPU: [ProcessStat]? // 追加：トッププロセス（CPU）
-    var topMemory: [ProcessStat]? // 追加：トッププロセス（メモリ）
-    var topDisk: [ProcessStat]? // 追加：トッププロセス（ディスク）
-    var diskIOUsage: DiskUsageInfo? // 追加：ディスク全体のI/O
+    var thermalState: String?  // Mac thermal state
+    var batteryUsage: BatteryUsageInfo? // Battery usage info
+    var topCPU: [ProcessStat]? // Top processes (CPU)
+    var topMemory: [ProcessStat]? // Top processes (Memory)
+    var topDisk: [ProcessStat]? // Top processes (Disk)
+    var diskIOUsage: DiskUsageInfo? // Overall disk I/O usage
 }
 
-// 通信速度をまとめる構造体
+// Structure for network transfer speeds
 struct NetworkUsageInfo {
     var uploadBytesPerSecond: UInt64
     var downloadBytesPerSecond: UInt64
 }
 
-// ディスクI/O速度をまとめる構造体
+// Structure for disk I/O speeds
 struct DiskUsageInfo {
     var readBytesPerSecond: UInt64
     var writeBytesPerSecond: UInt64
 }
 
-// CPUの使用率をまとめる構造体
+// Structure for CPU usage rates
 struct CPUUsageInfo {
     var total: Float
     var perCore: [Float]
 }
 
-// GPU情報をまとめる構造体
+// Structure for GPU information
 struct GPUUsageInfo {
     var activeRatio: Float
 }
@@ -64,7 +64,7 @@ struct WatInfo {
     var isCharging: Bool
 }
 
-// バッテリー情報をまとめる構造体
+// Structure for battery information
 struct BatteryUsageInfo {
     var isCharging: Bool
     var currentCapacity: Int64
@@ -73,7 +73,7 @@ struct BatteryUsageInfo {
     var wattInfo: WatInfo?
 }
 
-// 電力量をまとめる構造体（拡張用）
+// Structure for power consumption info (for future extension)
 struct PowerUsageInfo {
     var packageWatts: Float
 }
@@ -84,42 +84,42 @@ enum DiskSpaceType {
     case used
 }
 
-// args(設定)に基づいて必要な情報だけを取得・保持するメインクラス
+// Main class to fetch and retain only necessary info based on args (configuration)
 class SystemMatrix: ObservableObject {
     typealias MegaByte = UInt64
 
-    // UI側で監視するデータ
+    // Data observed by the UI
     @Published var data = SystemMatrixData()
 
-    // 設定パラメータ
+    // Configuration parameters
     var args: SystemMatrixArgs
 
-    // 内部状態
+    // Internal state
     private var timer: AnyCancellable?
 
-    // ネットワーク計算用の状態保存
+    // State for network calculation
     private var prevNetworkInput: UInt64 = 0
     private var prevNetworkOutput: UInt64 = 0
     private var isFirstNetworkFetch = true
 
-    // ディスクI/O計算用の状態保存
+    // State for disk I/O calculation
     private var prevDiskRead: UInt64 = 0
     private var prevDiskWrite: UInt64 = 0
     private var isFirstDiskFetch = true
 
-    // CPU計算用の状態保存
+    // State for CPU calculation
     private var prevProcessorInfo: processor_info_array_t?
     private var prevProcessorCount: mach_msg_type_number_t = 0
     private var previousCPUUsage = CPUUsageInfo(total: 0.0, perCore: [])
     
-    // プロセス監視用のマネージャー
+    // Manager for process monitoring
     private var processMonitor = ProcessMonitor()
 
     init(args: SystemMatrixArgs) {
         self.args = args
     }
 
-    /// 定期モニタリングを開始する
+    /// Start periodic monitoring
     func startMonitoring() {
         timer = Timer.publish(every: 1.0, on: .main, in: .common)
             .autoconnect()
@@ -133,14 +133,14 @@ class SystemMatrix: ObservableObject {
         timer = nil
     }
 
-    /// 設定(args)に基づいて、必要なデータだけを取得する
+    /// Fetch only the necessary data based on args configuration
     func fetchData() {
-        // バックグラウンドで非同期に実行
+        // Execute asynchronously in the background
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
-            var newData = self.data  // 現在のデータをベースにする
+            var newData = self.data  // Base on current data
             
-            // プロセス情報を更新（CPU, Mem, Diskのトッププロセスのため）
+            // Update process stats (for top CPU, Memory, Disk processes)
             self.processMonitor.update()
 
             if self.args.cpu {
@@ -172,7 +172,7 @@ class SystemMatrix: ObservableObject {
                 newData.batteryUsage = self.getBatteryUsageInfo()
             }
 
-            // 取得完了後、メインスレッドでUIに反映
+            // Reflect to UI on the main thread after fetching
             DispatchQueue.main.async {
                 self.data = newData
                 // DebugRichConsole.printSystemMatrix(newData)
@@ -180,7 +180,7 @@ class SystemMatrix: ObservableObject {
         }
     }
 
-    /// GPU使用率を取得する (IOKit経由)
+    /// Fetch GPU usage via IOKit
     private func getGPUUsage() -> GPUUsageInfo? {
         let matchingDict = IOServiceMatching("IOAccelerator")
         var iterator: io_iterator_t = 0
@@ -196,7 +196,7 @@ class SystemMatrix: ObservableObject {
                 object, "PerformanceStatistics" as CFString, kCFAllocatorDefault, 0)?
                 .takeRetainedValue() as? [String: Any]
             {
-                // Device Utilization % が存在する場合はそのまま使用（Intel/Apple Silicon共通の標準的な手法）
+                // Use "Device Utilization %" directly if present (standard approach across Intel/Apple Silicon)
                 if let utilization = properties["Device Utilization %"] as? Int {
                     activeRatio = Float(utilization)
                     IOObjectRelease(object)
@@ -214,24 +214,24 @@ class SystemMatrix: ObservableObject {
         return nil
     }
 
-    /// Macの温度状態（サーマルステータス）を取得する
+    /// Fetch thermal state of the Mac
     private func getThermalState() -> String {
         let state = ProcessInfo.processInfo.thermalState
         switch state {
         case .nominal:
-            return "Normal"  // 正常・発熱なし
+            return "Normal"  // Nominal - no thermal throttling
         case .fair:
-            return "Warm"  // 暖かい・ファンが回り始める
+            return "Warm"  // Fair - fans may spin up
         case .serious:
-            return "Hot"  // 熱い・パフォーマンス低下の恐れ
+            return "Hot"  // Serious - risk of performance throttling
         case .critical:
-            return "Critical"  // 限界・システム緊急状態
+            return "Critical"  // Critical - system emergency thermal state
         @unknown default:
             return "Unknown"
         }
     }
 
-    /// システム全体のCPU使用率（%）および各コアの使用率を取得
+    /// Fetch system-wide CPU usage (%) and per-core usage
     private func getCPUUsage() -> CPUUsageInfo {
         var processorInfo: processor_info_array_t?
         var processorCount: mach_msg_type_number_t = 0
@@ -312,7 +312,7 @@ class SystemMatrix: ObservableObject {
         return previousCPUUsage
     }
 
-    /// ネットワーク（Wi-Fi等）の通信速度（上り/下り）を取得する
+    /// Fetch network transfer speed (upload/download)
     private func getNetworkUsage() -> NetworkUsageInfo? {
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&ifaddr) == 0 else { return nil }
@@ -326,10 +326,10 @@ class SystemMatrix: ObservableObject {
             let interface = ptr!.pointee
             let name = String(cString: interface.ifa_name)
 
-            // ループバック(lo0)などの内部通信は除外し、実際の物理ネットワーク通信のみを計測
+            // Exclude loopback (lo0) and measure only physical network traffic
             if name.hasPrefix("lo") { continue }
 
-            // AF_LINK のデータ構造の中に送受信バイト数が入っている
+            // AF_LINK data structure contains transferred and received byte counts
             if interface.ifa_addr.pointee.sa_family == UInt8(AF_LINK) {
                 if let data = interface.ifa_data {
                     let networkData = data.assumingMemoryBound(to: if_data.self).pointee
@@ -340,7 +340,7 @@ class SystemMatrix: ObservableObject {
         }
         freeifaddrs(ifaddr)
 
-        // 初回呼び出し時は基準点を作成して0を返す
+        // Create baseline on first call and return 0
         if isFirstNetworkFetch {
             prevNetworkInput = currentInput
             prevNetworkOutput = currentOutput
@@ -348,7 +348,7 @@ class SystemMatrix: ObservableObject {
             return NetworkUsageInfo(uploadBytesPerSecond: 0, downloadBytesPerSecond: 0)
         }
 
-        // 前回(1秒前)からの差分を算出
+        // Calculate diff from previous interval (1 second ago)
         let diffInput = currentInput >= prevNetworkInput ? currentInput - prevNetworkInput : 0
         let diffOutput = currentOutput >= prevNetworkOutput ? currentOutput - prevNetworkOutput : 0
 
@@ -358,7 +358,7 @@ class SystemMatrix: ObservableObject {
         return NetworkUsageInfo(uploadBytesPerSecond: diffOutput, downloadBytesPerSecond: diffInput)
     }
 
-    /// ディスクI/O速度（Read/Write）を取得する
+    /// Fetch disk I/O speeds (Read/Write)
     private func getDiskIOUsage() -> DiskUsageInfo? {
         let matchingDict = IOServiceMatching("IOBlockStorageDriver")
         var iterator: io_iterator_t = 0
@@ -474,9 +474,9 @@ class SystemMatrix: ObservableObject {
         return nil
     }
 
-    // return value - = 放電
-    // return value + = 充電
-    // これらをisChargingの値に
+    // return value - = discharging
+    // return value + = charging
+    // used to determine isCharging
     public func getChargingPowerWat() -> WatInfo? {
         let matchingDict = IOServiceMatching("AppleSmartBattery")
         var iterator: io_iterator_t = 0
@@ -497,7 +497,7 @@ class SystemMatrix: ObservableObject {
                     if let d = props?.takeRetainedValue() as? [String: Any] {
                         _amperage = Float(d["Amperage"] as? Int ?? 0)
                         _voltage = Float(d["Voltage"] as? Int ?? 0)
-                        _isCharging = (_amperage >= 0) // 0以上の場合は充電・AC電源駆動
+                        _isCharging = (_amperage >= 0) // Values >= 0 indicate charging / AC power
                         _activeWatts = Float(abs(_amperage) * _voltage) / 1_000_000.0
                     }
                 }
@@ -530,7 +530,7 @@ class SystemMatrix: ObservableObject {
         return (desc["Time to Full Charge"] as? Int64) ?? 0
     }
     
-    /// バッテリー関連の情報を一括取得して返す
+    /// Fetch and return consolidated battery usage information
     private func getBatteryUsageInfo() -> BatteryUsageInfo {
         return BatteryUsageInfo(
             isCharging: getIsNowCharging(),

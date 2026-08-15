@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>Kamidana</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.shin.Kamidana</string>
+	<key>CFBundleName</key>
+	<string>Kamidana</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Kamidana uses AppleScript to retrieve and control music player playback information.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Kamidana uses your location to scan and display nearby Wi-Fi networks.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Kamidana uses your location to scan and display nearby Wi-Fi networks.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Kamidana uses Bluetooth to scan for and display nearby device connection status.</string>
+</dict>
+</plist>

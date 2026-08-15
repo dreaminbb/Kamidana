@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// アプリ全体のテーマカラーを管理する構造体
-/// CSSのように一貫性のあるセマンティックな変数名を使用します。
+/// Structure to manage application theme colors.
+/// Uses consistent semantic variable names similar to CSS.
 public struct Theme {
     // Backgrounds & Surfaces
     public var background: Color
@@ -26,7 +26,7 @@ public struct Theme {
 }
 
 public extension Theme {
-    /// Catppuccin Mocha テーマの定義
+    /// Catppuccin Mocha theme definition
     static let catppuccinMocha = Theme(
         background: Color(hex: "#1e1e2e"),       // base
         surface: Color(hex: "#313244"),          // surface0
@@ -48,7 +48,7 @@ public extension Theme {
     )
 }
 
-// 16進数カラーコードをSwiftUIのColorに変換する拡張
+// Extension to convert hexadecimal color codes to SwiftUI Color
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

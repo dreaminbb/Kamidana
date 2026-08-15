@@ -11,7 +11,7 @@ struct BatteryWidget: View {
         if let battery = matrix.data.batteryUsage {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 6) {
-                    // コンパクト表示
+                    // Compact display
                     NerdFontIcon(
                         batteryIconName(
                             capacity: battery.currentCapacity, isCharging: battery.isCharging)

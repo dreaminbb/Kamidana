@@ -5,7 +5,7 @@ struct SystemControlWidget: View {
     let systemController = SystemController()
 
     @State private var isHovered = false
-    @Environment(\.compactMode) var compactMode: Bool  // 👈 他のウィジェットとパディングを合わせるために追加
+    @Environment(\.compactMode) var compactMode: Bool  // Match padding with other widgets
     @Environment(\.openWindow) private var openWindow
 
     func openBtopTerminalWindow() {
@@ -16,47 +16,44 @@ struct SystemControlWidget: View {
             defer: false
         )
 
-        // 💡 半透明・クールな見た目にするための重要設定
-        window.titlebarAppearsTransparent = true  // タイトルバーを透明化
-        window.titleVisibility = .hidden  // タイトル文字を隠す
-        window.backgroundColor = .clear  // ウィンドウ自体の背景色を透明に
-        window.isOpaque = false  // 透過を許可（これがないとすりガラス効果が出ません）
-        window.center()  // 画面の中央に配置
+        // Settings for translucent frosted glass appearance
+        window.titlebarAppearsTransparent = true  // Make title bar transparent
+        window.titleVisibility = .hidden  // Hide title text
+        window.backgroundColor = .clear  // Make window background color transparent
+        window.isOpaque = false  // Allow transparency for frosted glass effect
+        window.center()  // Center on screen
 
-        // 4. SwiftUIのViewをAppKitのウィンドウにはめ込む
-        // ここで半透明やすりガラスの装飾をつけます
+        // Embed SwiftUI View into AppKit window with translucent styling
         let terminalUI = TerminalView(executable: "/opt/homebrew/bin/btop", theme: theme)
             .background(theme.background.opacity(0.8))
-            .background(.ultraThinMaterial)  // すりガラス効果
+            .background(.ultraThinMaterial)  // Frosted glass effect
 
-        // NSHostingView が SwiftUI と AppKit(NSWindow) を繋ぐ橋渡し役になります
+        // NSHostingView bridges SwiftUI and AppKit (NSWindow)
         window.contentView = NSHostingView(rootView: terminalUI)
         NSApplication.shared.activate(ignoringOtherApps: true)
 
-        // 5. ウィンドウを一番手前に表示してフォーカスを当てる
+        // Bring window to front and focus
         window.makeKeyAndOrderFront(nil)
-
     }
 
     var body: some View {
-        // ベースのアイコン（他のWiFiUIなどと全く同じレイアウト・高さになります）
+        // Base icon (matches layout and height of other widget buttons)
         HStack(spacing: 4) {
-            NerdFontIcon(.appleLogo)
+            NerdFontIcon(.appleLogo, size: 14)
                 .foregroundColor(theme.secondary)
-                .font(.system(size: 14))
-                .frame(width: 20, alignment: .center)  // 🌟 幅を20pxに広げて中央揃えを強制
+                .frame(width: 20, alignment: .center) // Set 20px width and center alignment
         }
-        .SmoothUIModule(theme: theme)  // 👈 これで他のUIと位置・サイズが完全に一致します
-        // ホバー時に展開するメニューは「背景（裏側）」として配置します
+        .SmoothUIModule(theme: theme) // Matches size and position with other modules
+        // Menu that expands on hover is placed in the background
         .background(
             Group {
                 if isHovered {
                     VStack(alignment: .leading, spacing: 4) {
-                        // 🌟 ボトルの首（細い部分）：
+                        // Header spacing matching button width:
                         Color.clear
-                            .frame(width: compactMode ? 36 : 44, height: 28)  // ベース幅(20 + 左右padding)に合わせる
+                            .frame(width: compactMode ? 36 : 44, height: 28) // Match base width (20 + horizontal padding)
 
-                        // 🌟 ボトルの胴体（太く展開する部分）：
+                        // Expanded menu body:
                         VStack(alignment: .leading, spacing: 12) {
 
                             menuButton(
@@ -92,7 +89,7 @@ struct SystemControlWidget: View {
                             }
 
                         }
-                        // 🌟 左側のパディングをSmoothUIModule（ホームボタン側）のパディングと完全に同じ値にすることで縦軸を揃える！
+                        // Match leading padding with SmoothUIModule to align vertical axis
                         .padding(.leading, compactMode ? 8 : 12)
                         .padding(.trailing, 16)
                         .padding(.vertical, 12)
@@ -104,9 +101,9 @@ struct SystemControlWidget: View {
                         )
                         .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
-                    //  fixedSize()をつけることで、アイコンの幅に制限されずテキストに合わせて展開
+                    // Prevent clipping and allow expansion to text width using fixedSize
                     .fixedSize()
-                    // ホームボタン（左上）を起点として、下へ伸びる形のアニメーション
+                    // Animation expanding downwards anchored at top-leading
                     .transition(.scale(scale: 0.01, anchor: .topLeading).combined(with: .opacity))
                 }
             }, alignment: .topLeading
@@ -116,20 +113,17 @@ struct SystemControlWidget: View {
                 isHovered = hovering
             }
         }
-        .zIndex(100)  // 展開時に他のウィジェットの下に隠れないようにする
+        .zIndex(100) // Prevent being hidden behind other widgets when expanded
     }
 
-    // 🌟 ボタンのデザインを共通化してコードをスッキリさせる（コンパイラのエラーも防げます）
+    // Helper to create consistent menu buttons
     private func menuButton(
         icon: NerdFontIconType, color: Color, text: String, action: @escaping () -> Void
-    )
-        -> some View
-    {
+    ) -> some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                NerdFontIcon(icon)
+                NerdFontIcon(icon, size: 14)
                     .foregroundColor(color)
-                    .font(.system(size: 14, weight: .bold))
                     .frame(width: 20, alignment: .center)
 
                 Text(text)

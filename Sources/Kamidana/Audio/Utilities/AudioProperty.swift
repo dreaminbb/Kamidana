@@ -9,12 +9,12 @@ enum AudioError: Error {
 
 class AudioProperty {
     
-    /// CoreAudioから値を取得する共通ユーティリティ
+    /// Common utility to get property value from CoreAudio
     /// - Parameters:
-    ///   - objectID: 対象のオブジェクトID (システム全体なら kAudioObjectSystemObject)
-    ///   - selector: 取得したいプロパティ (例: kAudioHardwarePropertyDefaultOutputDevice)
-    ///   - scope: 入力か出力か (例: kAudioObjectPropertyScopeGlobal)
-    ///   - element: 要素 (例: kAudioObjectPropertyElementMain)
+    ///   - objectID: Target object ID (e.g. kAudioObjectSystemObject for system-wide)
+    ///   - selector: Property selector to get (e.g. kAudioHardwarePropertyDefaultOutputDevice)
+    ///   - scope: Input or output scope (e.g. kAudioObjectPropertyScopeGlobal)
+    ///   - element: Element (e.g. kAudioObjectPropertyElementMain)
     static func getProperty<T>(
         objectID: AudioObjectID,
         selector: AudioObjectPropertySelector,
@@ -41,7 +41,7 @@ class AudioProperty {
         }
     }
     
-    /// CoreAudioから配列サイズを取得し、配列データとして取得するユーティリティ
+    /// Utility to get array size and fetch array data from CoreAudio
     static func getArrayProperty<T>(
         objectID: AudioObjectID,
         selector: AudioObjectPropertySelector,
@@ -76,7 +76,7 @@ class AudioProperty {
         }
     }
     
-    /// CoreAudioから文字列(CFString)を取得するユーティリティ
+    /// Utility to get string (CFString) from CoreAudio
     static func getStringProperty(
         objectID: AudioObjectID,
         selector: AudioObjectPropertySelector,
@@ -102,7 +102,7 @@ class AudioProperty {
         }
     }
     
-    /// CoreAudioのプロパティに値を設定する共通ユーティリティ
+    /// Common utility to set property value on CoreAudio
     static func setProperty<T>(
         objectID: AudioObjectID,
         selector: AudioObjectPropertySelector,

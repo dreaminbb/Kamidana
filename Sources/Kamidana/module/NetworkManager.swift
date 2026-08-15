@@ -6,20 +6,20 @@ import Network
 
 class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
-    // UI側でリアルタイムに監視できるように @Published をつける
+    // Mark with @Published for real-time monitoring in UI
     @Published var currentConnection: String = "OFF"
     @Published var availableNetworks: [CWNetwork] = []
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "NetworkMonitor")
 
-    // Wi-FiのSSID（名前）を取得するために位置情報権限を要求するマネージャー
+    // Location manager to request authorization required for fetching Wi-Fi SSID
     private let locationManager = CLLocationManager()
 
     override init() {
         super.init()
 
-        // 位置情報（Wi-Fiの名前取得に必須）の権限リクエスト
+        // Request location permission (required to retrieve Wi-Fi SSID)
         locationManager.delegate = self
         if locationManager.authorizationStatus == .notDetermined {
             locationManager.requestWhenInUseAuthorization()
@@ -28,7 +28,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         startMonitoring()
     }
 
-    // 監視を開始する関数
+    // Start network monitoring
     private func startMonitoring() {
         monitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async {
@@ -46,17 +46,17 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
         }
 
-        // モニターを実際に起動する（これがないと動かない）
+        // Start the network path monitor
         monitor.start(queue: queue)
     }
 
-    /// 周辺の利用可能なWi-Fiネットワークをスキャンして取得し、配列に保存する
+    /// Scan for nearby available Wi-Fi networks and store them in an array
     func scanForNetworks() {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let result = self?.fetchAvailableNetwork()
             DispatchQueue.main.async {
                 if case .success(let networks) = result {
-                    // 電波が強い順（RSSIが大きい順）にソートして保存
+                    // Sort by signal strength (descending RSSI value) and store
                     self?.availableNetworks = networks.sorted { $0.rssiValue > $1.rssiValue }
                 } else {
                     self?.availableNetworks = []
@@ -65,23 +65,23 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 
-    /// 周辺の利用可能なWi-Fiネットワークをスキャンして取得する
+    /// Scan and fetch available Wi-Fi networks in the vicinity
     func fetchAvailableNetwork() -> Result<Set<CWNetwork>, Error> {
         let client = CWWiFiClient.shared()
 
-        // Wi-Fiインターフェース（アンテナ）を取得
+        // Obtain the Wi-Fi interface
         guard let interface = client.interface() else {
             let error = NSError(
                 domain: "NetworkManager", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Wi-Fiインターフェースが見つかりません"])
+                userInfo: [NSLocalizedDescriptionKey: "Wi-Fi interface not found"])
             return .failure(error)
         }
 
         do {
-            // スキャンを実行
+            // Perform scan
             let allNetworks = try interface.scanForNetworks(withName: nil)
 
-            // 1. SSIDが空（nil または ""）の非公開ネットワーク（Hidden Network）を除外する
+            // 1. Exclude hidden networks with empty SSID (nil or "")
             let publicNetworks = allNetworks.filter { network in
                 guard let ssid = network.ssid, !ssid.isEmpty else {
                     return false
@@ -89,14 +89,13 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 return true
             }
 
-            // 2. MacのWi-Fi設定画面と同じように「同じ名前(SSID)のWi-Fi」を重複排除する
-            // （メッシュWi-Fi等で同じ名前の電波が複数飛んでいる場合、一番電波が強いものを1つだけ残す）
+            // 2. Deduplicate networks with the same SSID (keep the one with the strongest signal, e.g. in mesh Wi-Fi setups)
             var uniqueNetworks = [String: CWNetwork]()
             for network in publicNetworks {
                 guard let ssid = network.ssid else { continue }
 
                 if let existing = uniqueNetworks[ssid] {
-                    // RSSI（電波強度）はマイナスの値（例: -50dBm と -80dBm）。0に近い（大きい）方が電波が強い
+                    // RSSI (signal strength) is negative (e.g. -50 dBm vs -80 dBm); values closer to 0 indicate stronger signal
                     if network.rssiValue > existing.rssiValue {
                         uniqueNetworks[ssid] = network
                     }
@@ -107,12 +106,12 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
             return .success(Set(uniqueNetworks.values))
         } catch {
-            // 権限エラーやスキャン失敗時はエラーを返す
+            // Return error if scanning fails or permissions are missing
             return .failure(error)
         }
     }
 
-    /// 指定したSSIDが、過去に接続したことのある「既知のネットワーク」かどうかを判定する
+    /// Determine whether the specified SSID is a known network previously connected to
     func isKnownNetwork(ssid: String) -> Bool {
         guard let interface = CWWiFiClient.shared().interface(),
               let config = interface.configuration() else {
@@ -128,41 +127,41 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return false
     }
 
-    /// Wi-Fiに接続する。パスワードが不要（既知のネットワークやフリーWi-Fi）の場合は nil を渡せる
+    /// Connect to Wi-Fi. Pass nil if no password is required (known network or open Wi-Fi)
     func connectWIFI(ssid: String, password: String?) -> Result<Bool, Error> {
-        // 1. まず利用可能なネットワーク一覧を取得する
+        // 1. Fetch available networks list
         let result = fetchAvailableNetwork()
 
         switch result {
         case .success(let networks):
-            // 2. 取得した Set<CWNetwork> の中から、指定されたSSIDと完全に一致するものを探す
+            // 2. Find matching network with specified SSID from Set<CWNetwork>
             guard let targetNetwork = networks.first(where: { $0.ssid == ssid }) else {
                 let error = NSError(
                     domain: "NetworkManager", code: 404,
-                    userInfo: [NSLocalizedDescriptionKey: "指定されたWi-Fiが見つかりません"])
+                    userInfo: [NSLocalizedDescriptionKey: "Specified Wi-Fi network not found"])
                 return .failure(error)
             }
 
-            // 3. 接続するためのWi-Fiインターフェースを準備
+            // 3. Prepare Wi-Fi interface for connection
             let client = CWWiFiClient.shared()
             guard let interface = client.interface() else {
                 let error = NSError(
                     domain: "NetworkManager", code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "Wi-Fiインターフェースが見つかりません"])
+                    userInfo: [NSLocalizedDescriptionKey: "Wi-Fi interface not found"])
                 return .failure(error)
             }
 
             do {
-                // 4. 実際に接続（アソシエーション）を試みる
+                // 4. Attempt association to target network
                 try interface.associate(to: targetNetwork, password: password)
                 return .success(true)
             } catch {
-                // パスワード間違いなどのエラー
+                // Handle errors such as invalid password
                 return .failure(error)
             }
 
         case .failure(let error):
-            // そもそもスキャンに失敗した場合
+            // Handle scan failure
             return .failure(error)
         }
     }

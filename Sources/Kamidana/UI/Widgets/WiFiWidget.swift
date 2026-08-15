@@ -51,7 +51,7 @@ struct WiFiWidget: View {
                 .padding(.bottom, 5)
 
                 if let ssid = selectedSSID {
-                    // ▼ パスワード入力画面 ▼
+                    // Password input view
                     VStack(spacing: 12) {
                         Text("\(ssid) に接続")
                             .font(.subheadline)

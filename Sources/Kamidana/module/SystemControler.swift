@@ -1,8 +1,8 @@
 import AppKit
 import Foundation
 
-// アプリの強制終了
-// brew or nixのアップデート利用可能なパッケージ
+// Force quit application
+// Available update packages for brew or nix
 
 enum SystemControlError: Error, LocalizedError {
     case scriptFailed(String)

@@ -42,7 +42,7 @@ struct CpuGpuWidget: View {
                         .foregroundColor(theme.textPrimary)
                         .padding(.bottom, 4)
 
-                    // CPU概要
+                    // CPU Overview
                     if let cpu = matrix.data.cpuUsage {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("CPU").font(.subheadline).foregroundColor(theme.textSecondary)
@@ -55,7 +55,7 @@ struct CpuGpuWidget: View {
                         }
                     }
                     
-                    // GPU詳細
+                    // GPU Details
                     if let gpu = matrix.data.gpuUsage {
                         if matrix.data.cpuUsage != nil {
                             Divider().background(theme.surfaceBorder)
@@ -72,7 +72,7 @@ struct CpuGpuWidget: View {
                         Divider().background(theme.surfaceBorder)
                     }
                     
-                    // CPU詳細
+                    // CPU Details
                     if let cpu = matrix.data.cpuUsage {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("CPU Cores").font(.subheadline).foregroundColor(theme.textSecondary)

@@ -12,7 +12,7 @@ enum DisplayDetector {
         }
 
         let displayID = CGDirectDisplayID(number.uint32Value)
-        // C言語のBooleanは0以外がtrueとなるため、!= 0 で判定するのが確実
+        // In C, non-zero is true for boolean values, so checking != 0 is reliable
         print("displayID: \(displayID != 0) \(displayID)")
         return CGDisplayIsBuiltin(displayID) == 1
     }

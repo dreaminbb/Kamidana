@@ -5,7 +5,7 @@ import SwiftUI
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: NSWindow!
-    let barHeight: CGFloat = 600  // アイランド展開に対応できるよう、高さを大きく拡大
+    let barHeight: CGFloat = 600  // Enlarged height to support island expansion
 
     static let sharedDelegate = AppDelegate()
 
@@ -18,7 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         let contentView = StatusBarView()
 
-        // 最初のウィンドウ作成
+        // Create initial window
         statusBarWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
             styleMask: [.borderless],
@@ -35,14 +35,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingController = NSHostingController(rootView: contentView)
         statusBarWindow.contentView = hostingController.view
 
-        // ウィンドウの初期位置を計算
+        // Calculate initial window position
         updateWindowPosition()
 
         statusBarWindow.makeKeyAndOrderFront(nil)
         statusBarWindow.orderFrontRegardless()
         NSApp.activate(ignoringOtherApps: true)
 
-        // 【追加】ディスプレイの設定変更（抜き差しや解像度変更）を監視
+        // Monitor display configuration changes (connect/disconnect, resolution changes)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(updateWindowPosition),
@@ -50,7 +50,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil
         )
 
-        // 【追加】スリープからの復帰を監視
+        // Monitor wake from sleep
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(updateWindowPosition),
@@ -59,9 +59,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
-    // 【追加】画面の一番上に強制的に再配置する関数
+    // Reposition window forcibly to the top of the screen
     @objc func updateWindowPosition() {
-        // システムの画面情報更新が完了するのを待つために非同期で実行
+        // Run asynchronously to wait for system screen info updates to complete
         DispatchQueue.main.async {
             guard let screen = NSScreen.screens.first else { return }
             let screenRect = screen.frame
@@ -73,36 +73,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 height: self.barHeight
             )
 
-            // アニメーションなしで即座に正しい位置・サイズにスナップさせる
+            // Snap immediately to the correct position and size without animation
             self.statusBarWindow.setFrame(windowRect, display: true)
         }
     }
 }
 
 struct StatusBarView: View {
-    // SystemMatrixを初期化
+    // Initialize SystemMatrix
     @StateObject private var matrix = SystemMatrix(
         args: SystemMatrixArgs(
             cpu: true,
             memory: true,
-            disk: true,  // ←追加: ディスクI/O用
+            disk: true,  // For disk I/O
             internet: true,
-            power: true,  // ←追加: バッテリー計算用
+            power: true,  // For battery calculation
             gpu: true,
             thermal: true,
-            battery: true  // ←追加: バッテリーUI用
+            battery: true  // For battery UI
         ))
 
-    // LocalSendマネージャーを初期化
+    // Initialize LocalSend manager
     @StateObject private var localSend = LocalSendManager()
 
-    // ネットワークマネージャーを初期化
+    // Initialize network manager
     @StateObject private var netManager = NetworkManager()
 
-    // 音楽マネージャー（メディア再生）を初期化
+    // Initialize music manager (media playback)
     @StateObject private var musicManager = MusicPlayingManager()
 
-    // オーディオマネージャーを初期化
+    // Initialize audio manager
     @StateObject private var audioVM = AudioViewModel()
     @StateObject private var uiSettings = UISettingsStore()
     @StateObject private var bluetooth = BluetoothManager()
@@ -114,7 +114,7 @@ struct StatusBarView: View {
         let compactMode = uiSettings.resolveCompactMode(isBuiltInDisplay: isBuiltInDisplay)
 
         ZStack(alignment: .top) {
-            // 左側のウィジェット群
+            // Left widget group
             HStack(alignment: .top, spacing: compactMode ? 6 : 8) {
                 // System Control
                 SystemControlWidget(theme: theme)
@@ -123,7 +123,7 @@ struct StatusBarView: View {
                 WiFiWidget(netManager: netManager, theme: theme)
                 AudioWidget(audioVM: audioVM, theme: theme)
 
-                // コンパクトモード（内蔵画面）の場合はオーディオウィジェットの右からカメラの中央へ向けて配置
+                // In compact mode (built-in display), place island from right of audio widget toward center camera
                 if compactMode {
                     Color.clear
                         .frame(width: 32, height: 32)
@@ -139,20 +139,20 @@ struct StatusBarView: View {
             .padding(.leading, 10)
             .padding(.top, 5)
 
-            // 右側のウィジェット群
+            // Right widget group
             HStack(
                 alignment: .top,
                 spacing: compactMode ? 6 : 8,
                 content: {
                     if compactMode {
-                        // コンパクトモードでは一部ウィジェットをFold（折りたたみ）する
+                        // In compact mode, fold some widgets
                         CpuWidget(matrix: matrix, theme: theme)
                         MemoryWidget(matrix: matrix, theme: theme)
                         BatteryWidget(matrix: matrix, theme: theme)
                         ClockWidget(theme: theme)
                         FoldedWidgetsButton(matrix: matrix, theme: theme)
                     } else {
-                        // 通常モードでは全て展開
+                        // In normal mode, expand all widgets
                         NetworkWidget(matrix: matrix, theme: theme)
                         CpuWidget(matrix: matrix, theme: theme)
                         GpuWidget(matrix: matrix, theme: theme)
@@ -169,7 +169,7 @@ struct StatusBarView: View {
             .padding(.trailing, 10)
             .padding(.top, 5)
 
-            // 通常モード（外部画面）の場合のみ、画面の真ん中の一番上に配置
+            // In normal mode (external display), place in the top center of the screen
             if !compactMode {
                 KamidanaIsland(theme: theme, musicManager: musicManager)
                     .fixedSize()
@@ -190,8 +190,8 @@ struct StatusBarView: View {
             NotificationCenter.default.publisher(
                 for: NSApplication.didChangeScreenParametersNotification)
         ) { _ in
-            // 通知が飛んできた直後はシステム内部の画面情報(NSScreen.screens)が
-            // まだ更新されていないことがあるため、非同期で一拍遅らせて判定する
+            // System screen info (NSScreen.screens) might not be updated yet right after receiving the notification,
+            // so evaluate asynchronously with a slight delay
             DispatchQueue.main.async {
                 isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
                 // print("Updated isBuiltInDisplay: \(isBuiltInDisplay)")

@@ -24,17 +24,17 @@ struct KamidanaIsland: View {
     let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     static let defaultHoveredSize = CGSize(width: 600, height: 300)
 
-    // 🌟 アプローチ1: サイズを計算して返す関数
+    // Calculate and return size
     private func getIslandSize() -> CGSize {
         if !isHovered { return CGSize(width: 180, height: 32) }
 
-        // Tabによるサイズ変更が必要な場合はここで計算できます
+        // If size change by tab is needed, calculate here
         if selectedTab == .btop {
-            // もしTerminalタブの時だけサイズを変えたい場合はここで返す
+            // If changing size only for the Terminal tab, return here
             return CGSize(width: 800, height: 500)
         }
 
-        // `??` 演算子を使えば、値がない場合(nil)のデフォルト値を1行で綺麗に書けます
+        // Use `??` operator to provide fallback defaults cleanly when nil
         let w = islandSize.width ?? Self.defaultHoveredSize.width
         let h = islandSize.height ?? Self.defaultHoveredSize.height
         return CGSize(width: w, height: h)
@@ -43,9 +43,9 @@ struct KamidanaIsland: View {
     var body: some View {
         VStack(spacing: 0) {
             if isHovered {
-                // 🌟 展開時のUI
+                // Expanded UI
 
-                // 1. ブラウザ風のタブバー
+                // 1. Browser-style tab bar
                 HStack(spacing: 12) {
                     ForEach(IslandTab.allCases, id: \.self) { tab in
                         Button(action: {
@@ -75,16 +75,16 @@ struct KamidanaIsland: View {
 
                 Divider().background(theme.surfaceBorder)
 
-                // 2. タブごとのコンテンツ（中身）
+                // 2. Tab content
                 Group {
                     switch selectedTab {
                     case .music:
-                        // アイランド全体に広がるように修正したMusicWidgetを直接配置
+                        // Place MusicWidget directly configured to expand across the island
                         MusicWidget(musicManager: musicManager, theme: theme)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     case .btop:
-                        // 【重要】TerminalViewをここに埋め込む
+                        // Embed TerminalView here
                         TerminalView(executable: "/opt/homebrew/bin/btop", theme: theme)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .cornerRadius(12)
@@ -93,10 +93,10 @@ struct KamidanaIsland: View {
                 }
 
             } else {
-                // 🌟 普段の小さなUI（折りたたみ時）
+                // Compact UI (collapsed state)
                 HStack(spacing: 0) {
                     if !musicManager.title.isEmpty, let artwork = musicManager.artwork {
-                        // 音楽再生中はアートワークを表示
+                        // Display artwork when music is playing
                         Image(nsImage: artwork)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -111,10 +111,10 @@ struct KamidanaIsland: View {
                             .clipShape(Circle())
                             .padding(.leading, 10)
 
-                        // TODO: ここにオーディオビジュライザーを入れる
+                        // TODO: Add audio visualizer here
 
                     } else {
-                        // 音楽がない時やアートワークがない時はデフォルトアイコン
+                        // Default icon when no music or artwork is available
                         NerdFontIcon(.grid)
                             .foregroundColor(theme.primary)
                     }
@@ -130,8 +130,8 @@ struct KamidanaIsland: View {
                 .padding(.leading, 3)
             }
         }
-        // ホバー状態に応じて Island 自体のサイズをダイナミックに変更する！
-        .frame(width: getIslandSize().width, height: getIslandSize().height)  // 関数を呼び出して渡す
+        // Dynamically change island size based on hover state
+        .frame(width: getIslandSize().width, height: getIslandSize().height)  // Pass computed size
         .background(theme.background.opacity(0.8))
         .background(.ultraThinMaterial)
         .cornerRadius(isHovered ? 24 : 16)
@@ -139,7 +139,7 @@ struct KamidanaIsland: View {
             RoundedRectangle(cornerRadius: isHovered ? 24 : 16)
                 .stroke(theme.surfaceBorder, lineWidth: 1)
         )
-        // 🌟 このアニメーションが Dynamic Island 特有の「ヌルッ」とした広がりを生みます
+        // Spring animation providing smooth expansion
         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isHovered)
         .onHover { hovering in
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {

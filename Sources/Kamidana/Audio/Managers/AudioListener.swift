@@ -16,21 +16,21 @@ public class AudioListener {
         
         let systemObjectID = AudioObjectID(kAudioObjectSystemObject)
         
-        // デフォルト出力デバイスの変更監視
+        // Monitor default output device changes
         var defaultOutputAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
         
-        // デフォルト入力デバイスの変更監視
+        // Monitor default input device changes
         var defaultInputAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultInputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
         
-        // 物理的なデバイスの接続・切断の監視（リストの更新）
+        // Monitor physical device connection/disconnection (list updates)
         var devicesAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDevices,
             mScope: kAudioObjectPropertyScopeGlobal,
@@ -49,14 +49,14 @@ public class AudioListener {
             self?.onDeviceChanged?()
         }
         
-        // 注: 音量の変更監視は、現在のデフォルトデバイスIDに対して登録する必要があります。
-        // 音量やミュートが変わるたびに検知するには、デバイスが切り替わるたびにリスナーを付け直す必要がありますが、
-        // 今回は簡略化のためTimerで定期更新するか、ViewModelで手動更新させます。
-        // （完全な実装には AudioObjectAddPropertyListenerBlock を各デバイスの音量アドレスに登録します）
+        // Note: Volume change monitoring needs to be registered against the current default device ID.
+        // Detecting volume/mute changes requires reattaching listeners whenever the device switches;
+        // for simplicity, periodic updates via Timer or manual updates via ViewModel are used.
+        // (For full implementation, register AudioObjectAddPropertyListenerBlock to each device's volume address)
     }
     
     public func stop() {
-        // リスナーの解除処理（省略可）
+        // Listener cleanup (optional)
         isListening = false
     }
 }

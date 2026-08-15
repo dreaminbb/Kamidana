@@ -1,38 +1,40 @@
-.PHONY: build run app clean
+.PHONY: build run app debug clean
 
 APP_NAME = Kamidana
 BUILD_PATH = .build/release/$(APP_NAME)
 APP_DIR = $(APP_NAME).app
-MACOS_DIR = $(APP_DIR)/Contents/MacOS
+CONTENTS_DIR = $(APP_DIR)/Contents
+MACOS_DIR = $(CONTENTS_DIR)/MacOS
+RESOURCES_DIR = Resources
 
-# 開発用の通常実行
+# Run Kamidana directly for development
 run:
 	swift run
 
-# リリースビルド
+# Build release binary
 build:
 	swift build -c release
 
-# macOSの .app バンドルを作成する（本番リリース用）
+# Build and package the macOS .app bundle for production release
 app:
 	swift build -c release
 	mkdir -p $(MACOS_DIR)
 	cp .build/release/$(APP_NAME) $(MACOS_DIR)/$(APP_NAME)
-	# Info.plistを作成
-	echo '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n\t<key>CFBundleExecutable</key>\n\t<string>$(APP_NAME)</string>\n\t<key>CFBundleIdentifier</key>\n\t<string>com.shin.Kamidana</string>\n\t<key>CFBundleName</key>\n\t<string>$(APP_NAME)</string>\n\t<key>CFBundleShortVersionString</key>\n\t<string>1.0</string>\n\t<key>LSUIElement</key>\n\t<true/>\n\t<key>NSAppleEventsUsageDescription</key>\n\t<string>音楽プレイヤーの再生情報を取得・操作するためにAppleScriptを使用します。</string>\n\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>\n\t<key>NSLocationUsageDescription</key>\n\t<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>\n\t<key>NSBluetoothAlwaysUsageDescription</key>\n\t<string>周辺のBluetoothデバイスを検索して接続状態を表示するために使用します。</string>\n</dict>\n</plist>' > $(APP_DIR)/Contents/Info.plist
+	cp $(RESOURCES_DIR)/Info.plist $(CONTENTS_DIR)/Info.plist
 	codesign --force --deep --sign - $(APP_DIR)
-	@echo "✨ Created Release $(APP_DIR)"
+	@echo "Created Release $(APP_DIR)"
 
-# ターミナル上でログを見ながら実行するデバッグモード（DEBUGフラグ付き）
+# Build and run in debug mode with terminal logs
 debug:
 	swift build
 	mkdir -p $(MACOS_DIR)
 	cp .build/debug/$(APP_NAME) $(MACOS_DIR)/$(APP_NAME)
-	echo '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n\t<key>CFBundleExecutable</key>\n\t<string>$(APP_NAME)</string>\n\t<key>CFBundleIdentifier</key>\n\t<string>com.shin.Kamidana</string>\n\t<key>CFBundleName</key>\n\t<string>$(APP_NAME)</string>\n\t<key>CFBundleShortVersionString</key>\n\t<string>1.0</string>\n\t<key>LSUIElement</key>\n\t<true/>\n\t<key>NSAppleEventsUsageDescription</key>\n\t<string>音楽プレイヤーの再生情報を取得するためにAppleScriptを使用します。</string>\n\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>\n\t<key>NSLocationUsageDescription</key>\n\t<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>\n</dict>\n</plist>' > $(APP_DIR)/Contents/Info.plist
+	cp $(RESOURCES_DIR)/Info.plist $(CONTENTS_DIR)/Info.plist
 	codesign --force --deep --sign - $(APP_DIR)
-	@echo "🐛 Starting Kamidana in debug mode... (Press Ctrl+C to stop)"
+	@echo "Starting Kamidana in debug mode... (Press Ctrl+C to stop)"
 	./$(MACOS_DIR)/$(APP_NAME)
 
+# Clean build artifacts and app bundle
 clean:
 	rm -rf .build
 	rm -rf $(APP_DIR)

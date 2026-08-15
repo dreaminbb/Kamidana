@@ -56,7 +56,7 @@ public class AudioVolumeManager {
     }
     
     private func setVolume(deviceID: AudioDeviceID, scope: AudioObjectPropertyScope, value: Float32) {
-        // 音量は0.0〜1.0の範囲にクランプする
+        // Clamp volume to 0.0 - 1.0 range
         let clampedValue = max(0.0, min(1.0, value))
         _ = AudioProperty.setProperty(
             objectID: deviceID,
