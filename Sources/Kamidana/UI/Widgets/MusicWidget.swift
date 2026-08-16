@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct MusicWidget: View {
-    @ObservedObject var musicManager: MusicPlayingManager
-    @Environment(\.compactMode) var compactMode: Bool
+    @EnvironmentObject var musicManager: MusicPlayingManager
 
     @State private var rotation: Double = 0.0
     @State private var isDraggingSlider = false

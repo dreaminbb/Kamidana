@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 struct BluetoothWidget: View {
-    @ObservedObject var bluetooth: BluetoothManager
+    @EnvironmentObject var bluetooth: BluetoothManager
     @State private var showPopover = false
     @State private var isButtonHovered = false
     @State private var isPopoverHovered = false

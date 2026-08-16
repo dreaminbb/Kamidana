@@ -2,7 +2,7 @@ import CoreWLAN
 import SwiftUI
 
 struct WiFiWidget: View {
-    @ObservedObject var netManager: NetworkManager
+    @EnvironmentObject var netManager: NetworkManager
     @State private var showPopover = false
     @State private var selectedSSID: String? = nil
     @State private var wifiPassword = ""

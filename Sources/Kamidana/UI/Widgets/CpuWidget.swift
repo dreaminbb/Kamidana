@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CpuWidget: View {
-    @ObservedObject var matrix: SystemMatrix
+    @EnvironmentObject var matrix: SystemMatrix
     @State private var showPopover = false
     let config: CpuWidgetConfig
     

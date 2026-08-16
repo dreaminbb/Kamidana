@@ -100,9 +100,11 @@ public struct AudioWidgetConfig: Codable {
   public var textColor: String = "#cdd6f4"
 }
 
-public struct SystemControlWidgetConfig: Codable {
-  public var icon: String = "󰀵"  // appleLogo
-  public var iconColor: String = "#cba6f7"
+public struct SystemActionWidgetConfig: Codable, Hashable {
+  public var action: String  // "sleep", "reboot", "shutdown", "logout", "lockScreen", "aboutThisMac"
+  public var name: String?  // Optional label
+  public var icon: String
+  public var iconColor: String
 }
 
 public struct MusicWidgetConfig: Codable {
@@ -119,14 +121,35 @@ public struct TerminalWidgetConfig: Codable, Hashable {
   public var terminalPath: String
 }
 
-public struct FolderWidgetConfig: Codable, Hashable {
-  public var name: String
-  public var icon: String
-  public var widgets: [AnyWidgetConfig]
+public struct WidgetInstance: Hashable {
+  public let id = UUID()
+  public let typeID: String
+  public let config: AnyHashable
+
+  public init(typeID: String, config: AnyHashable) {
+    self.typeID = typeID
+    self.config = config
+  }
+
+  public static func == (lhs: WidgetInstance, rhs: WidgetInstance) -> Bool {
+    lhs.typeID == rhs.typeID && lhs.config == rhs.config
+  }
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(typeID)
+    hasher.combine(config)
+  }
+}
+
+public struct WidgetFolderConfig: Hashable {
+  public var name: String?
+  public var icon: String?
+  public var iconFolded: String?
+  public var iconColor: String = "#cba6f7"
+  public var direction: String = "below"  // "below" || "right" || "left"
+  public var widgets: [WidgetInstance]
 }
 
 // Make all existing configs Hashable so we can use them in ForEach
-extension SystemControlWidgetConfig: Hashable {}
 extension WifiWidgetConfig: Hashable {}
 extension AudioWidgetConfig: Hashable {}
 extension MusicWidgetConfig: Hashable {}
@@ -138,97 +161,21 @@ extension BluetoothWidgetConfig: Hashable {}
 extension BatteryWidgetConfig: Hashable {}
 extension ClockWidgetConfig: Hashable {}
 
-// MARK: - Heterogeneous Widget Enum
-
-public enum AnyWidgetConfig: Codable, Hashable {
-  case systemControl(SystemControlWidgetConfig)
-  case wifi(WifiWidgetConfig)
-  case audio(AudioWidgetConfig)
-  case music(MusicWidgetConfig)
-  case terminal(TerminalWidgetConfig)
-  case network(NetworkWidgetConfig)
-  case cpu(CpuWidgetConfig)
-  case memory(MemoryWidgetConfig)
-  case disk(DiskWidgetConfig)
-  case bluetooth(BluetoothWidgetConfig)
-  case battery(BatteryWidgetConfig)
-  case clock(ClockWidgetConfig)
-  case folder(FolderWidgetConfig)
-
-  private enum CodingKeys: String, CodingKey {
-    case systemControl, wifi, audio, music, terminal, network, cpu, memory, disk, bluetooth,
-      battery, clock, folder
-  }
-
-  public init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    if let config = try container.decodeIfPresent(
-      SystemControlWidgetConfig.self, forKey: .systemControl)
-    {
-      self = .systemControl(config)
-    } else if let config = try container.decodeIfPresent(WifiWidgetConfig.self, forKey: .wifi) {
-      self = .wifi(config)
-    } else if let config = try container.decodeIfPresent(AudioWidgetConfig.self, forKey: .audio) {
-      self = .audio(config)
-    } else if let config = try container.decodeIfPresent(MusicWidgetConfig.self, forKey: .music) {
-      self = .music(config)
-    } else if let config = try container.decodeIfPresent(
-      TerminalWidgetConfig.self, forKey: .terminal)
-    {
-      self = .terminal(config)
-    } else if let config = try container.decodeIfPresent(NetworkWidgetConfig.self, forKey: .network)
-    {
-      self = .network(config)
-    } else if let config = try container.decodeIfPresent(CpuWidgetConfig.self, forKey: .cpu) {
-      self = .cpu(config)
-    } else if let config = try container.decodeIfPresent(MemoryWidgetConfig.self, forKey: .memory) {
-      self = .memory(config)
-    } else if let config = try container.decodeIfPresent(DiskWidgetConfig.self, forKey: .disk) {
-      self = .disk(config)
-    } else if let config = try container.decodeIfPresent(
-      BluetoothWidgetConfig.self, forKey: .bluetooth)
-    {
-      self = .bluetooth(config)
-    } else if let config = try container.decodeIfPresent(BatteryWidgetConfig.self, forKey: .battery)
-    {
-      self = .battery(config)
-    } else if let config = try container.decodeIfPresent(ClockWidgetConfig.self, forKey: .clock) {
-      self = .clock(config)
-    } else if let config = try container.decodeIfPresent(FolderWidgetConfig.self, forKey: .folder) {
-      self = .folder(config)
-    } else {
-      throw DecodingError.dataCorrupted(
-        DecodingError.Context(
-          codingPath: decoder.codingPath, debugDescription: "Unknown widget type"))
-    }
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
-    switch self {
-    case .systemControl(let config): try container.encode(config, forKey: .systemControl)
-    case .wifi(let config): try container.encode(config, forKey: .wifi)
-    case .audio(let config): try container.encode(config, forKey: .audio)
-    case .music(let config): try container.encode(config, forKey: .music)
-    case .terminal(let config): try container.encode(config, forKey: .terminal)
-    case .network(let config): try container.encode(config, forKey: .network)
-    case .cpu(let config): try container.encode(config, forKey: .cpu)
-    case .memory(let config): try container.encode(config, forKey: .memory)
-    case .disk(let config): try container.encode(config, forKey: .disk)
-    case .bluetooth(let config): try container.encode(config, forKey: .bluetooth)
-    case .battery(let config): try container.encode(config, forKey: .battery)
-    case .clock(let config): try container.encode(config, forKey: .clock)
-    case .folder(let config): try container.encode(config, forKey: .folder)
-    }
-  }
-}
-
 public struct BluetoothWidgetConfig: Codable {
   public var iconConnected: String = "󰂯"
   public var iconDisconnected: String = "󰂲"
   public var connectedColor: String = "#89b4fa"
   public var disconnectedColor: String = "#a6adc8"
   public var textColor: String = "#cdd6f4"
+}
+
+// MARK: - Layout Configuration
+
+public struct DisplayLayoutConfig {
+  public var style: WidgetStyleConfig = WidgetStyleConfig.defaultNormal
+  public var left: [WidgetInstance] = []
+  public var center: [WidgetInstance] = []
+  public var right: [WidgetInstance] = []
 }
 
 // MARK: - Main Config Struct
@@ -238,31 +185,118 @@ public struct Config {
   public let barTopPadding: Int64 = 5
   public var colors: GlobalColorsConfig = GlobalColorsConfig()
 
-  // UI Style
-  public var styleNormal: WidgetStyleConfig = .defaultNormal
-  public var styleCompact: WidgetStyleConfig = .defaultCompact
+  public var externalDisplay: DisplayLayoutConfig = DisplayLayoutConfig(
+    style: .defaultNormal,
+    left: [
+      WidgetInstance(
+        typeID: "widgetFolder",
+        config: WidgetFolderConfig(
+          name: nil, icon: "󰀵", iconColor: "#cba6f7", direction: "below",
+          widgets: [
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "aboutThisMac", name: "About this Mac", icon: "󰌢", iconColor: "#94e2d5")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "sleep", name: "Sleep", icon: "󰒲", iconColor: "#94e2d5")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "shutdown", name: "Shutdown", icon: "⏻", iconColor: "#f38ba8")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "reboot", name: "Reboot", icon: "󰑐", iconColor: "#fab387")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "logout", name: "Logout", icon: "󰈆", iconColor: "#89b4fa")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "lockScreen", name: "Screen Lock", icon: "󰌾", iconColor: "#f5c2e7")),
+          ])),
+      WidgetInstance(typeID: "wifi", config: WifiWidgetConfig()),
+      WidgetInstance(typeID: "audio", config: AudioWidgetConfig()),
+    ],
+    center: [
+      WidgetInstance(typeID: "music", config: MusicWidgetConfig()),
+      WidgetInstance(
+        typeID: "terminal",
+        config: TerminalWidgetConfig(name: "btop", terminalPath: "/opt/homebrew/bin/btop")),
+    ],
+    right: [
+      WidgetInstance(typeID: "network", config: NetworkWidgetConfig()),
+      WidgetInstance(typeID: "cpu", config: CpuWidgetConfig()),
+      WidgetInstance(typeID: "memory", config: MemoryWidgetConfig()),
+      WidgetInstance(typeID: "disk", config: DiskWidgetConfig()),
+      WidgetInstance(typeID: "bluetooth", config: BluetoothWidgetConfig()),
+      WidgetInstance(typeID: "battery", config: BatteryWidgetConfig()),
+      WidgetInstance(typeID: "clock", config: ClockWidgetConfig()),
+    ]
+  )
 
-  // Layout Sections
-  public var left: [AnyWidgetConfig] = [
-    .systemControl(SystemControlWidgetConfig()),
-    .wifi(WifiWidgetConfig()),
-    .audio(AudioWidgetConfig()),
-  ]
-
-  public var center: [AnyWidgetConfig] = [
-    .music(MusicWidgetConfig()),
-    .terminal(TerminalWidgetConfig(name: "btop", terminalPath: "/opt/homebrew/bin/htop")),
-  ]
-
-  public var right: [AnyWidgetConfig] = [
-    .network(NetworkWidgetConfig()),
-    .cpu(CpuWidgetConfig()),
-    .memory(MemoryWidgetConfig()),
-    .disk(DiskWidgetConfig()),
-    .bluetooth(BluetoothWidgetConfig()),
-    .battery(BatteryWidgetConfig()),
-    .clock(ClockWidgetConfig()),
-  ]
+  public var builtInDisplay: DisplayLayoutConfig = DisplayLayoutConfig(
+    style: .defaultCompact,
+    left: [
+      WidgetInstance(
+        typeID: "widgetFolder",
+        config: WidgetFolderConfig(
+          name: nil, icon: "󰀵", iconColor: "#cba6f7", direction: "below",
+          widgets: [
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "aboutThisMac", name: "About this Mac", icon: "󰌢", iconColor: "#94e2d5")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "sleep", name: "Sleep", icon: "󰒲", iconColor: "#94e2d5")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "shutdown", name: "Shutdown", icon: "⏻", iconColor: "#f38ba8")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "reboot", name: "Reboot", icon: "󰑐", iconColor: "#fab387")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "logout", name: "Logout", icon: "󰈆", iconColor: "#89b4fa")),
+            WidgetInstance(
+              typeID: "systemAction",
+              config: SystemActionWidgetConfig(
+                action: "lockScreen", name: "Screen Lock", icon: "󰌾", iconColor: "#f5c2e7")),
+          ])),
+      WidgetInstance(typeID: "audio", config: AudioWidgetConfig()),
+    ],
+    center: [
+      WidgetInstance(typeID: "music", config: MusicWidgetConfig()),
+      WidgetInstance(
+        typeID: "terminal",
+        config: TerminalWidgetConfig(name: "btop", terminalPath: "/opt/homebrew/bin/btop")),
+    ],
+    right: [
+      WidgetInstance(typeID: "cpu", config: CpuWidgetConfig()),
+      WidgetInstance(typeID: "memory", config: MemoryWidgetConfig()),
+      WidgetInstance(
+        typeID: "widgetFolder",
+        config:
+          WidgetFolderConfig(
+            name: "", icon: "󰉋", iconColor: "#cba6f7", direction: "below",
+            widgets: [
+              WidgetInstance(typeID: "network", config: NetworkWidgetConfig()),
+              WidgetInstance(typeID: "disk", config: DiskWidgetConfig()),
+            ])),
+      WidgetInstance(typeID: "bluetooth", config: BluetoothWidgetConfig()),
+      WidgetInstance(typeID: "wifi", config: WifiWidgetConfig()),
+      WidgetInstance(typeID: "battery", config: BatteryWidgetConfig()),
+      WidgetInstance(typeID: "clock", config: ClockWidgetConfig()),
+    ]
+  )
 
   public init() {}
 }

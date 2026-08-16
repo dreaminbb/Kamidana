@@ -16,6 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationDidFinishLaunching(_ notification: Notification) {
+    WidgetRegistry.shared.registerAllWidgets()
     let contentView = StatusBarView()
 
     // Create initial window
@@ -110,26 +111,23 @@ struct StatusBarView: View {
   @State private var isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
 
   var body: some View {
-    let compactMode = uiSettings.resolveCompactMode(isBuiltInDisplay: isBuiltInDisplay)
+    let currentLayout: DisplayLayoutConfig = isBuiltInDisplay ? ConfigManager.shared.currentConfig.builtInDisplay : ConfigManager.shared.currentConfig.externalDisplay
 
     ZStack(alignment: .top) {
       // Left widget group
-      HStack(alignment: .top, spacing: compactMode ? 6 : 8) {
-        ForEach(ConfigManager.shared.currentConfig.left, id: \.self) { widget in
-            switch widget {
-            case .systemControl(let conf): SystemControlWidget(config: conf)
-            case .wifi(let conf): WiFiWidget(netManager: netManager, config: conf)
-            case .audio(let conf): AudioWidget(audioVM: audioVM, config: conf)
-            default: EmptyView()
+      HStack(alignment: .top, spacing: 8) {
+        ForEach(currentLayout.left, id: \.id) { instance in
+            if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
+                factory.makeView(config: instance.config)
             }
         }
 
-        // In compact mode (built-in display), place island from right of audio widget toward center camera
-        if compactMode {
+        // In built-in display mode, place island from right of audio widget toward center camera
+        if isBuiltInDisplay {
           Color.clear
             .frame(width: 32, height: 32)
             .overlay(
-              KamidanaIsland(musicManager: musicManager)
+              KamidanaIsland(centerWidgets: currentLayout.center)
                 .fixedSize(), alignment: .topLeading
             )
             .zIndex(100)
@@ -143,48 +141,11 @@ struct StatusBarView: View {
       // Right widget group
       HStack(
         alignment: .top,
-        spacing: compactMode ? 6 : 8,
+        spacing: 8,
         content: {
-          if compactMode {
-            // In compact mode, fold some widgets
-            ForEach(ConfigManager.shared.currentConfig.right, id: \.self) { widget in
-              switch widget {
-              case .cpu(let conf): CpuWidget(matrix: matrix, config: conf)
-              case .memory(let conf): MemoryWidget(matrix: matrix, config: conf)
-              case .battery(let conf): BatteryWidget(matrix: matrix, config: conf)
-              case .clock(let conf): ClockWidget(config: conf)
-              default: EmptyView()
-              }
-            }
-            FoldedWidgetsButton(matrix: matrix)
-          } else {
-            // In normal mode, expand all widgets
-            ForEach(ConfigManager.shared.currentConfig.right, id: \.self) { widget in
-              switch widget {
-              case .network(let conf): NetworkWidget(matrix: matrix, config: conf)
-              case .cpu(let conf): CpuWidget(matrix: matrix, config: conf)
-              case .memory(let conf): MemoryWidget(matrix: matrix, config: conf)
-              case .disk(let conf): DiskWidget(matrix: matrix, config: conf)
-              case .bluetooth(let conf): BluetoothWidget(bluetooth: bluetooth, config: conf)
-              case .battery(let conf): BatteryWidget(matrix: matrix, config: conf)
-              case .clock(let conf): ClockWidget(config: conf)
-              case .folder(let conf):
-                HStack {
-                  ForEach(conf.widgets, id: \.self) { nested in
-                    switch nested {
-                    case .network(let c): NetworkWidget(matrix: matrix, config: c)
-                    case .cpu(let c): CpuWidget(matrix: matrix, config: c)
-                    case .memory(let c): MemoryWidget(matrix: matrix, config: c)
-                    case .disk(let c): DiskWidget(matrix: matrix, config: c)
-                    case .bluetooth(let c): BluetoothWidget(bluetooth: bluetooth, config: c)
-                    case .battery(let c): BatteryWidget(matrix: matrix, config: c)
-                    case .clock(let c): ClockWidget(config: c)
-                    default: EmptyView()
-                    }
-                  }
-                }
-              default: EmptyView()
-              }
+          ForEach(currentLayout.right, id: \.id) { instance in
+            if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
+                factory.makeView(config: instance.config)
             }
           }
         }
@@ -194,16 +155,21 @@ struct StatusBarView: View {
       .padding(.trailing, 10)
       .padding(.top, 5)
 
-      // In normal mode (external display), place in the top center of the screen
-      if !compactMode {
-        KamidanaIsland(musicManager: musicManager)
+      // In external display mode, place in the top center of the screen
+      if !isBuiltInDisplay {
+        KamidanaIsland(centerWidgets: currentLayout.center)
           .fixedSize()
           .padding(.top, 7)
           .zIndex(100)
       }
     }
-    .environment(\.compactMode, compactMode)
-    .font(.system(size: compactMode ? 13 : 14, weight: .semibold, design: .monospaced))
+    .environment(\.widgetStyle, currentLayout.style)
+    .environmentObject(netManager)
+    .environmentObject(audioVM)
+    .environmentObject(matrix)
+    .environmentObject(bluetooth)
+    .environmentObject(musicManager)
+    .font(.system(size: isBuiltInDisplay ? 13 : 14, weight: .semibold, design: .monospaced))
     .frame(maxWidth: .infinity, maxHeight: 600, alignment: .top)
     .background(Color.clear)
     .onAppear {
@@ -225,34 +191,4 @@ struct StatusBarView: View {
   }
 }
 
-private struct FoldedWidgetsButton: View {
-  @ObservedObject var matrix: SystemMatrix
 
-  @State private var showPopover = false
-
-  var body: some View {
-    let colors = ConfigManager.shared.currentConfig.colors
-    Button(action: { showPopover.toggle() }) {
-      NerdFontIcon("󰝖")
-        .foregroundColor(Color(hex: colors.textSecondary))
-    }
-    .buttonStyle(.plain)
-    .SmoothUIModule()
-    .popover(isPresented: $showPopover, arrowEdge: .bottom) {
-      VStack(alignment: .leading, spacing: 8) {
-        Text("Folded Widgets")
-          .font(.headline)
-          .foregroundColor(Color(hex: colors.textPrimary))
-        if let net = ConfigManager.shared.currentConfig.right.compactMap({ w -> NetworkWidgetConfig? in if case .network(let c) = w { return c }; return nil }).first {
-            NetworkWidget(matrix: matrix, config: net)
-        }
-        GpuWidget(matrix: matrix)
-        if let disk = ConfigManager.shared.currentConfig.right.compactMap({ w -> DiskWidgetConfig? in if case .disk(let c) = w { return c }; return nil }).first {
-            DiskWidget(matrix: matrix, config: disk)
-        }
-      }
-      .padding()
-      .background(Color(hex: colors.background))
-    }
-  }
-}

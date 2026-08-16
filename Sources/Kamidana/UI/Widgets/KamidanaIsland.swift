@@ -6,10 +6,11 @@ struct windowSizeRequirements {
 }
 
 struct KamidanaIsland: View {
-    @ObservedObject var musicManager: MusicPlayingManager
+    @EnvironmentObject var musicManager: MusicPlayingManager
+    let centerWidgets: [WidgetInstance]
 
     @State private var isHovered = false
-    @State private var selectedTab: AnyWidgetConfig? = ConfigManager.shared.currentConfig.center.first
+    @State private var selectedTab: WidgetInstance? = nil
 
     @State private var rotation: Double = 0.0
     @State private var islandSize: windowSizeRequirements = windowSizeRequirements(
@@ -26,7 +27,7 @@ struct KamidanaIsland: View {
 
         // If size change by tab is needed, calculate here
         if let tab = selectedTab {
-            if case .terminal(_) = tab {
+            if tab.typeID == "terminal" {
                 return Self.terminalHoveredSize
             }
         }
@@ -45,7 +46,7 @@ struct KamidanaIsland: View {
 
                 // 1. Browser-style tab bar
                 HStack(spacing: 12) {
-                    ForEach(ConfigManager.shared.currentConfig.center, id: \.self) { tab in
+                    ForEach(centerWidgets, id: \.id) { tab in
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedTab = tab
@@ -76,16 +77,10 @@ struct KamidanaIsland: View {
                 // 2. Tab content
                 Group {
                     if let selected = selectedTab {
-                        switch selected {
-                        case .music(let conf):
-                            MusicWidget(musicManager: musicManager, config: conf)
+                        if let factory = WidgetRegistry.shared.factory(for: selected.typeID) {
+                            factory.makeView(config: selected.config)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        case .terminal(let conf):
-                            TerminalView(executable: conf.terminalPath)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .cornerRadius(12)
-                                .padding(12)
-                        default:
+                        } else {
                             EmptyView()
                         }
                     }
@@ -114,7 +109,7 @@ struct KamidanaIsland: View {
 
                     } else {
                         // Default icon when no music or artwork is available
-                        let musicConfig = ConfigManager.shared.currentConfig.center.compactMap { w -> MusicWidgetConfig? in if case .music(let c) = w { return c }; return nil }.first ?? MusicWidgetConfig()
+                        let musicConfig = centerWidgets.first(where: { $0.typeID == "music" })?.config as? MusicWidgetConfig ?? MusicWidgetConfig()
                         NerdFontIcon(musicConfig.defaultIcon)
                             .foregroundColor(Color(hex: musicConfig.defaultIconColor))
                     }
@@ -146,13 +141,14 @@ struct KamidanaIsland: View {
                 isHovered = hovering
             }
         }
+        .onAppear {
+            if selectedTab == nil {
+                selectedTab = centerWidgets.first
+            }
+        }
     }
 
-    private func tabName(for widget: AnyWidgetConfig) -> String {
-        switch widget {
-        case .music: return "Music"
-        case .terminal(let conf): return conf.name
-        default: return "Tab"
-        }
+    private func tabName(for widget: WidgetInstance) -> String {
+        return WidgetRegistry.shared.factory(for: widget.typeID)?.getTabName(config: widget.config) ?? "Unknown"
     }
 }

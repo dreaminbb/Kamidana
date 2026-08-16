@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AudioWidget: View {
-    @ObservedObject var audioVM: AudioViewModel
+    @EnvironmentObject var audioVM: AudioViewModel
     let config: AudioWidgetConfig
     
     @State private var showAudioPopover = false

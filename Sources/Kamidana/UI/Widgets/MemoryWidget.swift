@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MemoryWidget: View {
-    @ObservedObject var matrix: SystemMatrix
+    @EnvironmentObject var matrix: SystemMatrix
     @State private var showPopover = false
     @State private var isHovered = false
     let config: MemoryWidgetConfig

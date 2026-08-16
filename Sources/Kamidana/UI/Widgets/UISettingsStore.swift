@@ -37,8 +37,8 @@ final class UISettingsStore: ObservableObject {
         }
     }
 
-    func isCollapsed(_ kind: WidgetKind, compactMode: Bool) -> Bool {
-        compactMode && collapsedWidgets.contains(kind)
+    func isCollapsed(_ kind: WidgetKind) -> Bool {
+        collapsedWidgets.contains(kind)
     }
 
     func toggleCollapsed(_ kind: WidgetKind) {
@@ -46,17 +46,6 @@ final class UISettingsStore: ObservableObject {
             collapsedWidgets.remove(kind)
         } else {
             collapsedWidgets.insert(kind)
-        }
-    }
-
-    func resolveCompactMode(isBuiltInDisplay: Bool) -> Bool {
-        switch displayModePolicy {
-        case .alwaysCompact:
-            return true
-        case .alwaysRegular:
-            return false
-        case .auto:
-            return isBuiltInDisplay
         }
     }
 }
