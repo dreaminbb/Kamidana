@@ -3,7 +3,7 @@ import SwiftUI
 struct CpuWidget: View {
     @ObservedObject var matrix: SystemMatrix
     @State private var showPopover = false
-    private var config: CpuWidgetConfig { ConfigManager.shared.currentConfig.cpu }
+    let config: CpuWidgetConfig
     
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors

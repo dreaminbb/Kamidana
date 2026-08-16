@@ -1,0 +1,173 @@
+# ==========================================
+# Kamidana Configuration File
+# 
+# Place this file at: ~/.config/kamidana/config.yaml
+# ==========================================
+
+# ------------------------------------------
+# Global Colors (Catppuccin Mocha defaults)
+# ------------------------------------------
+colors:
+  background: "#1e1e2e"
+  surface: "#313244"
+  surfaceHighlight: "#45475a"
+  surfaceBorder: "#585b70"
+  textPrimary: "#cdd6f4"
+  textSecondary: "#bac2de"
+  textTertiary: "#a6adc8"
+  primary: "#89b4fa"
+  secondary: "#cba6f7"
+  accent: "#f5c2e7"
+  success: "#a6e3a1"
+  warning: "#fab387"
+  danger: "#f38ba8"
+  info: "#94e2d5"
+  caution: "#f9e2af"
+
+# ------------------------------------------
+# UI Style (Padding, corner radius, opacity)
+# ------------------------------------------
+styleNormal:
+  paddingHorizontal: 12.0
+  paddingTop: 6.0
+  paddingBottom: 9.0
+  cornerRadius: 12.0
+  backgroundColorOpacity: 0.6
+  hoverBackgroundColorOpacity: 0.8
+
+styleCompact:
+  paddingHorizontal: 8.0
+  paddingTop: 6.0
+  paddingBottom: 9.0
+  cornerRadius: 8.0
+  backgroundColorOpacity: 0.6
+  hoverBackgroundColorOpacity: 0.8
+
+# ------------------------------------------
+# Widget Configurations by Layout Section
+# 
+# Each section (left, center, right) contains
+# an array of widget definitions.
+# ------------------------------------------
+
+left:
+  # TODO:
+  # This should be 
+  # - widgetFold:
+  #     icon: "󰀵"
+  #     iconColor: "#cba6f7"
+  #     direction: "below" # below || right || left
+  #
+  #     - reboot:
+  #       icon: ""
+  #
+  #     - sleep:
+  #         icon: ""
+
+
+  - systemControl:
+      icon: "󰀵"
+      iconColor: "#cba6f7"
+
+  - wifi:
+      connectedIcon: "󰤨"
+      disconnectedIcon: "󰤭"
+      lanIcon: "󰲝"
+      iconColor: "#f5c2e7"
+      textColor: "#cdd6f4"
+      disconnectedTextColor: "#a6adc8"
+
+  - audio:
+      speakerIcon: ""
+      speakerMutedIcon: "󰟎"
+      micIcon: "󰍬"
+      micMutedIcon: "󰍭"
+      activeColor: "#89b4fa"
+      micActiveColor: "#fab387"
+      mutedColor: "#f38ba8"
+      textColor: "#cdd6f4"
+
+
+center:
+  - music:
+      defaultIcon: "󰝚"
+      defaultIconColor: "#f5c2e7"
+      playIcon: "󰐊"
+      pauseIcon: "󰏤"
+      forwardIcon: "󰒭"
+      backwardIcon: "󰒮"
+
+  - terminal:
+      name: "btop"
+      terminalPath: "/opt/homebrew/bin/btop"
+      
+  # Example of adding a second terminal widget to the center island
+  # - terminal:
+  #     name: "weather"
+  #     terminalPath: "curl wttr.in"
+
+
+right:
+  - network:
+      uploadIcon: "󰁝"
+      downloadIcon: "󰁅"
+      iconColor: "#94e2d5"
+      textColor: "#cdd6f4"
+
+  - cpu:
+      icon: "󰍛"
+      successColor: "#a6e3a1"
+      cautionColor: "#f9e2af"
+      dangerColor: "#f38ba8"
+      successThreshold: 30.0
+      dangerThreshold: 70.0
+
+  # Example of using a widget folder (Note: folders are not allowed in `center`)
+  - folder:
+      name: "Stats"
+      icon: "󰉋"
+      widgets:
+        - memory:
+            icon: "󰘚"
+            iconColor: "#cba6f7"
+            textColor: "#cba6f7"
+            displayFormat: "xx %"
+
+        - disk:
+            icon: "󰋊"
+            iconColor: "#fab387"
+            textColor: "#fab387"
+            readIcon: "󰁅"
+            writeIcon: "󰁝"
+            displayFormat: "x/a"
+
+  - bluetooth:
+      iconConnected: "󰂯"
+      iconDisconnected: "󰂲"
+      connectedColor: "#89b4fa"
+      disconnectedColor: "#a6adc8"
+      textColor: "#cdd6f4"
+
+  - battery:
+      chargingColor: "#a6e3a1"
+      dischargingColor: "#cdd6f4"
+      warningColor: "#fab387"
+      dangerColor: "#f38ba8"
+      charging_right_now: "󰂄"
+      _100_capacity: "󰁹"
+      _90_capacity: "󰂂"
+      _80_capacity: "󰂁"
+      _70_capacity: "󰂀"
+      _60_capacity: "󰁿"
+      _50_capacity: "󰁾"
+      _40_capacity: "󰁽"
+      _30_capacity: "󰁼"
+      _20_capacity: "󰁹"
+      _10_capacity: "󰁻"
+      _sub_10_charged: "󰂃"
+
+  - clock:
+      dateFormat: "yyyy-MM-dd"
+      timeFormat: "HH:mm:ss"
+      locale: "ja_JP"
+      textColor: "#cdd6f4"

@@ -4,7 +4,7 @@ struct DiskWidget: View {
     @ObservedObject var matrix: SystemMatrix
     @State private var showPopover = false
     @State private var isHovered = false
-    private var config: DiskWidgetConfig { ConfigManager.shared.currentConfig.disk }
+    let config: DiskWidgetConfig
     
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors

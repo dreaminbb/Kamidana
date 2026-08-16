@@ -1,10 +1,5 @@
 import SwiftUI
 
-enum IslandTab: String, CaseIterable {
-    case music = "Music"
-    case btop = "Btop"
-}
-
 struct windowSizeRequirements {
     var width: CGFloat?
     var height: CGFloat?
@@ -14,7 +9,7 @@ struct KamidanaIsland: View {
     @ObservedObject var musicManager: MusicPlayingManager
 
     @State private var isHovered = false
-    @State private var selectedTab: IslandTab = .music
+    @State private var selectedTab: AnyWidgetConfig? = ConfigManager.shared.currentConfig.center.first
 
     @State private var rotation: Double = 0.0
     @State private var islandSize: windowSizeRequirements = windowSizeRequirements(
@@ -30,9 +25,10 @@ struct KamidanaIsland: View {
         if !isHovered { return Self.defaultCompactSize }
 
         // If size change by tab is needed, calculate here
-        if selectedTab == .btop {
-            // If changing size only for the Terminal tab, return here
-            return Self.terminalHoveredSize
+        if let tab = selectedTab {
+            if case .terminal(_) = tab {
+                return Self.terminalHoveredSize
+            }
         }
 
         // Use `??` operator to provide fallback defaults cleanly when nil
@@ -49,7 +45,7 @@ struct KamidanaIsland: View {
 
                 // 1. Browser-style tab bar
                 HStack(spacing: 12) {
-                    ForEach(IslandTab.allCases, id: \.self) { tab in
+                    ForEach(ConfigManager.shared.currentConfig.center, id: \.self) { tab in
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedTab = tab
@@ -57,7 +53,7 @@ struct KamidanaIsland: View {
                             }
 
                         }) {
-                            Text(tab.rawValue)
+                            Text(tabName(for: tab))
                                 .font(.system(size: 14, weight: .bold))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 6)
@@ -79,18 +75,19 @@ struct KamidanaIsland: View {
 
                 // 2. Tab content
                 Group {
-                    switch selectedTab {
-                    case .music:
-                        // Place MusicWidget directly configured to expand across the island
-                        MusicWidget(musicManager: musicManager)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                    case .btop:
-                        // Embed TerminalView here
-                        TerminalView(executable: ConfigManager.shared.currentConfig.systemControl.terminalPath)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .cornerRadius(12)
-                            .padding(12)
+                    if let selected = selectedTab {
+                        switch selected {
+                        case .music(let conf):
+                            MusicWidget(musicManager: musicManager, config: conf)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        case .terminal(let conf):
+                            TerminalView(executable: conf.terminalPath)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .cornerRadius(12)
+                                .padding(12)
+                        default:
+                            EmptyView()
+                        }
                     }
                 }
 
@@ -117,8 +114,9 @@ struct KamidanaIsland: View {
 
                     } else {
                         // Default icon when no music or artwork is available
-                        NerdFontIcon("󰕰")
-                            .foregroundColor(Color(hex: colors.primary))
+                        let musicConfig = ConfigManager.shared.currentConfig.center.compactMap { w -> MusicWidgetConfig? in if case .music(let c) = w { return c }; return nil }.first ?? MusicWidgetConfig()
+                        NerdFontIcon(musicConfig.defaultIcon)
+                            .foregroundColor(Color(hex: musicConfig.defaultIconColor))
                     }
 
                     Spacer()
@@ -147,6 +145,14 @@ struct KamidanaIsland: View {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 isHovered = hovering
             }
+        }
+    }
+
+    private func tabName(for widget: AnyWidgetConfig) -> String {
+        switch widget {
+        case .music: return "Music"
+        case .terminal(let conf): return conf.name
+        default: return "Tab"
         }
     }
 }

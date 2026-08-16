@@ -35,6 +35,7 @@ public struct MemoryWidgetConfig: Codable {
   public var icon: String = "󰘚"
   public var iconColor: String = "#cba6f7"
   public var textColor: String = "#cba6f7"
+  public var displayFormat: String = "xx %"  // e.g., "x/a" for Used/Total or "xx %" for Percentage
 }
 
 public struct DiskWidgetConfig: Codable {
@@ -43,6 +44,7 @@ public struct DiskWidgetConfig: Codable {
   public var textColor: String = "#fab387"
   public var readIcon: String = "󰁅"  // arrowDownCircle
   public var writeIcon: String = "󰁝"  // arrowUpCircle
+  public var displayFormat: String = "xx %"  // e.g., "x/a" or "xx %"
 }
 
 public struct NetworkWidgetConfig: Codable {
@@ -101,7 +103,6 @@ public struct AudioWidgetConfig: Codable {
 public struct SystemControlWidgetConfig: Codable {
   public var icon: String = "󰀵"  // appleLogo
   public var iconColor: String = "#cba6f7"
-  public var terminalPath: String = "/opt/homebrew/bin/btop"
 }
 
 public struct MusicWidgetConfig: Codable {
@@ -111,6 +112,115 @@ public struct MusicWidgetConfig: Codable {
   public var pauseIcon: String = "󰏤"
   public var forwardIcon: String = "󰒭"
   public var backwardIcon: String = "󰒮"
+}
+
+public struct TerminalWidgetConfig: Codable, Hashable {
+  public var name: String
+  public var terminalPath: String
+}
+
+public struct FolderWidgetConfig: Codable, Hashable {
+  public var name: String
+  public var icon: String
+  public var widgets: [AnyWidgetConfig]
+}
+
+// Make all existing configs Hashable so we can use them in ForEach
+extension SystemControlWidgetConfig: Hashable {}
+extension WifiWidgetConfig: Hashable {}
+extension AudioWidgetConfig: Hashable {}
+extension MusicWidgetConfig: Hashable {}
+extension NetworkWidgetConfig: Hashable {}
+extension CpuWidgetConfig: Hashable {}
+extension MemoryWidgetConfig: Hashable {}
+extension DiskWidgetConfig: Hashable {}
+extension BluetoothWidgetConfig: Hashable {}
+extension BatteryWidgetConfig: Hashable {}
+extension ClockWidgetConfig: Hashable {}
+
+// MARK: - Heterogeneous Widget Enum
+
+public enum AnyWidgetConfig: Codable, Hashable {
+  case systemControl(SystemControlWidgetConfig)
+  case wifi(WifiWidgetConfig)
+  case audio(AudioWidgetConfig)
+  case music(MusicWidgetConfig)
+  case terminal(TerminalWidgetConfig)
+  case network(NetworkWidgetConfig)
+  case cpu(CpuWidgetConfig)
+  case memory(MemoryWidgetConfig)
+  case disk(DiskWidgetConfig)
+  case bluetooth(BluetoothWidgetConfig)
+  case battery(BatteryWidgetConfig)
+  case clock(ClockWidgetConfig)
+  case folder(FolderWidgetConfig)
+
+  private enum CodingKeys: String, CodingKey {
+    case systemControl, wifi, audio, music, terminal, network, cpu, memory, disk, bluetooth,
+      battery, clock, folder
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    if let config = try container.decodeIfPresent(
+      SystemControlWidgetConfig.self, forKey: .systemControl)
+    {
+      self = .systemControl(config)
+    } else if let config = try container.decodeIfPresent(WifiWidgetConfig.self, forKey: .wifi) {
+      self = .wifi(config)
+    } else if let config = try container.decodeIfPresent(AudioWidgetConfig.self, forKey: .audio) {
+      self = .audio(config)
+    } else if let config = try container.decodeIfPresent(MusicWidgetConfig.self, forKey: .music) {
+      self = .music(config)
+    } else if let config = try container.decodeIfPresent(
+      TerminalWidgetConfig.self, forKey: .terminal)
+    {
+      self = .terminal(config)
+    } else if let config = try container.decodeIfPresent(NetworkWidgetConfig.self, forKey: .network)
+    {
+      self = .network(config)
+    } else if let config = try container.decodeIfPresent(CpuWidgetConfig.self, forKey: .cpu) {
+      self = .cpu(config)
+    } else if let config = try container.decodeIfPresent(MemoryWidgetConfig.self, forKey: .memory) {
+      self = .memory(config)
+    } else if let config = try container.decodeIfPresent(DiskWidgetConfig.self, forKey: .disk) {
+      self = .disk(config)
+    } else if let config = try container.decodeIfPresent(
+      BluetoothWidgetConfig.self, forKey: .bluetooth)
+    {
+      self = .bluetooth(config)
+    } else if let config = try container.decodeIfPresent(BatteryWidgetConfig.self, forKey: .battery)
+    {
+      self = .battery(config)
+    } else if let config = try container.decodeIfPresent(ClockWidgetConfig.self, forKey: .clock) {
+      self = .clock(config)
+    } else if let config = try container.decodeIfPresent(FolderWidgetConfig.self, forKey: .folder) {
+      self = .folder(config)
+    } else {
+      throw DecodingError.dataCorrupted(
+        DecodingError.Context(
+          codingPath: decoder.codingPath, debugDescription: "Unknown widget type"))
+    }
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    switch self {
+    case .systemControl(let config): try container.encode(config, forKey: .systemControl)
+    case .wifi(let config): try container.encode(config, forKey: .wifi)
+    case .audio(let config): try container.encode(config, forKey: .audio)
+    case .music(let config): try container.encode(config, forKey: .music)
+    case .terminal(let config): try container.encode(config, forKey: .terminal)
+    case .network(let config): try container.encode(config, forKey: .network)
+    case .cpu(let config): try container.encode(config, forKey: .cpu)
+    case .memory(let config): try container.encode(config, forKey: .memory)
+    case .disk(let config): try container.encode(config, forKey: .disk)
+    case .bluetooth(let config): try container.encode(config, forKey: .bluetooth)
+    case .battery(let config): try container.encode(config, forKey: .battery)
+    case .clock(let config): try container.encode(config, forKey: .clock)
+    case .folder(let config): try container.encode(config, forKey: .folder)
+    }
+  }
 }
 
 public struct BluetoothWidgetConfig: Codable {
@@ -132,18 +242,27 @@ public struct Config {
   public var styleNormal: WidgetStyleConfig = .defaultNormal
   public var styleCompact: WidgetStyleConfig = .defaultCompact
 
-  // Widgets
-  public var cpu: CpuWidgetConfig = CpuWidgetConfig()
-  public var memory: MemoryWidgetConfig = MemoryWidgetConfig()
-  public var disk: DiskWidgetConfig = DiskWidgetConfig()
-  public var network: NetworkWidgetConfig = NetworkWidgetConfig()
-  public var battery: BatteryWidgetConfig = BatteryWidgetConfig()
-  public var clock: ClockWidgetConfig = ClockWidgetConfig()
-  public var wifi: WifiWidgetConfig = WifiWidgetConfig()
-  public var audio: AudioWidgetConfig = AudioWidgetConfig()
-  public var systemControl: SystemControlWidgetConfig = SystemControlWidgetConfig()
-  public var music: MusicWidgetConfig = MusicWidgetConfig()
-  public var bluetooth: BluetoothWidgetConfig = BluetoothWidgetConfig()
+  // Layout Sections
+  public var left: [AnyWidgetConfig] = [
+    .systemControl(SystemControlWidgetConfig()),
+    .wifi(WifiWidgetConfig()),
+    .audio(AudioWidgetConfig()),
+  ]
+
+  public var center: [AnyWidgetConfig] = [
+    .music(MusicWidgetConfig()),
+    .terminal(TerminalWidgetConfig(name: "btop", terminalPath: "/opt/homebrew/bin/htop")),
+  ]
+
+  public var right: [AnyWidgetConfig] = [
+    .network(NetworkWidgetConfig()),
+    .cpu(CpuWidgetConfig()),
+    .memory(MemoryWidgetConfig()),
+    .disk(DiskWidgetConfig()),
+    .bluetooth(BluetoothWidgetConfig()),
+    .battery(BatteryWidgetConfig()),
+    .clock(ClockWidgetConfig()),
+  ]
 
   public init() {}
 }

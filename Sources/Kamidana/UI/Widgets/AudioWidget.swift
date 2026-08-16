@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AudioWidget: View {
     @ObservedObject var audioVM: AudioViewModel
-    var config: AudioWidgetConfig { ConfigManager.shared.currentConfig.audio }
+    let config: AudioWidgetConfig
     
     @State private var showAudioPopover = false
     @State private var showMicPopover = false

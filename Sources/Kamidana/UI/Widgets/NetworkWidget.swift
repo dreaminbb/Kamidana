@@ -5,9 +5,10 @@ struct NetworkWidget: View {
     @State private var showPopover = false
     @State private var isHovered = false
 
+    let config: NetworkWidgetConfig
+
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        let config = ConfigManager.shared.currentConfig.network
         if let net = matrix.data.internetUsage {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 2) {

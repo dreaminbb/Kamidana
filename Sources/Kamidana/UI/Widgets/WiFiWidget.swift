@@ -9,9 +9,10 @@ struct WiFiWidget: View {
     @State private var connectionStatusMsg = ""
     @State private var isHovered = false
 
+    let config: WifiWidgetConfig
+
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        let config = ConfigManager.shared.currentConfig.wifi
         Button(action: {
             showPopover.toggle()
             if showPopover {

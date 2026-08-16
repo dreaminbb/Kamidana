@@ -4,7 +4,7 @@ struct MemoryWidget: View {
     @ObservedObject var matrix: SystemMatrix
     @State private var showPopover = false
     @State private var isHovered = false
-    private var config: MemoryWidgetConfig { ConfigManager.shared.currentConfig.memory }
+    let config: MemoryWidgetConfig
     
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors

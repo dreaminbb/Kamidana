@@ -5,30 +5,29 @@ struct BatteryWidget: View {
   @State private var showPopover = false
   @State private var isHovered = false
 
-  @State private var BatteryWidgetConfigInstance = BatteryWidgetConfig()
+  let config: BatteryWidgetConfig
 
   private func resolveBatteryIcon(capacity: Int64, isCharging: Bool) -> String {
     if isCharging {
-      return BatteryWidgetConfigInstance.charging_right_now
+      return config.charging_right_now
     }
     switch capacity {
-    case 95...100: return BatteryWidgetConfigInstance._100_capacity
-    case 85..<95: return BatteryWidgetConfigInstance._90_capacity
-    case 75..<85: return BatteryWidgetConfigInstance._80_capacity
-    case 65..<75: return BatteryWidgetConfigInstance._70_capacity
-    case 55..<65: return BatteryWidgetConfigInstance._60_capacity
-    case 45..<55: return BatteryWidgetConfigInstance._50_capacity
-    case 35..<45: return BatteryWidgetConfigInstance._40_capacity
-    case 25..<35: return BatteryWidgetConfigInstance._30_capacity
-    case 15..<25: return BatteryWidgetConfigInstance._20_capacity
-    case 10..<15: return BatteryWidgetConfigInstance._10_capacity
-    default: return BatteryWidgetConfigInstance._sub_10_charged
+    case 95...100: return config._100_capacity
+    case 85..<95: return config._90_capacity
+    case 75..<85: return config._80_capacity
+    case 65..<75: return config._70_capacity
+    case 55..<65: return config._60_capacity
+    case 45..<55: return config._50_capacity
+    case 35..<45: return config._40_capacity
+    case 25..<35: return config._30_capacity
+    case 15..<25: return config._20_capacity
+    case 10..<15: return config._10_capacity
+    default: return config._sub_10_charged
     }
   }
 
   var body: some View {
     let colors = ConfigManager.shared.currentConfig.colors
-    let config = ConfigManager.shared.currentConfig.battery
     if let battery = matrix.data.batteryUsage {
       Button(action: { showPopover.toggle() }) {
         HStack(spacing: 6) {
@@ -124,7 +123,6 @@ struct BatteryWidget: View {
   }
 
   private func getThermalColor(_ state: String) -> Color {
-    let config = ConfigManager.shared.currentConfig.battery
     let colors = ConfigManager.shared.currentConfig.colors
     switch state {
     case "Normal": return Color(hex: colors.info)

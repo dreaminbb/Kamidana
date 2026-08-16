@@ -3,6 +3,7 @@ import SwiftUI
 
 struct CpuGpuWidget: View {
     @ObservedObject var matrix: SystemMatrix
+    let config: CpuWidgetConfig
     @State private var showPopover = false
     @State private var isHovered = false
     
@@ -12,7 +13,7 @@ struct CpuGpuWidget: View {
             VStack(alignment: .leading, spacing: 2) {
                 if let cpu = matrix.data.cpuUsage {
                     HStack(spacing: 4) {
-                        NerdFontIcon(ConfigManager.shared.currentConfig.cpu.icon).foregroundColor(getCPUColor(cpu.total))
+                        NerdFontIcon(config.icon).foregroundColor(getCPUColor(cpu.total))
                         Text(String(format: "%5.1f%%", cpu.total))
                             .foregroundColor(getCPUColor(cpu.total))
                     }
@@ -46,7 +47,7 @@ struct CpuGpuWidget: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("CPU").font(.subheadline).foregroundColor(Color(hex: colors.textSecondary))
                             HStack {
-                                NerdFontIcon(ConfigManager.shared.currentConfig.cpu.icon).foregroundColor(getCPUColor(cpu.total)).frame(width: 20)
+                                NerdFontIcon(config.icon).foregroundColor(getCPUColor(cpu.total)).frame(width: 20)
                                 Text("Total:").foregroundColor(Color(hex: colors.textSecondary)).frame(width: 80, alignment: .leading)
                                 Text(String(format: "%.1f%%", cpu.total)).foregroundColor(Color(hex: colors.textPrimary))
                             }

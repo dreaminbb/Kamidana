@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct ClockWidget: View {
+    let config: ClockWidgetConfig
     @State private var currentTime = Date()
     let clockTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var dateText: String {
-        let config = ConfigManager.shared.currentConfig.clock
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: config.locale)
         formatter.dateFormat = config.dateFormat
@@ -13,7 +13,6 @@ struct ClockWidget: View {
     }
 
     private var timeText: String {
-        let config = ConfigManager.shared.currentConfig.clock
         let formatter = DateFormatter()
         formatter.dateFormat = config.timeFormat
         return formatter.string(from: currentTime)
@@ -25,7 +24,7 @@ struct ClockWidget: View {
             Text(timeText)
         }
         .fontWeight(.bold)
-        .foregroundColor(Color(hex: ConfigManager.shared.currentConfig.clock.textColor))
+        .foregroundColor(Color(hex: config.textColor))
         .SmoothUIModule()
         .onReceive(clockTimer) { input in
             currentTime = input

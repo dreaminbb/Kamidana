@@ -115,12 +115,14 @@ struct StatusBarView: View {
     ZStack(alignment: .top) {
       // Left widget group
       HStack(alignment: .top, spacing: compactMode ? 6 : 8) {
-        // System Control
-        SystemControlWidget()
-
-        // LocalSendWidget(localSend: localSend)
-        WiFiWidget(netManager: netManager)
-        AudioWidget(audioVM: audioVM)
+        ForEach(ConfigManager.shared.currentConfig.left, id: \.self) { widget in
+            switch widget {
+            case .systemControl(let conf): SystemControlWidget(config: conf)
+            case .wifi(let conf): WiFiWidget(netManager: netManager, config: conf)
+            case .audio(let conf): AudioWidget(audioVM: audioVM, config: conf)
+            default: EmptyView()
+            }
+        }
 
         // In compact mode (built-in display), place island from right of audio widget toward center camera
         if compactMode {
@@ -145,21 +147,45 @@ struct StatusBarView: View {
         content: {
           if compactMode {
             // In compact mode, fold some widgets
-            CpuWidget(matrix: matrix)
-            MemoryWidget(matrix: matrix)
-            BatteryWidget(matrix: matrix)
-            ClockWidget()
+            ForEach(ConfigManager.shared.currentConfig.right, id: \.self) { widget in
+              switch widget {
+              case .cpu(let conf): CpuWidget(matrix: matrix, config: conf)
+              case .memory(let conf): MemoryWidget(matrix: matrix, config: conf)
+              case .battery(let conf): BatteryWidget(matrix: matrix, config: conf)
+              case .clock(let conf): ClockWidget(config: conf)
+              default: EmptyView()
+              }
+            }
             FoldedWidgetsButton(matrix: matrix)
           } else {
             // In normal mode, expand all widgets
-            NetworkWidget(matrix: matrix)
-            CpuWidget(matrix: matrix)
-            GpuWidget(matrix: matrix)
-            MemoryWidget(matrix: matrix)
-            DiskWidget(matrix: matrix)
-            BluetoothWidget(bluetooth: bluetooth)
-            BatteryWidget(matrix: matrix)
-            ClockWidget()
+            ForEach(ConfigManager.shared.currentConfig.right, id: \.self) { widget in
+              switch widget {
+              case .network(let conf): NetworkWidget(matrix: matrix, config: conf)
+              case .cpu(let conf): CpuWidget(matrix: matrix, config: conf)
+              case .memory(let conf): MemoryWidget(matrix: matrix, config: conf)
+              case .disk(let conf): DiskWidget(matrix: matrix, config: conf)
+              case .bluetooth(let conf): BluetoothWidget(bluetooth: bluetooth, config: conf)
+              case .battery(let conf): BatteryWidget(matrix: matrix, config: conf)
+              case .clock(let conf): ClockWidget(config: conf)
+              case .folder(let conf):
+                HStack {
+                  ForEach(conf.widgets, id: \.self) { nested in
+                    switch nested {
+                    case .network(let c): NetworkWidget(matrix: matrix, config: c)
+                    case .cpu(let c): CpuWidget(matrix: matrix, config: c)
+                    case .memory(let c): MemoryWidget(matrix: matrix, config: c)
+                    case .disk(let c): DiskWidget(matrix: matrix, config: c)
+                    case .bluetooth(let c): BluetoothWidget(bluetooth: bluetooth, config: c)
+                    case .battery(let c): BatteryWidget(matrix: matrix, config: c)
+                    case .clock(let c): ClockWidget(config: c)
+                    default: EmptyView()
+                    }
+                  }
+                }
+              default: EmptyView()
+              }
+            }
           }
         }
       )
@@ -217,9 +243,13 @@ private struct FoldedWidgetsButton: View {
         Text("Folded Widgets")
           .font(.headline)
           .foregroundColor(Color(hex: colors.textPrimary))
-        NetworkWidget(matrix: matrix)
+        if let net = ConfigManager.shared.currentConfig.right.compactMap({ w -> NetworkWidgetConfig? in if case .network(let c) = w { return c }; return nil }).first {
+            NetworkWidget(matrix: matrix, config: net)
+        }
         GpuWidget(matrix: matrix)
-        DiskWidget(matrix: matrix)
+        if let disk = ConfigManager.shared.currentConfig.right.compactMap({ w -> DiskWidgetConfig? in if case .disk(let c) = w { return c }; return nil }).first {
+            DiskWidget(matrix: matrix, config: disk)
+        }
       }
       .padding()
       .background(Color(hex: colors.background))

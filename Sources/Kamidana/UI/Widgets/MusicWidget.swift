@@ -9,7 +9,7 @@ struct MusicWidget: View {
     @State private var sliderValue: Double = 0.0
     @State private var dragUUID = UUID()
 
-    var config: MusicWidgetConfig { ConfigManager.shared.currentConfig.music }
+    let config: MusicWidgetConfig
 
     // Timer for rotation animation
     let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()

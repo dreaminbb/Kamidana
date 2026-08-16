@@ -7,9 +7,10 @@ struct BluetoothWidget: View {
     @State private var isButtonHovered = false
     @State private var isPopoverHovered = false
 
+    let config: BluetoothWidgetConfig
+
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        let config = ConfigManager.shared.currentConfig.bluetooth
         Button(action: {
             showPopover.toggle()
             if showPopover {

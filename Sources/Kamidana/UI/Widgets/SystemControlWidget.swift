@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SystemControlWidget: View {
     let systemController = SystemController()
+    let config: SystemControlWidgetConfig
 
     @State private var isHovered = false
     @Environment(\.compactMode) var compactMode: Bool  // Match padding with other widgets
@@ -23,9 +24,12 @@ struct SystemControlWidget: View {
         window.center()  // Center on screen
 
         // Embed SwiftUI View into AppKit window with translucent styling
-        let config = ConfigManager.shared.currentConfig.systemControl
         let colors = ConfigManager.shared.currentConfig.colors
-        let terminalUI = TerminalView(executable: config.terminalPath)
+        let executable = ConfigManager.shared.currentConfig.center.compactMap { widget -> String? in
+            if case .terminal(let t) = widget { return t.terminalPath }
+            return nil
+        }.first ?? "/bin/sh"
+        let terminalUI = TerminalView(executable: executable)
             .background(Color(hex: colors.background).opacity(0.8))
             .background(.ultraThinMaterial)  // Frosted glass effect
 
@@ -41,7 +45,6 @@ struct SystemControlWidget: View {
         let colors = ConfigManager.shared.currentConfig.colors
         // Base icon (matches layout and height of other widget buttons)
         HStack(spacing: 4) {
-            let config = ConfigManager.shared.currentConfig.systemControl
             NerdFontIcon(config.icon, size: 14)
                 .foregroundColor(Color(hex: config.iconColor))
                 .frame(width: 20, alignment: .center) // Set 20px width and center alignment
