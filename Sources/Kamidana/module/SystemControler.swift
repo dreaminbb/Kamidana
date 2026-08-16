@@ -24,7 +24,7 @@ class SystemController {
         #"tell application "System Events" to keystroke "q" using {command down, control down}"#
 
     static let sleepScript = "tell application \"System Events\" to sleep"
-    static let aboutThisMacAppPath = "/System/Library/CoreServices/Applications/About This Mac.app"
+    static let aboutThisMacAppPath = "/System/Applications/Utilities/System Information.app"
 
     static func runAppleScript(_ script: String) -> Result<Bool, SystemControlError> {
 

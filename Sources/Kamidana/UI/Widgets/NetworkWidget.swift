@@ -8,18 +8,19 @@ struct NetworkWidget: View {
     @State private var isHovered = false
 
     var body: some View {
+        let config = ConfigManager.shared.currentConfig.network
         if let net = matrix.data.internetUsage {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 2) {
                     HStack(spacing: 3) {
-                        NerdFontIcon(.arrowUpRight).foregroundColor(theme.info)
+                        NerdFontIcon(config.uploadIcon).foregroundColor(config.iconColor.resolve(with: theme))
                         Text(formatBytes(net.uploadBytesPerSecond) + "/s")
-                            .foregroundColor(theme.textPrimary)
+                            .foregroundColor(config.textColor.resolve(with: theme))
                     }
                     HStack(spacing: 3) {
-                        NerdFontIcon(.arrowDownRight).foregroundColor(theme.info)
+                        NerdFontIcon(config.downloadIcon).foregroundColor(config.iconColor.resolve(with: theme))
                         Text(formatBytes(net.downloadBytesPerSecond) + "/s")
-                            .foregroundColor(theme.textPrimary)
+                            .foregroundColor(config.textColor.resolve(with: theme))
                     }
                 }
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
@@ -39,7 +40,7 @@ struct NetworkWidget: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            NerdFontIcon(.network).foregroundColor(theme.primary).frame(
+                            NerdFontIcon("󰲝").foregroundColor(theme.primary).frame(
                                 width: 20)
                             Text("Upload:").foregroundColor(theme.textSecondary).frame(
                                 width: 70, alignment: .leading)

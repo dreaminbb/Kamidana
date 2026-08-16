@@ -8,6 +8,7 @@ struct BatteryWidget: View {
     @State private var isHovered = false
 
     var body: some View {
+        let config = ConfigManager.shared.currentConfig.battery
         if let battery = matrix.data.batteryUsage {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 6) {
@@ -16,10 +17,10 @@ struct BatteryWidget: View {
                         batteryIconName(
                             capacity: battery.currentCapacity, isCharging: battery.isCharging)
                     )
-                    .foregroundColor(battery.isCharging ? theme.success : theme.textPrimary)
+                    .foregroundColor(battery.isCharging ? config.chargingColor.resolve(with: theme) : config.dischargingColor.resolve(with: theme))
 
                     Text("\(battery.currentCapacity)%")
-                        .foregroundColor(theme.textPrimary)
+                        .foregroundColor(config.dischargingColor.resolve(with: theme))
                 }
             }
             .buttonStyle(.plain)
@@ -38,14 +39,14 @@ struct BatteryWidget: View {
                     Text("Battery").font(.subheadline).foregroundColor(theme.textSecondary)
 
                     HStack {
-                        NerdFontIcon(.bolt).foregroundColor(theme.caution).frame(
+                        NerdFontIcon("󰌪").foregroundColor(theme.caution).frame(
                             width: 20)
                         if battery.isCharging {
                             Text("Charging (\(battery.timeToFull)m to full)")
-                                .foregroundColor(theme.success)
+                                .foregroundColor(config.chargingColor.resolve(with: theme))
                         } else if battery.timeToEmpty > 0 {
                             Text("Discharging (\(battery.timeToEmpty)m remaining)")
-                                .foregroundColor(theme.warning)
+                                .foregroundColor(config.warningColor.resolve(with: theme))
                         } else {
                             Text("Fully Charged")
                                 .foregroundColor(theme.textPrimary)
@@ -84,7 +85,7 @@ struct BatteryWidget: View {
                         Text("Thermal").font(.subheadline).foregroundColor(theme.textSecondary)
 
                         HStack {
-                            NerdFontIcon(.thermometer).foregroundColor(
+                            NerdFontIcon("󰔏").foregroundColor(
                                 getThermalColor(thermal, theme: theme)
                             ).frame(width: 20)
                             Text("State:").foregroundColor(theme.textSecondary).frame(
@@ -102,24 +103,25 @@ struct BatteryWidget: View {
     }
 
     private func getThermalColor(_ state: String, theme: Theme) -> Color {
+        let config = ConfigManager.shared.currentConfig.battery
         switch state {
         case "Normal": return theme.info
-        case "Warm": return theme.caution
-        case "Hot", "Critical": return theme.danger
+        case "Warm": return config.warningColor.resolve(with: theme)
+        case "Hot", "Critical": return config.dangerColor.resolve(with: theme)
         default: return theme.textPrimary
         }
     }
 
-    private func batteryIconName(capacity: Int64, isCharging: Bool) -> NerdFontIconType {
+    private func batteryIconName(capacity: Int64, isCharging: Bool) -> String {
         if isCharging {
-            return .batteryCharging
+            return ""
         }
         switch capacity {
-        case ..<13: return .batteryEmpty
-        case ..<38: return .batteryQuarter
-        case ..<63: return .batteryHalf
-        case ..<88: return .batteryThreeQuarters
-        default: return .battery
+        case ..<13: return ""
+        case ..<38: return ""
+        case ..<63: return ""
+        case ..<88: return ""
+        default: return ""
         }
     }
 }

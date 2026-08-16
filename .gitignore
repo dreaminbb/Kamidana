@@ -68,3 +68,4 @@ fastlane/test_output
 /Tests/KamidanaTests/musicTest.swift
 /.DS_Store
 .personal
+/readmepic/.DS_Store

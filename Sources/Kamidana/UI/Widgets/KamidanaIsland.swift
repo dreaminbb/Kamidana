@@ -23,15 +23,17 @@ struct KamidanaIsland: View {
 
     let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     static let defaultHoveredSize = CGSize(width: 600, height: 300)
+    static let defaultCompactSize = CGSize(width: 180, height: 32)
+    static let terminalHoveredSize = CGSize(width: 800, height: 500)
 
     // Calculate and return size
     private func getIslandSize() -> CGSize {
-        if !isHovered { return CGSize(width: 180, height: 32) }
+        if !isHovered { return Self.defaultCompactSize }
 
         // If size change by tab is needed, calculate here
         if selectedTab == .btop {
             // If changing size only for the Terminal tab, return here
-            return CGSize(width: 800, height: 500)
+            return Self.terminalHoveredSize
         }
 
         // Use `??` operator to provide fallback defaults cleanly when nil
@@ -85,7 +87,7 @@ struct KamidanaIsland: View {
 
                     case .btop:
                         // Embed TerminalView here
-                        TerminalView(executable: "/opt/homebrew/bin/btop", theme: theme)
+                        TerminalView(executable: ConfigManager.shared.currentConfig.systemControl.terminalPath, theme: theme)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .cornerRadius(12)
                             .padding(12)
@@ -115,7 +117,7 @@ struct KamidanaIsland: View {
 
                     } else {
                         // Default icon when no music or artwork is available
-                        NerdFontIcon(.grid)
+                        NerdFontIcon("󰕰")
                             .foregroundColor(theme.primary)
                     }
 

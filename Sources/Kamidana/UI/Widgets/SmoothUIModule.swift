@@ -6,18 +6,19 @@ struct SmoothUIModuleModifier: ViewModifier {
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
-        content
-            .padding(.horizontal, compactMode ? 8 : 12)
+        let config = compactMode ? ConfigManager.shared.currentConfig.styleCompact : ConfigManager.shared.currentConfig.styleNormal
+        return content
+            .padding(.horizontal, config.paddingHorizontal)
             // Keep top at 6px and thicken bottom by 3px (total 9px)
-            .padding(.top, 6)
-            .padding(.bottom, 9)
+            .padding(.top, config.paddingTop)
+            .padding(.bottom, config.paddingBottom)
             // On hover use surfaceHighlight, normally use semi-transparent background
-            .background(isHovered ? theme.surfaceHighlight.opacity(0.8) : theme.background.opacity(0.6))
+            .background(isHovered ? theme.surfaceHighlight.opacity(config.hoverBackgroundColorOpacity) : theme.background.opacity(config.backgroundColorOpacity))
             // Layer UltraThinMaterial for a glass-like blur effect
             .background(.ultraThinMaterial)
-            .cornerRadius(compactMode ? 8 : 12)
+            .cornerRadius(config.cornerRadius)
             .overlay(
-                RoundedRectangle(cornerRadius: compactMode ? 8 : 12)
+                RoundedRectangle(cornerRadius: config.cornerRadius)
                     // Highlight border subtly on hover
                     .stroke(isHovered ? theme.surfaceBorder : theme.surface, lineWidth: 1)
             )

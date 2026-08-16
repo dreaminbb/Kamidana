@@ -24,7 +24,8 @@ struct SystemControlWidget: View {
         window.center()  // Center on screen
 
         // Embed SwiftUI View into AppKit window with translucent styling
-        let terminalUI = TerminalView(executable: "/opt/homebrew/bin/btop", theme: theme)
+        let config = ConfigManager.shared.currentConfig.systemControl
+        let terminalUI = TerminalView(executable: config.terminalPath, theme: theme)
             .background(theme.background.opacity(0.8))
             .background(.ultraThinMaterial)  // Frosted glass effect
 
@@ -39,8 +40,9 @@ struct SystemControlWidget: View {
     var body: some View {
         // Base icon (matches layout and height of other widget buttons)
         HStack(spacing: 4) {
-            NerdFontIcon(.appleLogo, size: 14)
-                .foregroundColor(theme.secondary)
+            let config = ConfigManager.shared.currentConfig.systemControl
+            NerdFontIcon(config.icon, size: 14)
+                .foregroundColor(config.iconColor.resolve(with: theme))
                 .frame(width: 20, alignment: .center) // Set 20px width and center alignment
         }
         .SmoothUIModule(theme: theme) // Matches size and position with other modules
@@ -57,34 +59,34 @@ struct SystemControlWidget: View {
                         VStack(alignment: .leading, spacing: 12) {
 
                             menuButton(
-                                icon: .laptop, color: theme.info, text: "About this Mac"
+                                icon: "󰌢", color: theme.info, text: "About this Mac"
                             ) {
                                 let _ = systemController.showAboutThisMac()
                             }
 
-                            menuButton(icon: .bed, color: theme.info, text: "Sleep") {
+                            menuButton(icon: "󰒲", color: theme.info, text: "Sleep") {
                                 let _ = systemController.sleepSystem()
                             }
 
-                            menuButton(icon: .power, color: theme.danger, text: "Shutdown") {
+                            menuButton(icon: "⏻", color: theme.danger, text: "Shutdown") {
                                 let _ = systemController.shutdownSystem()
                             }
 
                             menuButton(
-                                icon: .arrowClockwise, color: theme.warning,
+                                icon: "󰑐", color: theme.warning,
                                 text: "Reboot"
                             ) {
                                 let _ = systemController.rebootSystem()
                             }
 
                             menuButton(
-                                icon: .exit, color: theme.primary,
+                                icon: "󰈆", color: theme.primary,
                                 text: "Logout"
                             ) {
                                 let _ = systemController.logoutSystem()
                             }
 
-                            menuButton(icon: .lock, color: theme.accent, text: "Screen Lock") {
+                            menuButton(icon: "󰌾", color: theme.accent, text: "Screen Lock") {
                                 let _ = systemController.lockScreen()
                             }
 
@@ -118,7 +120,7 @@ struct SystemControlWidget: View {
 
     // Helper to create consistent menu buttons
     private func menuButton(
-        icon: NerdFontIconType, color: Color, text: String, action: @escaping () -> Void
+        icon: String, color: Color, text: String, action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             HStack(spacing: 10) {

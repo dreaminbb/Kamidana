@@ -10,6 +10,7 @@ struct BluetoothWidget: View {
     @State private var isPopoverHovered = false
 
     var body: some View {
+        let config = ConfigManager.shared.currentConfig.bluetooth
         Button(action: {
             showPopover.toggle()
             if showPopover {
@@ -17,8 +18,8 @@ struct BluetoothWidget: View {
             }
         }) {
             HStack(spacing: 4) {
-                NerdFontIcon(bluetooth.isBluetoothOn ? .bluetooth : .bluetoothSlash)
-                    .foregroundColor(bluetooth.isBluetoothOn ? theme.accent : theme.textTertiary)
+                NerdFontIcon(bluetooth.isBluetoothOn ? config.iconConnected : config.iconDisconnected)
+                    .foregroundColor(bluetooth.isBluetoothOn ? config.connectedColor.resolve(with: theme) : config.disconnectedColor.resolve(with: theme))
             }
         }
         .buttonStyle(.plain)
@@ -98,7 +99,7 @@ struct DeviceRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            NerdFontIcon(info.isConnected ? .link : .linkPlus)
+            NerdFontIcon(info.isConnected ? "" : "")
                 .foregroundColor(info.isConnected ? theme.accent : theme.textTertiary)
 
             Text(info.name)
@@ -142,7 +143,7 @@ struct SettingsRowButton: View {
 
     var body: some View {
         HStack {
-            NerdFontIcon(.list)
+            NerdFontIcon("󰝖")
                 .foregroundColor(theme.accent)
             Text("Bluetooth Settings...")
                 .font(.subheadline)

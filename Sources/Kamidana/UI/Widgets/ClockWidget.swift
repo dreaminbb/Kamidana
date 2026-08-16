@@ -7,15 +7,17 @@ struct ClockWidget: View {
     let clockTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var dateText: String {
+        let config = ConfigManager.shared.currentConfig.clock
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "M/d (E)"
+        formatter.locale = Locale(identifier: config.locale)
+        formatter.dateFormat = config.dateFormat
         return formatter.string(from: currentTime)
     }
 
     private var timeText: String {
+        let config = ConfigManager.shared.currentConfig.clock
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"  // Time format
+        formatter.dateFormat = config.timeFormat
         return formatter.string(from: currentTime)
     }
     var body: some View {
@@ -25,7 +27,7 @@ struct ClockWidget: View {
             Text(timeText)
         }
         .fontWeight(.bold)
-        .foregroundColor(theme.textPrimary)
+        .foregroundColor(ConfigManager.shared.currentConfig.clock.textColor.resolve(with: theme))
         .SmoothUIModule(theme: theme)
         .onReceive(clockTimer) { input in
             currentTime = input

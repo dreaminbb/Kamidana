@@ -6,14 +6,15 @@ struct MemoryWidget: View {
     
     @State private var showPopover = false
     @State private var isHovered = false
+    private var config: MemoryWidgetConfig { ConfigManager.shared.currentConfig.memory }
     
     var body: some View {
         if let mem = matrix.data.memoryMB {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
-                    NerdFontIcon(.memory).foregroundColor(theme.secondary)
+                    NerdFontIcon(config.icon).foregroundColor(config.iconColor.resolve(with: theme))
                     Text(String(format: "%.1f GB", Double(mem) / 1024.0))
-                        .foregroundColor(theme.secondary)
+                        .foregroundColor(config.textColor.resolve(with: theme))
                 }
             }
             .buttonStyle(.plain)

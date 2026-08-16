@@ -5,12 +5,13 @@ struct CpuWidget: View {
     var theme: Theme
     
     @State private var showPopover = false
+    private var config: CpuWidgetConfig { ConfigManager.shared.currentConfig.cpu }
     
     var body: some View {
         if let cpu = matrix.data.cpuUsage {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
-                    NerdFontIcon(.cpu).foregroundColor(getCPUColor(cpu.total, theme: theme))
+                    NerdFontIcon(config.icon).foregroundColor(getCPUColor(cpu.total, theme: theme))
                     Text(String(format: "%5.1f%%", cpu.total)).foregroundColor(getCPUColor(cpu.total, theme: theme))
                 }
             }
@@ -71,8 +72,8 @@ struct CpuWidget: View {
     }
     
     private func getCPUColor(_ usage: Float, theme: Theme) -> Color {
-        if usage < 30.0 { return theme.success }
-        if usage < 70.0 { return theme.caution }
-        return theme.danger
+        if usage < config.successThreshold { return config.successColor.resolve(with: theme) }
+        if usage < config.dangerThreshold { return config.cautionColor.resolve(with: theme) }
+        return config.dangerColor.resolve(with: theme)
     }
 }

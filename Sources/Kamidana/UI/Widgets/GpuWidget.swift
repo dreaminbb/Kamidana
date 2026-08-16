@@ -11,7 +11,7 @@ struct GpuWidget: View {
         if let gpu = matrix.data.gpuUsage {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 1) {
-                    NerdFontIcon(.gpu)
+                    NerdFontIcon("󰢮")
                         .foregroundColor(theme.info)
                         .frame(width: 14, height: 14, alignment: .center)
                         .clipped()

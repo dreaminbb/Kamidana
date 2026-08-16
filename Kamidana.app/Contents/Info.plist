@@ -13,12 +13,12 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>音楽プレイヤーの再生情報を取得・操作するためにAppleScriptを使用します。</string>
+	<string>Kamidana uses AppleScript to retrieve and control music player playback information.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>
+	<string>Kamidana uses your location to scan and display nearby Wi-Fi networks.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>周辺のWi-Fiネットワークを検索して表示するために位置情報を使用します。</string>
+	<string>Kamidana uses your location to scan and display nearby Wi-Fi networks.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>周辺のBluetoothデバイスを検索して接続状態を表示するために使用します。</string>
+	<string>Kamidana uses Bluetooth to scan for and display nearby device connection status.</string>
 </dict>
 </plist>

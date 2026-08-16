@@ -8,16 +8,15 @@ struct AudioWidget: View {
     @State private var showMicPopover = false
     @State private var isHovered = false
 
+    var config: AudioWidgetConfig { ConfigManager.shared.currentConfig.audio }
+
     var body: some View {
         HStack(spacing: 12) {
             // Output (Speaker)
             HStack(spacing: 6) {
                 Button(action: { audioVM.toggleOutputMute() }) {
-                    Image(
-                        systemName: audioVM.isOutputMuted
-                            ? "speaker.slash.fill" : "speaker.wave.2.fill"
-                    )
-                    .foregroundColor(audioVM.isOutputMuted ? theme.danger : theme.primary)
+                    NerdFontIcon(audioVM.isOutputMuted ? config.speakerMutedIcon : config.speakerIcon)
+                    .foregroundColor(audioVM.isOutputMuted ? config.mutedColor.resolve(with: theme) : config.activeColor.resolve(with: theme))
                 }
                 .buttonStyle(.plain)
 
@@ -44,14 +43,14 @@ struct AudioWidget: View {
                             .padding(.bottom, 5)
 
                         HStack {
-                            NerdFontIcon(.speaker, size: 10).foregroundColor(theme.textTertiary)
+                            NerdFontIcon(config.speakerMutedIcon, size: 10).foregroundColor(theme.textTertiary)
                             Slider(
                                 value: Binding(
                                     get: { audioVM.outputVolume },
                                     set: { audioVM.setOutputVolume($0) }), in: 0.0...1.0
                             )
-                            .frame(width: 150).accentColor(theme.primary)
-                            NerdFontIcon(.speakerWave, size: 10).foregroundColor(
+                            .frame(width: 150).accentColor(config.activeColor.resolve(with: theme))
+                            NerdFontIcon(config.speakerIcon, size: 10).foregroundColor(
                                 theme.textTertiary
                             )
                         }
@@ -69,7 +68,7 @@ struct AudioWidget: View {
                                             )
                                             .foregroundColor(
                                                 audioVM.currentOutputDevice?.id == device.id
-                                                    ? theme.primary : theme.textTertiary)
+                                                    ? config.activeColor.resolve(with: theme) : theme.textTertiary)
                                             Text(device.name).foregroundColor(theme.textPrimary)
                                             Spacer()
                                         }
@@ -92,8 +91,8 @@ struct AudioWidget: View {
             // Input (Microphone)
             HStack(spacing: 6) {
                 Button(action: { audioVM.toggleInputMute() }) {
-                    NerdFontIcon(audioVM.isInputMuted ? .micSlash : .mic)
-                        .foregroundColor(audioVM.isInputMuted ? theme.danger : theme.warning)
+                    NerdFontIcon(audioVM.isInputMuted ? config.micMutedIcon : config.micIcon)
+                        .foregroundColor(audioVM.isInputMuted ? config.mutedColor.resolve(with: theme) : config.micActiveColor.resolve(with: theme))
                 }
                 .buttonStyle(.plain)
 
@@ -120,14 +119,14 @@ struct AudioWidget: View {
                             .padding(.bottom, 5)
 
                         HStack {
-                            NerdFontIcon(.mic, size: 10).foregroundColor(theme.textTertiary)
+                            NerdFontIcon(config.micMutedIcon, size: 10).foregroundColor(theme.textTertiary)
                             Slider(
                                 value: Binding(
                                     get: { audioVM.inputVolume },
                                     set: { audioVM.setInputVolume($0) }), in: 0.0...1.0
                             )
-                            .frame(width: 150).accentColor(theme.warning)
-                            NerdFontIcon(.mic, size: 10).foregroundColor(theme.textTertiary)
+                            .frame(width: 150).accentColor(config.micActiveColor.resolve(with: theme))
+                            NerdFontIcon(config.micIcon, size: 10).foregroundColor(theme.textTertiary)
                         }
                         .padding(.bottom, 5)
 
@@ -143,7 +142,7 @@ struct AudioWidget: View {
                                             )
                                             .foregroundColor(
                                                 audioVM.currentInputDevice?.id == device.id
-                                                    ? theme.warning : theme.textTertiary)
+                                                    ? config.micActiveColor.resolve(with: theme) : theme.textTertiary)
                                             Text(device.name).foregroundColor(theme.textPrimary)
                                             Spacer()
                                         }

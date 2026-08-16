@@ -6,14 +6,15 @@ struct DiskWidget: View {
     
     @State private var showPopover = false
     @State private var isHovered = false
+    private var config: DiskWidgetConfig { ConfigManager.shared.currentConfig.disk }
     
     var body: some View {
         if let diskSpace = matrix.data.diskSpace {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 4) {
-                    NerdFontIcon(.disk).foregroundColor(theme.warning)
+                    NerdFontIcon(config.icon).foregroundColor(config.iconColor.resolve(with: theme))
                     Text(diskSpace)
-                        .foregroundColor(theme.warning)
+                        .foregroundColor(config.textColor.resolve(with: theme))
                 }
             }
             .buttonStyle(.plain)
@@ -34,12 +35,12 @@ struct DiskWidget: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("I/O Speed").font(.subheadline).foregroundColor(theme.textSecondary)
                                 HStack {
-                                    NerdFontIcon(.arrowDownCircle).foregroundColor(theme.info).frame(width: 20)
+                                    NerdFontIcon(config.readIcon).foregroundColor(theme.info).frame(width: 20)
                                     Text("Read:").foregroundColor(theme.textSecondary).frame(width: 50, alignment: .leading)
                                     Text("\(formatBytes(diskIO.readBytesPerSecond))/s").foregroundColor(theme.textPrimary)
                                 }
                                 HStack {
-                                    NerdFontIcon(.arrowUpCircle).foregroundColor(theme.warning).frame(width: 20)
+                                    NerdFontIcon(config.writeIcon).foregroundColor(theme.warning).frame(width: 20)
                                     Text("Write:").foregroundColor(theme.textSecondary).frame(width: 50, alignment: .leading)
                                     Text("\(formatBytes(diskIO.writeBytesPerSecond))/s").foregroundColor(theme.textPrimary)
                                 }

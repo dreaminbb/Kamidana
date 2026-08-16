@@ -10,6 +10,8 @@ struct MusicWidget: View {
     @State private var sliderValue: Double = 0.0
     @State private var dragUUID = UUID()
 
+    var config: MusicWidgetConfig { ConfigManager.shared.currentConfig.music }
+
     // Timer for rotation animation
     let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
 
@@ -39,17 +41,17 @@ struct MusicWidget: View {
                     // 2. Skip and play/pause controls
                     HStack(spacing: 40) {
                         Button(action: { musicManager.changeTrack(direction: .previous) }) {
-                            NerdFontIcon(.backward, size: 35)
+                            NerdFontIcon(config.backwardIcon, size: 35)
                                 .foregroundColor(theme.textPrimary)
                         }.buttonStyle(.plain)
 
                         Button(action: { musicManager.pauseMusic() }) {
-                            NerdFontIcon(musicManager.isPlaying ? .pause : .play, size: 35)
+                            NerdFontIcon(musicManager.isPlaying ? config.pauseIcon : config.playIcon, size: 35)
                                 .foregroundColor(theme.success)
                         }.buttonStyle(.plain)
 
                         Button(action: { musicManager.changeTrack(direction: .next) }) {
-                            NerdFontIcon(.forward, size: 35)
+                            NerdFontIcon(config.forwardIcon, size: 35)
                                 .foregroundColor(theme.textPrimary)
                         }.buttonStyle(.plain)
                     }
@@ -113,9 +115,9 @@ struct MusicWidget: View {
         } else {
             // UI when no music is playing
             VStack(spacing: 16) {
-                NerdFontIcon(.music)
+                NerdFontIcon(config.defaultIcon)
                     .font(.system(size: 48))
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundColor(config.defaultIconColor.resolve(with: theme))
                 Text("No Music Playing")
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(theme.textSecondary)
@@ -135,9 +137,9 @@ struct MusicWidget: View {
             } else {
                 ZStack {
                     theme.surface
-                    NerdFontIcon(.music)
+                    NerdFontIcon(config.defaultIcon)
                         .font(.system(size: size / 3))
-                        .foregroundColor(theme.accent)
+                        .foregroundColor(config.defaultIconColor.resolve(with: theme))
                 }
             }
         }

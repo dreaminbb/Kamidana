@@ -12,6 +12,7 @@ struct WiFiWidget: View {
     @State private var isHovered = false
 
     var body: some View {
+        let config = ConfigManager.shared.currentConfig.wifi
         Button(action: {
             showPopover.toggle()
             if showPopover {
@@ -21,13 +22,13 @@ struct WiFiWidget: View {
             HStack(spacing: 4) {
                 NerdFontIcon(
                     netManager.currentConnection == "WIFI"
-                        ? .wifi
-                        : (netManager.currentConnection == "LAN" ? .network : .wifiSlash)
+                        ? config.connectedIcon
+                        : (netManager.currentConnection == "LAN" ? config.lanIcon : config.disconnectedIcon)
                 )
-                .foregroundColor(theme.accent)
+                .foregroundColor(config.iconColor.resolve(with: theme))
             }
             .foregroundColor(
-                netManager.currentConnection != "OFF" ? theme.textPrimary : theme.textTertiary)
+                netManager.currentConnection != "OFF" ? config.textColor.resolve(with: theme) : config.disconnectedTextColor.resolve(with: theme))
         }
         .buttonStyle(.plain)
         .SmoothUIModule(theme: theme)
@@ -44,7 +45,7 @@ struct WiFiWidget: View {
                     Button(action: {
                         netManager.scanForNetworks()
                     }) {
-                        NerdFontIcon(.arrowClockwise)
+                        NerdFontIcon("󰑐")
                     }
                     .buttonStyle(.plain)
                 }
@@ -157,7 +158,7 @@ struct WiFiWidget: View {
                                     }
                                 }) {
                                     HStack {
-                                        NerdFontIcon(.wifi).foregroundColor(theme.textPrimary)
+                                        NerdFontIcon(config.connectedIcon).foregroundColor(theme.textPrimary)
                                         Text(network.ssid ?? "Hidden")
                                             .lineLimit(1)
                                             .foregroundColor(theme.textPrimary)
