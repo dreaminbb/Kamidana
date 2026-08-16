@@ -2,7 +2,6 @@ import SwiftUI
 
 struct MusicWidget: View {
     @ObservedObject var musicManager: MusicPlayingManager
-    var theme: Theme
     @Environment(\.compactMode) var compactMode: Bool
 
     @State private var rotation: Double = 0.0
@@ -16,6 +15,7 @@ struct MusicWidget: View {
     let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
 
     var body: some View {
+        let colors = ConfigManager.shared.currentConfig.colors
         if !musicManager.title.isEmpty {
             // UI utilizing full island area
             HStack(alignment: .center, spacing: 40) {
@@ -29,12 +29,12 @@ struct MusicWidget: View {
                     VStack(spacing: 8) {
                         Text(musicManager.title)
                             .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(theme.textPrimary)
+                            .foregroundColor(Color(hex: colors.textPrimary))
                             .lineLimit(2)
                             .multilineTextAlignment(.center)
                         Text(musicManager.artist)
                             .font(.system(size: 18))
-                            .foregroundColor(theme.textSecondary)
+                            .foregroundColor(Color(hex: colors.textSecondary))
                             .lineLimit(1)
                     }
 
@@ -42,17 +42,17 @@ struct MusicWidget: View {
                     HStack(spacing: 40) {
                         Button(action: { musicManager.changeTrack(direction: .previous) }) {
                             NerdFontIcon(config.backwardIcon, size: 35)
-                                .foregroundColor(theme.textPrimary)
+                                .foregroundColor(Color(hex: colors.textPrimary))
                         }.buttonStyle(.plain)
 
                         Button(action: { musicManager.pauseMusic() }) {
                             NerdFontIcon(musicManager.isPlaying ? config.pauseIcon : config.playIcon, size: 35)
-                                .foregroundColor(theme.success)
+                                .foregroundColor(Color(hex: colors.success))
                         }.buttonStyle(.plain)
 
                         Button(action: { musicManager.changeTrack(direction: .next) }) {
                             NerdFontIcon(config.forwardIcon, size: 35)
-                                .foregroundColor(theme.textPrimary)
+                                .foregroundColor(Color(hex: colors.textPrimary))
                         }.buttonStyle(.plain)
                     }
                     .padding(.top, 8)
@@ -65,7 +65,7 @@ struct MusicWidget: View {
                                     isDraggingSlider ? sliderValue : musicManager.currentPosition)
                             )
                             .font(.system(size: 14, design: .monospaced))
-                            .foregroundColor(theme.textSecondary)
+                            .foregroundColor(Color(hex: colors.textSecondary))
                             .frame(width: 45, alignment: .leading)
 
                             Slider(
@@ -93,11 +93,11 @@ struct MusicWidget: View {
                                     }
                                 }
                             )
-                            .accentColor(theme.accent)
+                            .accentColor(Color(hex: colors.accent))
 
                             Text(formatTime(musicManager.trackTime))
                                 .font(.system(size: 14, design: .monospaced))
-                                .foregroundColor(theme.textSecondary)
+                                .foregroundColor(Color(hex: colors.textSecondary))
                                 .frame(width: 45, alignment: .trailing)
                         }
                     }
@@ -117,10 +117,10 @@ struct MusicWidget: View {
             VStack(spacing: 16) {
                 NerdFontIcon(config.defaultIcon)
                     .font(.system(size: 48))
-                    .foregroundColor(config.defaultIconColor.resolve(with: theme))
+                    .foregroundColor(Color(hex: config.defaultIconColor))
                 Text("No Music Playing")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundColor(Color(hex: colors.textSecondary))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -129,6 +129,7 @@ struct MusicWidget: View {
     // Artwork view
     @ViewBuilder
     private func artworkView(size: CGFloat) -> some View {
+        let colors = ConfigManager.shared.currentConfig.colors
         Group {
             if let artwork = musicManager.artwork {
                 Image(nsImage: artwork)
@@ -136,17 +137,17 @@ struct MusicWidget: View {
                     .aspectRatio(contentMode: .fill)
             } else {
                 ZStack {
-                    theme.surface
+                    Color(hex: colors.surface)
                     NerdFontIcon(config.defaultIcon)
                         .font(.system(size: size / 3))
-                        .foregroundColor(config.defaultIconColor.resolve(with: theme))
+                        .foregroundColor(Color(hex: config.defaultIconColor))
                 }
             }
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
         .rotationEffect(.degrees(rotation))
-        .overlay(Circle().stroke(theme.surfaceBorder.opacity(0.5), lineWidth: 2))
+        .overlay(Circle().stroke(Color(hex: colors.surfaceBorder).opacity(0.5), lineWidth: 2))
     }
 
     // Utility to format seconds into mm:ss format

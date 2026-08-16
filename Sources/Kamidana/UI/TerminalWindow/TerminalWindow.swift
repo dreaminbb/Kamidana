@@ -3,14 +3,13 @@ import SwiftUI
 
 /// A description
 /// ```swift
-/// TerminalView(executable: "/opt/homebrew/bin/btop", theme: theme)
-///     .background(theme.base.opacity(0.6)) // Kamidanaのテーマ色で半透明
+/// TerminalView(executable: "/opt/homebrew/bin/btop")
+///     .background(Color(hex: colors.base).opacity(0.6)) // Kamidanaのテーマ色で半透明
 ///     .background(.ultraThinMaterial)      // すりガラス効果
 /// ```
 struct TerminalView: NSViewRepresentable {
 
     var executable: String
-    var theme: Theme
 
     func makeNSView(context: Context) -> LocalProcessTerminalView {
 
@@ -30,26 +29,27 @@ struct TerminalView: NSViewRepresentable {
 
     // テーマカラーをターミナルのANSIカラーパレットに適用する
     func applyTheme(to terminal: LocalProcessTerminalView) {
-        terminal.nativeForegroundColor = NSColor(theme.textPrimary)
+        let colors = ConfigManager.shared.currentConfig.colors
+        terminal.nativeForegroundColor = NSColor(Color(hex: colors.textPrimary))
 
         let ansiColors: [SwiftTerm.Color] = [
-            SwiftTerm.Color(nsColor: NSColor(theme.surface)),
-            SwiftTerm.Color(nsColor: NSColor(theme.danger)),
-            SwiftTerm.Color(nsColor: NSColor(theme.success)),
-            SwiftTerm.Color(nsColor: NSColor(theme.warning)),
-            SwiftTerm.Color(nsColor: NSColor(theme.primary)),
-            SwiftTerm.Color(nsColor: NSColor(theme.secondary)),
-            SwiftTerm.Color(nsColor: NSColor(theme.info)),
-            SwiftTerm.Color(nsColor: NSColor(theme.textSecondary)),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.surface))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.danger))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.success))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.warning))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.primary))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.secondary))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.info))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.textSecondary))),
 
-            SwiftTerm.Color(nsColor: NSColor(theme.surfaceHighlight)),
-            SwiftTerm.Color(nsColor: NSColor(theme.danger)),
-            SwiftTerm.Color(nsColor: NSColor(theme.success)),
-            SwiftTerm.Color(nsColor: NSColor(theme.warning)),
-            SwiftTerm.Color(nsColor: NSColor(theme.primary)),
-            SwiftTerm.Color(nsColor: NSColor(theme.secondary)),
-            SwiftTerm.Color(nsColor: NSColor(theme.info)),
-            SwiftTerm.Color(nsColor: NSColor(theme.textPrimary))
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.surfaceHighlight))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.danger))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.success))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.warning))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.primary))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.secondary))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.info))),
+            SwiftTerm.Color(nsColor: NSColor(Color(hex: colors.textPrimary)))
         ]
 
         terminal.installColors(ansiColors)

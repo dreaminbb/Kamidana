@@ -1,35 +1,6 @@
 import Foundation
 import SwiftUI
 
-/// Semantic mapping for colors to allow flexible configuration
-public enum ThemeColorKey: String, Codable {
-  case background, surface, surfaceHighlight, surfaceBorder
-  case textPrimary, textSecondary, textTertiary
-  case primary, secondary, accent, success, warning, danger, info, caution
-  case clear
-
-  public func resolve(with theme: Theme) -> Color {
-    switch self {
-    case .background: return theme.background
-    case .surface: return theme.surface
-    case .surfaceHighlight: return theme.surfaceHighlight
-    case .surfaceBorder: return theme.surfaceBorder
-    case .textPrimary: return theme.textPrimary
-    case .textSecondary: return theme.textSecondary
-    case .textTertiary: return theme.textTertiary
-    case .primary: return theme.primary
-    case .secondary: return theme.secondary
-    case .accent: return theme.accent
-    case .success: return theme.success
-    case .warning: return theme.warning
-    case .danger: return theme.danger
-    case .info: return theme.info
-    case .caution: return theme.caution
-    case .clear: return .clear
-    }
-  }
-}
-
 /// Base configuration for widget styling (padding, backgrounds, borders)
 public struct WidgetStyleConfig: Codable {
   public var paddingHorizontal: CGFloat
@@ -53,23 +24,23 @@ public struct WidgetStyleConfig: Codable {
 
 public struct CpuWidgetConfig: Codable {
   public var icon: String = "󰍛"
-  public var successColor: ThemeColorKey = .success
-  public var cautionColor: ThemeColorKey = .caution
-  public var dangerColor: ThemeColorKey = .danger
+  public var successColor: String = "#a6e3a1"
+  public var cautionColor: String = "#f9e2af"
+  public var dangerColor: String = "#f38ba8"
   public var successThreshold: Float = 30.0
   public var dangerThreshold: Float = 70.0
 }
 
 public struct MemoryWidgetConfig: Codable {
   public var icon: String = "󰘚"
-  public var iconColor: ThemeColorKey = .secondary
-  public var textColor: ThemeColorKey = .secondary
+  public var iconColor: String = "#cba6f7"
+  public var textColor: String = "#cba6f7"
 }
 
 public struct DiskWidgetConfig: Codable {
   public var icon: String = "󰋊"
-  public var iconColor: ThemeColorKey = .warning
-  public var textColor: ThemeColorKey = .warning
+  public var iconColor: String = "#fab387"
+  public var textColor: String = "#fab387"
   public var readIcon: String = "󰁅"  // arrowDownCircle
   public var writeIcon: String = "󰁝"  // arrowUpCircle
 }
@@ -77,31 +48,43 @@ public struct DiskWidgetConfig: Codable {
 public struct NetworkWidgetConfig: Codable {
   public var uploadIcon: String = "󰁝"  // arrowUpRight
   public var downloadIcon: String = "󰁅"  // arrowDownRight
-  public var iconColor: ThemeColorKey = .info
-  public var textColor: ThemeColorKey = .textPrimary
+  public var iconColor: String = "#94e2d5"
+  public var textColor: String = "#cdd6f4"
 }
 
 public struct BatteryWidgetConfig: Codable {
-  public var chargingColor: ThemeColorKey = .success
-  public var dischargingColor: ThemeColorKey = .textPrimary
-  public var warningColor: ThemeColorKey = .warning
-  public var dangerColor: ThemeColorKey = .danger
+  public var chargingColor: String = "#a6e3a1"
+  public var dischargingColor: String = "#cdd6f4"
+  public var warningColor: String = "#fab387"
+  public var dangerColor: String = "#f38ba8"
+  public var charging_right_now: String = "󰂄"
+  public var _100_capacity: String = "󰁹"
+  public var _90_capacity: String = "󰂂"
+  public var _80_capacity: String = "󰂁"
+  public var _70_capacity: String = "󰂀"
+  public var _60_capacity: String = "󰁿"
+  public var _50_capacity: String = "󰁾"
+  public var _40_capacity: String = "󰁽"
+  public var _30_capacity: String = "󰁼"
+  public var _20_capacity: String = "󰁹"
+  public var _10_capacity: String = "󰁻"
+  public var _sub_10_charged: String = "󰂃"
 }
 
 public struct ClockWidgetConfig: Codable {
   public var dateFormat: String = "M/d (E)"
   public var timeFormat: String = "HH:mm"
   public var locale: String = "ja_JP"
-  public var textColor: ThemeColorKey = .textPrimary
+  public var textColor: String = "#cdd6f4"
 }
 
 public struct WifiWidgetConfig: Codable {
   public var connectedIcon: String = "󰤨"
   public var disconnectedIcon: String = "󰤭"
   public var lanIcon: String = "󰲝"
-  public var iconColor: ThemeColorKey = .accent
-  public var textColor: ThemeColorKey = .textPrimary
-  public var disconnectedTextColor: ThemeColorKey = .textTertiary
+  public var iconColor: String = "#f5c2e7"
+  public var textColor: String = "#cdd6f4"
+  public var disconnectedTextColor: String = "#a6adc8"
 }
 
 public struct AudioWidgetConfig: Codable {
@@ -109,21 +92,21 @@ public struct AudioWidgetConfig: Codable {
   public var speakerMutedIcon: String = "󰟎"  // speakerSlash? Actually speaker is 󰕮
   public var micIcon: String = "󰍬"
   public var micMutedIcon: String = "󰍭"
-  public var activeColor: ThemeColorKey = .primary
-  public var micActiveColor: ThemeColorKey = .warning
-  public var mutedColor: ThemeColorKey = .danger
-  public var textColor: ThemeColorKey = .textPrimary
+  public var activeColor: String = "#89b4fa"
+  public var micActiveColor: String = "#fab387"
+  public var mutedColor: String = "#f38ba8"
+  public var textColor: String = "#cdd6f4"
 }
 
 public struct SystemControlWidgetConfig: Codable {
   public var icon: String = "󰀵"  // appleLogo
-  public var iconColor: ThemeColorKey = .secondary
+  public var iconColor: String = "#cba6f7"
   public var terminalPath: String = "/opt/homebrew/bin/btop"
 }
 
 public struct MusicWidgetConfig: Codable {
   public var defaultIcon: String = "󰝚"
-  public var defaultIconColor: ThemeColorKey = .accent
+  public var defaultIconColor: String = "#f5c2e7"
   public var playIcon: String = "󰐊"
   public var pauseIcon: String = "󰏤"
   public var forwardIcon: String = "󰒭"
@@ -133,9 +116,9 @@ public struct MusicWidgetConfig: Codable {
 public struct BluetoothWidgetConfig: Codable {
   public var iconConnected: String = "󰂯"
   public var iconDisconnected: String = "󰂲"
-  public var connectedColor: ThemeColorKey = .primary
-  public var disconnectedColor: ThemeColorKey = .textTertiary
-  public var textColor: ThemeColorKey = .textPrimary
+  public var connectedColor: String = "#89b4fa"
+  public var disconnectedColor: String = "#a6adc8"
+  public var textColor: String = "#cdd6f4"
 }
 
 // MARK: - Main Config Struct
@@ -143,7 +126,7 @@ public struct BluetoothWidgetConfig: Codable {
 public struct Config {
   public let UserConfigPath: String = ""
   public let barTopPadding: Int64 = 5
-  public let theme: Theme = .catppuccinMocha
+  public var colors: GlobalColorsConfig = GlobalColorsConfig()
 
   // UI Style
   public var styleNormal: WidgetStyleConfig = .defaultNormal
@@ -165,10 +148,63 @@ public struct Config {
   public init() {}
 }
 
+public struct GlobalColorsConfig: Codable {
+  // Backgrounds & Surfaces
+  public var background: String = "#1e1e2e"
+  public var surface: String = "#313244"
+  public var surfaceHighlight: String = "#45475a"
+  public var surfaceBorder: String = "#585b70"
+
+  // Typography
+  public var textPrimary: String = "#cdd6f4"
+  public var textSecondary: String = "#bac2de"
+  public var textTertiary: String = "#a6adc8"
+
+  // Semantic Colors (Global)
+  public var primary: String = "#89b4fa"
+  public var secondary: String = "#cba6f7"
+  public var accent: String = "#f5c2e7"
+  public var success: String = "#a6e3a1"
+  public var warning: String = "#fab387"
+  public var danger: String = "#f38ba8"
+  public var info: String = "#94e2d5"
+  public var caution: String = "#f9e2af"
+}
+
+// Extension to convert hexadecimal color codes to SwiftUI Color
+extension Color {
+  init(hex: String) {
+    let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+    var int: UInt64 = 0
+    Scanner(string: hex).scanHexInt64(&int)
+    let a: UInt64
+    let r: UInt64
+    let g: UInt64
+    let b: UInt64
+    switch hex.count {
+    case 3:  // RGB (12-bit)
+      (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+    case 6:  // RGB (24-bit)
+      (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+    case 8:  // ARGB (32-bit)
+      (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+    default:
+      (a, r, g, b) = (255, 0, 0, 0)
+    }
+    self.init(
+      .sRGB,
+      red: Double(r) / 255,
+      green: Double(g) / 255,
+      blue: Double(b) / 255,
+      opacity: Double(a) / 255
+    )
+  }
+}
+
 // TODO:
-// - [ ] define default value
+// - [x] define default value
 // - [ ] load value from config file
-// - [ ] set config to program
+// - [ ] set config to program / (half done)
 public class ConfigManager {
 
   public static let shared = ConfigManager()

@@ -2,31 +2,30 @@ import SwiftUI
 
 struct NetworkWidget: View {
     @ObservedObject var matrix: SystemMatrix
-    var theme: Theme
-
     @State private var showPopover = false
     @State private var isHovered = false
 
     var body: some View {
+        let colors = ConfigManager.shared.currentConfig.colors
         let config = ConfigManager.shared.currentConfig.network
         if let net = matrix.data.internetUsage {
             Button(action: { showPopover.toggle() }) {
                 HStack(spacing: 2) {
                     HStack(spacing: 3) {
-                        NerdFontIcon(config.uploadIcon).foregroundColor(config.iconColor.resolve(with: theme))
+                        NerdFontIcon(config.uploadIcon).foregroundColor(Color(hex: config.iconColor))
                         Text(formatBytes(net.uploadBytesPerSecond) + "/s")
-                            .foregroundColor(config.textColor.resolve(with: theme))
+                            .foregroundColor(Color(hex: config.textColor))
                     }
                     HStack(spacing: 3) {
-                        NerdFontIcon(config.downloadIcon).foregroundColor(config.iconColor.resolve(with: theme))
+                        NerdFontIcon(config.downloadIcon).foregroundColor(Color(hex: config.iconColor))
                         Text(formatBytes(net.downloadBytesPerSecond) + "/s")
-                            .foregroundColor(config.textColor.resolve(with: theme))
+                            .foregroundColor(Color(hex: config.textColor))
                     }
                 }
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
             }
             .buttonStyle(.plain)
-            .SmoothUIModule(theme: theme)
+            .SmoothUIModule()
             .onHover { hover in
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
                 showPopover = hover
@@ -35,31 +34,31 @@ struct NetworkWidget: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Network Activity")
                         .font(.headline)
-                        .foregroundColor(theme.textPrimary)
+                        .foregroundColor(Color(hex: colors.textPrimary))
                         .padding(.bottom, 4)
 
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            NerdFontIcon("󰲝").foregroundColor(theme.primary).frame(
+                            NerdFontIcon("󰲝").foregroundColor(Color(hex: colors.primary)).frame(
                                 width: 20)
-                            Text("Upload:").foregroundColor(theme.textSecondary).frame(
+                            Text("Upload:").foregroundColor(Color(hex: colors.textSecondary)).frame(
                                 width: 70, alignment: .leading)
                             Text("\(formatBytes(net.uploadBytesPerSecond))/s").foregroundColor(
-                                theme.info)
+                                Color(hex: colors.info))
                         }
                         HStack {
                             Image(systemName: "").frame(width: 20)
-                            Text("Download:").foregroundColor(theme.textSecondary).frame(
+                            Text("Download:").foregroundColor(Color(hex: colors.textSecondary)).frame(
                                 width: 70, alignment: .leading)
                             Text("\(formatBytes(net.downloadBytesPerSecond))/s").foregroundColor(
-                                theme.info)
+                                Color(hex: colors.info))
                         }
                         .font(.system(size: 11, design: .monospaced))
                     }
                 }
                 .padding()
                 .frame(width: 220)
-                .background(theme.background)
+                .background(Color(hex: colors.background))
             }
         }
     }

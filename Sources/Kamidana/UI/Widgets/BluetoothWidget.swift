@@ -3,13 +3,12 @@ import SwiftUI
 
 struct BluetoothWidget: View {
     @ObservedObject var bluetooth: BluetoothManager
-    var theme: Theme
-
     @State private var showPopover = false
     @State private var isButtonHovered = false
     @State private var isPopoverHovered = false
 
     var body: some View {
+        let colors = ConfigManager.shared.currentConfig.colors
         let config = ConfigManager.shared.currentConfig.bluetooth
         Button(action: {
             showPopover.toggle()
@@ -19,12 +18,12 @@ struct BluetoothWidget: View {
         }) {
             HStack(spacing: 4) {
                 NerdFontIcon(bluetooth.isBluetoothOn ? config.iconConnected : config.iconDisconnected)
-                    .foregroundColor(bluetooth.isBluetoothOn ? config.connectedColor.resolve(with: theme) : config.disconnectedColor.resolve(with: theme))
+                    .foregroundColor(bluetooth.isBluetoothOn ? Color(hex: config.connectedColor) : Color(hex: config.disconnectedColor))
             }
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .SmoothUIModule(theme: theme)
+        .SmoothUIModule()
         .onHover { hover in
             isButtonHovered = hover
             if hover {
@@ -39,20 +38,20 @@ struct BluetoothWidget: View {
 
                 if !bluetooth.isBluetoothOn {
                     Text("Bluetooth is Off")
-                        .foregroundColor(theme.textTertiary)
+                        .foregroundColor(Color(hex: colors.textTertiary))
                         .frame(width: 250, alignment: .center)
                         .padding()
                 } else {
                     if bluetooth.pairedDevices.isEmpty {
                         Text("No paired devices")
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(Color(hex: colors.textTertiary))
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.vertical, 8)
                     } else {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 6) {
                                 ForEach(bluetooth.pairedDevices) { info in
-                                    DeviceRow(info: info, theme: theme, bluetooth: bluetooth)
+                                    DeviceRow(info: info, bluetooth: bluetooth)
                                 }
                             }
                         }
@@ -61,16 +60,16 @@ struct BluetoothWidget: View {
                 }
 
                 Divider()
-                    .background(theme.surfaceHighlight)
+                    .background(Color(hex: colors.surfaceHighlight))
 
                 // Open settings button
-                SettingsRowButton(theme: theme) {
+                SettingsRowButton() {
                     bluetooth.openBluetoothSettings()
                 }
             }
             .padding(12)
             .frame(width: 260)
-            .background(theme.background)
+            .background(Color(hex: colors.background))
             .onHover { hover in
                 isPopoverHovered = hover
                 if !hover {
@@ -93,37 +92,37 @@ struct BluetoothWidget: View {
 
 struct DeviceRow: View {
     let info: BluetoothDeviceInfo
-    let theme: Theme
     @ObservedObject var bluetooth: BluetoothManager
     @State private var isHovered = false
 
     var body: some View {
+        let colors = ConfigManager.shared.currentConfig.colors
         HStack(spacing: 8) {
             NerdFontIcon(info.isConnected ? "" : "")
-                .foregroundColor(info.isConnected ? theme.accent : theme.textTertiary)
+                .foregroundColor(info.isConnected ? Color(hex: colors.accent) : Color(hex: colors.textTertiary))
 
             Text(info.name)
                 .lineLimit(1)
-                .foregroundColor(theme.textPrimary)
+                .foregroundColor(Color(hex: colors.textPrimary))
 
             Spacer()
 
             if info.isConnected {
                 Text("Connected")
                     .font(.caption)
-                    .foregroundColor(theme.accent)
+                    .foregroundColor(Color(hex: colors.accent))
             } else {
                 Text("Saved")
                     .font(.caption)
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(Color(hex: colors.textTertiary))
             }
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .background(
             isHovered
-                ? theme.surfaceHighlight.opacity(0.8)
-                : (info.isConnected ? theme.surfaceHighlight.opacity(0.4) : theme.surface.opacity(0.3))
+                ? Color(hex: colors.surfaceHighlight).opacity(0.8)
+                : (info.isConnected ? Color(hex: colors.surfaceHighlight).opacity(0.4) : Color(hex: colors.surface).opacity(0.3))
         )
         .cornerRadius(6)
         .contentShape(Rectangle())
@@ -137,22 +136,22 @@ struct DeviceRow: View {
 }
 
 struct SettingsRowButton: View {
-    let theme: Theme
     let action: () -> Void
     @State private var isHovered = false
 
     var body: some View {
+        let colors = ConfigManager.shared.currentConfig.colors
         HStack {
             NerdFontIcon("󰝖")
-                .foregroundColor(theme.accent)
+                .foregroundColor(Color(hex: colors.accent))
             Text("Bluetooth Settings...")
                 .font(.subheadline)
-                .foregroundColor(theme.textPrimary)
+                .foregroundColor(Color(hex: colors.textPrimary))
             Spacer()
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
-        .background(isHovered ? theme.surfaceHighlight.opacity(0.8) : theme.surface.opacity(0.5))
+        .background(isHovered ? Color(hex: colors.surfaceHighlight).opacity(0.8) : Color(hex: colors.surface).opacity(0.5))
         .cornerRadius(6)
         .contentShape(Rectangle())
         .onHover { hover in

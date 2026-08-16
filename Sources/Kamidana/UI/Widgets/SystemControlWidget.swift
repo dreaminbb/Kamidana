@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct SystemControlWidget: View {
-    var theme: Theme
     let systemController = SystemController()
 
     @State private var isHovered = false
@@ -25,8 +24,9 @@ struct SystemControlWidget: View {
 
         // Embed SwiftUI View into AppKit window with translucent styling
         let config = ConfigManager.shared.currentConfig.systemControl
-        let terminalUI = TerminalView(executable: config.terminalPath, theme: theme)
-            .background(theme.background.opacity(0.8))
+        let colors = ConfigManager.shared.currentConfig.colors
+        let terminalUI = TerminalView(executable: config.terminalPath)
+            .background(Color(hex: colors.background).opacity(0.8))
             .background(.ultraThinMaterial)  // Frosted glass effect
 
         // NSHostingView bridges SwiftUI and AppKit (NSWindow)
@@ -38,14 +38,15 @@ struct SystemControlWidget: View {
     }
 
     var body: some View {
+        let colors = ConfigManager.shared.currentConfig.colors
         // Base icon (matches layout and height of other widget buttons)
         HStack(spacing: 4) {
             let config = ConfigManager.shared.currentConfig.systemControl
             NerdFontIcon(config.icon, size: 14)
-                .foregroundColor(config.iconColor.resolve(with: theme))
+                .foregroundColor(Color(hex: config.iconColor))
                 .frame(width: 20, alignment: .center) // Set 20px width and center alignment
         }
-        .SmoothUIModule(theme: theme) // Matches size and position with other modules
+        .SmoothUIModule() // Matches size and position with other modules
         // Menu that expands on hover is placed in the background
         .background(
             Group {
@@ -59,34 +60,34 @@ struct SystemControlWidget: View {
                         VStack(alignment: .leading, spacing: 12) {
 
                             menuButton(
-                                icon: "󰌢", color: theme.info, text: "About this Mac"
+                                icon: "󰌢", color: Color(hex: colors.info), text: "About this Mac"
                             ) {
                                 let _ = systemController.showAboutThisMac()
                             }
 
-                            menuButton(icon: "󰒲", color: theme.info, text: "Sleep") {
+                            menuButton(icon: "󰒲", color: Color(hex: colors.info), text: "Sleep") {
                                 let _ = systemController.sleepSystem()
                             }
 
-                            menuButton(icon: "⏻", color: theme.danger, text: "Shutdown") {
+                            menuButton(icon: "⏻", color: Color(hex: colors.danger), text: "Shutdown") {
                                 let _ = systemController.shutdownSystem()
                             }
 
                             menuButton(
-                                icon: "󰑐", color: theme.warning,
+                                icon: "󰑐", color: Color(hex: colors.warning),
                                 text: "Reboot"
                             ) {
                                 let _ = systemController.rebootSystem()
                             }
 
                             menuButton(
-                                icon: "󰈆", color: theme.primary,
+                                icon: "󰈆", color: Color(hex: colors.primary),
                                 text: "Logout"
                             ) {
                                 let _ = systemController.logoutSystem()
                             }
 
-                            menuButton(icon: "󰌾", color: theme.accent, text: "Screen Lock") {
+                            menuButton(icon: "󰌾", color: Color(hex: colors.accent), text: "Screen Lock") {
                                 let _ = systemController.lockScreen()
                             }
 
@@ -95,11 +96,11 @@ struct SystemControlWidget: View {
                         .padding(.leading, compactMode ? 8 : 12)
                         .padding(.trailing, 16)
                         .padding(.vertical, 12)
-                        .background(theme.background)
+                        .background(Color(hex: colors.background))
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(theme.surfaceHighlight, lineWidth: 1)
+                                .stroke(Color(hex: colors.surfaceHighlight), lineWidth: 1)
                         )
                         .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 2)
                     }
@@ -122,14 +123,15 @@ struct SystemControlWidget: View {
     private func menuButton(
         icon: String, color: Color, text: String, action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        let colors = ConfigManager.shared.currentConfig.colors
+        return Button(action: action) {
             HStack(spacing: 10) {
                 NerdFontIcon(icon, size: 14)
                     .foregroundColor(color)
                     .frame(width: 20, alignment: .center)
 
                 Text(text)
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundColor(Color(hex: colors.textPrimary))
             }
         }
         .buttonStyle(.plain)

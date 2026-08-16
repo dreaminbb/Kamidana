@@ -3,8 +3,6 @@ import SwiftUI
 
 struct WiFiWidget: View {
     @ObservedObject var netManager: NetworkManager
-    var theme: Theme
-
     @State private var showPopover = false
     @State private var selectedSSID: String? = nil
     @State private var wifiPassword = ""
@@ -12,6 +10,7 @@ struct WiFiWidget: View {
     @State private var isHovered = false
 
     var body: some View {
+        let colors = ConfigManager.shared.currentConfig.colors
         let config = ConfigManager.shared.currentConfig.wifi
         Button(action: {
             showPopover.toggle()
@@ -25,13 +24,13 @@ struct WiFiWidget: View {
                         ? config.connectedIcon
                         : (netManager.currentConnection == "LAN" ? config.lanIcon : config.disconnectedIcon)
                 )
-                .foregroundColor(config.iconColor.resolve(with: theme))
+                .foregroundColor(Color(hex: config.iconColor))
             }
             .foregroundColor(
-                netManager.currentConnection != "OFF" ? config.textColor.resolve(with: theme) : config.disconnectedTextColor.resolve(with: theme))
+                netManager.currentConnection != "OFF" ? Color(hex: config.textColor) : Color(hex: config.disconnectedTextColor))
         }
         .buttonStyle(.plain)
-        .SmoothUIModule(theme: theme)
+        .SmoothUIModule()
         .onHover { hover in
             withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
         }
@@ -40,7 +39,7 @@ struct WiFiWidget: View {
                 HStack {
                     Text("Wi-Fi Networks")
                         .font(.headline)
-                        .foregroundColor(theme.textPrimary)
+                        .foregroundColor(Color(hex: colors.textPrimary))
                     Spacer()
                     Button(action: {
                         netManager.scanForNetworks()
@@ -56,7 +55,7 @@ struct WiFiWidget: View {
                     VStack(spacing: 12) {
                         Text("\(ssid) に接続")
                             .font(.subheadline)
-                            .foregroundColor(theme.textPrimary)
+                            .foregroundColor(Color(hex: colors.textPrimary))
 
                         SecureField("パスワード", text: $wifiPassword)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -66,7 +65,7 @@ struct WiFiWidget: View {
                             Text(connectionStatusMsg)
                                 .font(.caption)
                                 .foregroundColor(
-                                    connectionStatusMsg.contains("成功") ? theme.success : theme.danger
+                                    connectionStatusMsg.contains("成功") ? Color(hex: colors.success) : Color(hex: colors.danger)
                                 )
                         }
 
@@ -108,7 +107,7 @@ struct WiFiWidget: View {
                     .padding(.horizontal, 10)
                 } else if netManager.availableNetworks.isEmpty {
                     Text("ネットワークを検索中...")
-                        .foregroundColor(theme.textTertiary)
+                        .foregroundColor(Color(hex: colors.textTertiary))
                         .frame(width: 250, alignment: .center)
                         .padding()
                 } else {
@@ -119,9 +118,9 @@ struct WiFiWidget: View {
                                     .font(.caption)
                                     .foregroundColor(
                                         connectionStatusMsg.contains("✅")
-                                            ? theme.success
+                                            ? Color(hex: colors.success)
                                             : (connectionStatusMsg.contains("❌")
-                                                ? theme.danger : theme.caution)
+                                                ? Color(hex: colors.danger) : Color(hex: colors.caution))
                                     )
                                     .padding(.bottom, 5)
                             }
@@ -158,19 +157,19 @@ struct WiFiWidget: View {
                                     }
                                 }) {
                                     HStack {
-                                        NerdFontIcon(config.connectedIcon).foregroundColor(theme.textPrimary)
+                                        NerdFontIcon(config.connectedIcon).foregroundColor(Color(hex: colors.textPrimary))
                                         Text(network.ssid ?? "Hidden")
                                             .lineLimit(1)
-                                            .foregroundColor(theme.textPrimary)
+                                            .foregroundColor(Color(hex: colors.textPrimary))
                                         Spacer()
                                         Text("\(network.rssiValue) dBm")
                                             .font(.caption)
-                                            .foregroundColor(theme.textTertiary)
+                                            .foregroundColor(Color(hex: colors.textTertiary))
                                     }
                                     .frame(width: 230)
                                     .padding(.vertical, 4)
                                     .padding(.horizontal, 8)
-                                    .background(theme.surface)
+                                    .background(Color(hex: colors.surface))
                                     .cornerRadius(6)
                                 }
                                 .buttonStyle(.plain)
@@ -181,7 +180,7 @@ struct WiFiWidget: View {
                 }
             }
             .padding()
-            .background(theme.background)
+            .background(Color(hex: colors.background))
         }
     }
 }

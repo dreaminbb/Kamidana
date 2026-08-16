@@ -11,7 +11,6 @@ struct windowSizeRequirements {
 }
 
 struct KamidanaIsland: View {
-    var theme: Theme
     @ObservedObject var musicManager: MusicPlayingManager
 
     @State private var isHovered = false
@@ -43,6 +42,7 @@ struct KamidanaIsland: View {
     }
 
     var body: some View {
+        let colors = ConfigManager.shared.currentConfig.colors
         VStack(spacing: 0) {
             if isHovered {
                 // Expanded UI
@@ -62,10 +62,10 @@ struct KamidanaIsland: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 6)
                                 .background(
-                                    selectedTab == tab ? theme.surfaceHighlight : Color.clear
+                                    selectedTab == tab ? Color(hex: colors.surfaceHighlight) : Color.clear
                                 )
                                 .foregroundColor(
-                                    selectedTab == tab ? theme.textPrimary : theme.textSecondary
+                                    selectedTab == tab ? Color(hex: colors.textPrimary) : Color(hex: colors.textSecondary)
                                 )
                                 .cornerRadius(8)
                         }
@@ -75,19 +75,19 @@ struct KamidanaIsland: View {
                 .padding(.top, 12)
                 .padding(.bottom, 8)
 
-                Divider().background(theme.surfaceBorder)
+                Divider().background(Color(hex: colors.surfaceBorder))
 
                 // 2. Tab content
                 Group {
                     switch selectedTab {
                     case .music:
                         // Place MusicWidget directly configured to expand across the island
-                        MusicWidget(musicManager: musicManager, theme: theme)
+                        MusicWidget(musicManager: musicManager)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     case .btop:
                         // Embed TerminalView here
-                        TerminalView(executable: ConfigManager.shared.currentConfig.systemControl.terminalPath, theme: theme)
+                        TerminalView(executable: ConfigManager.shared.currentConfig.systemControl.terminalPath)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .cornerRadius(12)
                             .padding(12)
@@ -118,7 +118,7 @@ struct KamidanaIsland: View {
                     } else {
                         // Default icon when no music or artwork is available
                         NerdFontIcon("󰕰")
-                            .foregroundColor(theme.primary)
+                            .foregroundColor(Color(hex: colors.primary))
                     }
 
                     Spacer()
@@ -128,18 +128,18 @@ struct KamidanaIsland: View {
 
                     Spacer()
                 }
-                .foregroundColor(theme.textPrimary)
+                .foregroundColor(Color(hex: colors.textPrimary))
                 .padding(.leading, 3)
             }
         }
         // Dynamically change island size based on hover state
         .frame(width: getIslandSize().width, height: getIslandSize().height)  // Pass computed size
-        .background(theme.background.opacity(0.8))
+        .background(Color(hex: colors.background).opacity(0.8))
         .background(.ultraThinMaterial)
         .cornerRadius(isHovered ? 24 : 16)
         .overlay(
             RoundedRectangle(cornerRadius: isHovered ? 24 : 16)
-                .stroke(theme.surfaceBorder, lineWidth: 1)
+                .stroke(Color(hex: colors.surfaceBorder), lineWidth: 1)
         )
         // Spring animation providing smooth expansion
         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isHovered)

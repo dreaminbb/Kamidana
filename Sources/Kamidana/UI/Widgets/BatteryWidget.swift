@@ -1,127 +1,137 @@
 import SwiftUI
 
 struct BatteryWidget: View {
-    @ObservedObject var matrix: SystemMatrix
-    var theme: Theme
+  @ObservedObject var matrix: SystemMatrix
+  @State private var showPopover = false
+  @State private var isHovered = false
 
-    @State private var showPopover = false
-    @State private var isHovered = false
+  @State private var BatteryWidgetConfigInstance = BatteryWidgetConfig()
 
-    var body: some View {
-        let config = ConfigManager.shared.currentConfig.battery
-        if let battery = matrix.data.batteryUsage {
-            Button(action: { showPopover.toggle() }) {
-                HStack(spacing: 6) {
-                    // Compact display
-                    NerdFontIcon(
-                        batteryIconName(
-                            capacity: battery.currentCapacity, isCharging: battery.isCharging)
-                    )
-                    .foregroundColor(battery.isCharging ? config.chargingColor.resolve(with: theme) : config.dischargingColor.resolve(with: theme))
-
-                    Text("\(battery.currentCapacity)%")
-                        .foregroundColor(config.dischargingColor.resolve(with: theme))
-                }
-            }
-            .buttonStyle(.plain)
-            .SmoothUIModule(theme: theme)
-            .onHover { hover in
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
-                showPopover = hover
-            }
-            .popover(isPresented: $showPopover, arrowEdge: .bottom) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("System Power & Thermal")
-                        .font(.headline)
-                        .foregroundColor(theme.textPrimary)
-                        .padding(.bottom, 4)
-
-                    Text("Battery").font(.subheadline).foregroundColor(theme.textSecondary)
-
-                    HStack {
-                        NerdFontIcon("󰌪").foregroundColor(theme.caution).frame(
-                            width: 20)
-                        if battery.isCharging {
-                            Text("Charging (\(battery.timeToFull)m to full)")
-                                .foregroundColor(config.chargingColor.resolve(with: theme))
-                        } else if battery.timeToEmpty > 0 {
-                            Text("Discharging (\(battery.timeToEmpty)m remaining)")
-                                .foregroundColor(config.warningColor.resolve(with: theme))
-                        } else {
-                            Text("Fully Charged")
-                                .foregroundColor(theme.textPrimary)
-                        }
-                    }
-                    .font(.system(size: 11, design: .monospaced))
-
-                    if let watt = battery.wattInfo {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("Power:").foregroundColor(theme.textSecondary).frame(
-                                    width: 70, alignment: .leading)
-                                Text(String(format: "%.1f W", watt.activeWatts)).foregroundColor(
-                                    theme.textPrimary)
-                            }
-                            HStack {
-                                Text("Voltage:").foregroundColor(theme.textSecondary).frame(
-                                    width: 70, alignment: .leading)
-                                Text(String(format: "%.1f V", watt.voltage)).foregroundColor(
-                                    theme.textPrimary)
-                            }
-                            HStack {
-                                Text("Amperage:").foregroundColor(theme.textSecondary).frame(
-                                    width: 70, alignment: .leading)
-                                Text(String(format: "%.0f mA", watt.amperage)).foregroundColor(
-                                    theme.textPrimary)
-                            }
-                        }
-                        .font(.system(size: 11, design: .monospaced))
-                        .padding(.leading, 28)
-                    }
-
-                    if let thermal = matrix.data.thermalState {
-                        Divider().background(theme.surfaceBorder).padding(.vertical, 4)
-
-                        Text("Thermal").font(.subheadline).foregroundColor(theme.textSecondary)
-
-                        HStack {
-                            NerdFontIcon("󰔏").foregroundColor(
-                                getThermalColor(thermal, theme: theme)
-                            ).frame(width: 20)
-                            Text("State:").foregroundColor(theme.textSecondary).frame(
-                                width: 70, alignment: .leading)
-                            Text(thermal).foregroundColor(getThermalColor(thermal, theme: theme))
-                        }
-                        .font(.system(size: 11, design: .monospaced))
-                    }
-                }
-                .padding()
-                .frame(width: 240)
-                .background(theme.background)
-            }
-        }
+  private func resolveBatteryIcon(capacity: Int64, isCharging: Bool) -> String {
+    if isCharging {
+      return BatteryWidgetConfigInstance.charging_right_now
     }
-
-    private func getThermalColor(_ state: String, theme: Theme) -> Color {
-        let config = ConfigManager.shared.currentConfig.battery
-        switch state {
-        case "Normal": return theme.info
-        case "Warm": return config.warningColor.resolve(with: theme)
-        case "Hot", "Critical": return config.dangerColor.resolve(with: theme)
-        default: return theme.textPrimary
-        }
+    switch capacity {
+    case 95...100: return BatteryWidgetConfigInstance._100_capacity
+    case 85..<95: return BatteryWidgetConfigInstance._90_capacity
+    case 75..<85: return BatteryWidgetConfigInstance._80_capacity
+    case 65..<75: return BatteryWidgetConfigInstance._70_capacity
+    case 55..<65: return BatteryWidgetConfigInstance._60_capacity
+    case 45..<55: return BatteryWidgetConfigInstance._50_capacity
+    case 35..<45: return BatteryWidgetConfigInstance._40_capacity
+    case 25..<35: return BatteryWidgetConfigInstance._30_capacity
+    case 15..<25: return BatteryWidgetConfigInstance._20_capacity
+    case 10..<15: return BatteryWidgetConfigInstance._10_capacity
+    default: return BatteryWidgetConfigInstance._sub_10_charged
     }
+  }
 
-    private func batteryIconName(capacity: Int64, isCharging: Bool) -> String {
-        if isCharging {
-            return ""
+  var body: some View {
+    let colors = ConfigManager.shared.currentConfig.colors
+    let config = ConfigManager.shared.currentConfig.battery
+    if let battery = matrix.data.batteryUsage {
+      Button(action: { showPopover.toggle() }) {
+        HStack(spacing: 6) {
+          // Compact display
+          NerdFontIcon(
+            resolveBatteryIcon(capacity: battery.currentCapacity, isCharging: battery.isCharging)
+          )
+          .foregroundColor(
+            battery.isCharging
+              ? Color(hex: config.chargingColor) : Color(hex: config.dischargingColor))
+
+          Text("\(battery.currentCapacity)%")
+            .foregroundColor(Color(hex: config.dischargingColor))
         }
-        switch capacity {
-        case ..<13: return ""
-        case ..<38: return ""
-        case ..<63: return ""
-        case ..<88: return ""
-        default: return ""
+      }
+      .buttonStyle(.plain)
+      .SmoothUIModule()
+      .onHover { hover in
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
+        showPopover = hover
+      }
+      .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+        VStack(alignment: .leading, spacing: 12) {
+          Text("System Power & Thermal")
+            .font(.headline)
+            .foregroundColor(Color(hex: colors.textPrimary))
+            .padding(.bottom, 4)
+
+          Text("Battery").font(.subheadline).foregroundColor(Color(hex: colors.textSecondary))
+
+          HStack {
+            NerdFontIcon("󰌪").foregroundColor(Color(hex: colors.caution)).frame(
+              width: 20)
+            if battery.isCharging {
+              Text("Charging (\(battery.timeToFull)m to full)")
+                .foregroundColor(Color(hex: config.chargingColor))
+            } else if battery.timeToEmpty > 0 {
+              Text("Discharging (\(battery.timeToEmpty)m remaining)")
+                .foregroundColor(Color(hex: config.warningColor))
+            } else {
+              Text("Fully Charged")
+                .foregroundColor(Color(hex: colors.textPrimary))
+            }
+          }
+          .font(.system(size: 11, design: .monospaced))
+
+          if let watt = battery.wattInfo {
+            VStack(alignment: .leading, spacing: 8) {
+              HStack {
+                Text("Power:").foregroundColor(Color(hex: colors.textSecondary)).frame(
+                  width: 70, alignment: .leading)
+                Text(String(format: "%.1f W", watt.activeWatts)).foregroundColor(
+                  Color(hex: colors.textPrimary))
+              }
+              HStack {
+                Text("Voltage:").foregroundColor(Color(hex: colors.textSecondary)).frame(
+                  width: 70, alignment: .leading)
+                Text(String(format: "%.1f V", watt.voltage)).foregroundColor(
+                  Color(hex: colors.textPrimary))
+              }
+              HStack {
+                Text("Amperage:").foregroundColor(Color(hex: colors.textSecondary)).frame(
+                  width: 70, alignment: .leading)
+                Text(String(format: "%.0f mA", watt.amperage)).foregroundColor(
+                  Color(hex: colors.textPrimary))
+              }
+            }
+            .font(.system(size: 11, design: .monospaced))
+            .padding(.leading, 28)
+          }
+
+          if let thermal = matrix.data.thermalState {
+            Divider().background(Color(hex: colors.surfaceBorder)).padding(.vertical, 4)
+
+            Text("Thermal").font(.subheadline).foregroundColor(Color(hex: colors.textSecondary))
+
+            HStack {
+              NerdFontIcon("󰔏").foregroundColor(
+                getThermalColor(thermal)
+              ).frame(width: 20)
+              Text("State:").foregroundColor(Color(hex: colors.textSecondary)).frame(
+                width: 70, alignment: .leading)
+              Text(thermal).foregroundColor(getThermalColor(thermal))
+            }
+            .font(.system(size: 11, design: .monospaced))
+          }
         }
+        .padding()
+        .frame(width: 240)
+        .background(Color(hex: colors.background))
+      }
     }
+  }
+
+  private func getThermalColor(_ state: String) -> Color {
+    let config = ConfigManager.shared.currentConfig.battery
+    let colors = ConfigManager.shared.currentConfig.colors
+    switch state {
+    case "Normal": return Color(hex: colors.info)
+    case "Warm": return Color(hex: config.warningColor)
+    case "Hot", "Critical": return Color(hex: config.dangerColor)
+    default: return Color(hex: colors.textPrimary)
+    }
+  }
+
 }

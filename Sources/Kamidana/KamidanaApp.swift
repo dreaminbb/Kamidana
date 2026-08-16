@@ -110,25 +110,24 @@ struct StatusBarView: View {
   @State private var isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
 
   var body: some View {
-    let theme = Theme.catppuccinMocha
     let compactMode = uiSettings.resolveCompactMode(isBuiltInDisplay: isBuiltInDisplay)
 
     ZStack(alignment: .top) {
       // Left widget group
       HStack(alignment: .top, spacing: compactMode ? 6 : 8) {
         // System Control
-        SystemControlWidget(theme: theme)
+        SystemControlWidget()
 
-        // LocalSendWidget(localSend: localSend, theme: theme)
-        WiFiWidget(netManager: netManager, theme: theme)
-        AudioWidget(audioVM: audioVM, theme: theme)
+        // LocalSendWidget(localSend: localSend)
+        WiFiWidget(netManager: netManager)
+        AudioWidget(audioVM: audioVM)
 
         // In compact mode (built-in display), place island from right of audio widget toward center camera
         if compactMode {
           Color.clear
             .frame(width: 32, height: 32)
             .overlay(
-              KamidanaIsland(theme: theme, musicManager: musicManager)
+              KamidanaIsland(musicManager: musicManager)
                 .fixedSize(), alignment: .topLeading
             )
             .zIndex(100)
@@ -146,21 +145,21 @@ struct StatusBarView: View {
         content: {
           if compactMode {
             // In compact mode, fold some widgets
-            CpuWidget(matrix: matrix, theme: theme)
-            MemoryWidget(matrix: matrix, theme: theme)
-            BatteryWidget(matrix: matrix, theme: theme)
-            ClockWidget(theme: theme)
-            FoldedWidgetsButton(matrix: matrix, theme: theme)
+            CpuWidget(matrix: matrix)
+            MemoryWidget(matrix: matrix)
+            BatteryWidget(matrix: matrix)
+            ClockWidget()
+            FoldedWidgetsButton(matrix: matrix)
           } else {
             // In normal mode, expand all widgets
-            NetworkWidget(matrix: matrix, theme: theme)
-            CpuWidget(matrix: matrix, theme: theme)
-            GpuWidget(matrix: matrix, theme: theme)
-            MemoryWidget(matrix: matrix, theme: theme)
-            DiskWidget(matrix: matrix, theme: theme)
-            BluetoothWidget(bluetooth: bluetooth, theme: theme)
-            BatteryWidget(matrix: matrix, theme: theme)
-            ClockWidget(theme: theme)
+            NetworkWidget(matrix: matrix)
+            CpuWidget(matrix: matrix)
+            GpuWidget(matrix: matrix)
+            MemoryWidget(matrix: matrix)
+            DiskWidget(matrix: matrix)
+            BluetoothWidget(bluetooth: bluetooth)
+            BatteryWidget(matrix: matrix)
+            ClockWidget()
           }
         }
       )
@@ -171,7 +170,7 @@ struct StatusBarView: View {
 
       // In normal mode (external display), place in the top center of the screen
       if !compactMode {
-        KamidanaIsland(theme: theme, musicManager: musicManager)
+        KamidanaIsland(musicManager: musicManager)
           .fixedSize()
           .padding(.top, 7)
           .zIndex(100)
@@ -202,28 +201,28 @@ struct StatusBarView: View {
 
 private struct FoldedWidgetsButton: View {
   @ObservedObject var matrix: SystemMatrix
-  let theme: Theme
 
   @State private var showPopover = false
 
   var body: some View {
+    let colors = ConfigManager.shared.currentConfig.colors
     Button(action: { showPopover.toggle() }) {
       NerdFontIcon("󰝖")
-        .foregroundColor(theme.textSecondary)
+        .foregroundColor(Color(hex: colors.textSecondary))
     }
     .buttonStyle(.plain)
-    .SmoothUIModule(theme: theme)
+    .SmoothUIModule()
     .popover(isPresented: $showPopover, arrowEdge: .bottom) {
       VStack(alignment: .leading, spacing: 8) {
         Text("Folded Widgets")
           .font(.headline)
-          .foregroundColor(theme.textPrimary)
-        NetworkWidget(matrix: matrix, theme: theme)
-        GpuWidget(matrix: matrix, theme: theme)
-        DiskWidget(matrix: matrix, theme: theme)
+          .foregroundColor(Color(hex: colors.textPrimary))
+        NetworkWidget(matrix: matrix)
+        GpuWidget(matrix: matrix)
+        DiskWidget(matrix: matrix)
       }
       .padding()
-      .background(theme.background)
+      .background(Color(hex: colors.background))
     }
   }
 }

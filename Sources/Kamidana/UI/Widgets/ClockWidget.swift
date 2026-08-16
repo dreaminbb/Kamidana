@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct ClockWidget: View {
-    var theme: Theme
-
     @State private var currentTime = Date()
     let clockTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -27,8 +25,8 @@ struct ClockWidget: View {
             Text(timeText)
         }
         .fontWeight(.bold)
-        .foregroundColor(ConfigManager.shared.currentConfig.clock.textColor.resolve(with: theme))
-        .SmoothUIModule(theme: theme)
+        .foregroundColor(Color(hex: ConfigManager.shared.currentConfig.clock.textColor))
+        .SmoothUIModule()
         .onReceive(clockTimer) { input in
             currentTime = input
         }
