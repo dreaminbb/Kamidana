@@ -24,3 +24,9 @@ Widgets often require access to shared system states (e.g., `SystemMatrix`, `Net
 3. For each instance, it looks up the factory: `WidgetRegistry.shared.factory(for: instance.typeID)`.
 4. The factory returns an `AnyView` containing the configured widget.
 5. The widget seamlessly accesses global state via the Environment.
+
+## 4. Component Restrictions
+To prevent complex UI states and clipping issues within SwiftUI popovers, there are explicit architectural restrictions on widget composition:
+- **Vertical `WidgetFolder` (`direction: "below"`) Content Constraint**: 
+  A vertically expanding WidgetFolder displays its children inside a popover. It is **strictly prohibited** to nest widgets that themselves expand on click or hover (e.g., another `WidgetFolder`, `NetworkWidget`, or `WiFiWidget`) inside this popover. 
+  Only simple, action-oriented widgets that trigger a command on click (such as `SystemActionWidget`) or purely informational widgets without sub-menus are permitted.

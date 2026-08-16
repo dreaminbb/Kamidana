@@ -51,12 +51,13 @@ struct WidgetFolder: View {
             }
           }
           .buttonStyle(.plain)
-          .SmoothUIModule()
 
           if config.direction == "right" && isExpanded {
             nestedWidgets()
           }
         }
+        .environment(\.isInsideWidgetFolder, true)
+        .SmoothUIModule()
       }
     }
   }

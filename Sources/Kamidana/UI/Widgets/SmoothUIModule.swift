@@ -1,12 +1,29 @@
 import SwiftUI
 
+struct IsInsideWidgetFolderKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
+extension EnvironmentValues {
+    var isInsideWidgetFolder: Bool {
+        get { self[IsInsideWidgetFolderKey.self] }
+        set { self[IsInsideWidgetFolderKey.self] = newValue }
+    }
+}
+
 struct SmoothUIModuleModifier: ViewModifier {
     @Environment(\.widgetStyle) var style: WidgetStyleConfig
+    @Environment(\.isInsideWidgetFolder) var isInsideWidgetFolder: Bool
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        return content
+
+        if isInsideWidgetFolder {
+            return AnyView(content)
+        }
+
+        return AnyView(content
             .padding(.horizontal, style.paddingHorizontal)
             // Keep top at 6px and thicken bottom by 3px (total 9px)
             .padding(.top, style.paddingTop)
@@ -25,8 +42,7 @@ struct SmoothUIModuleModifier: ViewModifier {
             .animation(.easeInOut(duration: 0.2), value: isHovered)
             .onHover { hovering in
                 isHovered = hovering
-            }
-
+            })
     }
 }
 

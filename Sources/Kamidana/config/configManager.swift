@@ -286,7 +286,7 @@ public struct Config {
         typeID: "widgetFolder",
         config:
           WidgetFolderConfig(
-            name: "", icon: "󰉋", iconColor: "#cba6f7", direction: "below",
+            name: "", icon: "󰇙", iconFolded: "", iconColor: "#cba6f7", direction: "left",
             widgets: [
               WidgetInstance(typeID: "network", config: NetworkWidgetConfig()),
               WidgetInstance(typeID: "disk", config: DiskWidgetConfig()),
