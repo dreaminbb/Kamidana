@@ -78,7 +78,7 @@ To ensure the codebase remains maintainable, portable, and accessible to interna
 - All code identifiers, comments (`//`, `///`), docstrings, commit messages, and log messages **must be written in English**.
 
 ### 2. No Emojis in Source Code & Logs
-- **Do not use emojis** in code comments, console prints, or log strings. Keep log messages professional, clean, and concise (e.g., `[BluetoothManager] Device disconnected:` instead of `❌ 切断: ...`).
+- **Do not use emojis** in code comments, console prints, or log strings. Keep log messages professional, clean, and concise (e.g., `[BluetoothManager] Device disconnected:` instead of `❌ disconnected : ...`).
 
 ### 3. Portability & No Hardcoded Paths
 - Never hardcode user-specific paths (e.g., `/Users/username/...`).
