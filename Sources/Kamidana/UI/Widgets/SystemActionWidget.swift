@@ -19,9 +19,10 @@ struct SystemActionWidget: View {
                         .foregroundColor(Color(hex: colors.textPrimary))
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .SmoothUIModule()
+        .buttonStyle(WidgetButtonStyle())
     }
     
     private func performAction() {

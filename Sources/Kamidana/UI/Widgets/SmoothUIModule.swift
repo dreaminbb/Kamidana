@@ -46,6 +46,15 @@ struct SmoothUIModuleModifier: ViewModifier {
     }
 }
 
+struct WidgetButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .SmoothUIModule()
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.88 : 1)
+    }
+}
+
 extension View {
     func SmoothUIModule() -> some View {
         self.modifier(SmoothUIModuleModifier())
