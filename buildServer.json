@@ -1,0 +1,14 @@
+{
+  "argv" : [
+    "/opt/homebrew/Cellar/sourcekit-xcode-bsp/0.0.7/libexec/sourcekit-xcode-bsp"
+  ],
+  "bspVersion" : "2.1.0",
+  "buildRoot" : ".build/derived-data",
+  "languages" : [
+    "swift"
+  ],
+  "name" : "sourcekit-xcode-bsp",
+  "platform" : "macosx",
+  "version" : "0.1.0",
+  "workspace" : "Kamidana"
+}
