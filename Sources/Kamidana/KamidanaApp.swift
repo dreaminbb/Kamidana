@@ -111,15 +111,18 @@ struct StatusBarView: View {
   @State private var isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
 
   var body: some View {
-    let currentLayout: DisplayLayoutConfig = isBuiltInDisplay ? ConfigManager.shared.currentConfig.builtInDisplay : ConfigManager.shared.currentConfig.externalDisplay
+    let currentLayout: DisplayLayoutConfig =
+      isBuiltInDisplay
+      ? ConfigManager.shared.currentConfig.builtInDisplay
+      : ConfigManager.shared.currentConfig.externalDisplay
 
     ZStack(alignment: .top) {
       // Left widget group
       HStack(alignment: .top, spacing: 8) {
         ForEach(currentLayout.left, id: \.id) { instance in
-            if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
-                factory.makeView(config: instance.config)
-            }
+          if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
+            factory.makeView(config: instance.config)
+          }
         }
 
         // In built-in display mode, place island from right of audio widget toward center camera
@@ -145,7 +148,7 @@ struct StatusBarView: View {
         content: {
           ForEach(currentLayout.right, id: \.id) { instance in
             if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
-                factory.makeView(config: instance.config)
+              factory.makeView(config: instance.config)
             }
           }
         }
@@ -190,5 +193,3 @@ struct StatusBarView: View {
     }
   }
 }
-
-

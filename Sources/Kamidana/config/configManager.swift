@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Yams
 
 /// Base configuration for widget styling (padding, backgrounds, borders)
 public struct WidgetStyleConfig: Codable {
@@ -121,7 +122,7 @@ public struct TerminalWidgetConfig: Codable, Hashable {
   public var terminalPath: String
 }
 
-public struct WidgetInstance: Hashable {
+public struct WidgetInstance: Hashable, Decodable {
   public let id = UUID()
   public let typeID: String
   public let config: AnyHashable
@@ -138,15 +139,87 @@ public struct WidgetInstance: Hashable {
     hasher.combine(typeID)
     hasher.combine(config)
   }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: DynamicCodingKey.self)
+    guard container.allKeys.count == 1, let key = container.allKeys.first else {
+      throw DecodingError.dataCorrupted(
+        .init(
+          codingPath: decoder.codingPath,
+          debugDescription: "Each widget must be a mapping with exactly one widget type key."
+        )
+      )
+    }
+
+    WidgetRegistry.shared.registerAllWidgets()
+    guard let factory = WidgetRegistry.shared.factory(for: key.stringValue) else {
+      throw DecodingError.dataCorruptedError(
+        forKey: key,
+        in: container,
+        debugDescription: "Unknown widget type '\(key.stringValue)'."
+      )
+    }
+
+    self.init(
+      typeID: key.stringValue,
+      config: try factory.decodeConfiguration(from: container.superDecoder(forKey: key))
+    )
+  }
 }
 
-public struct WidgetFolderConfig: Hashable {
+private struct DynamicCodingKey: CodingKey {
+  let stringValue: String
+  let intValue: Int?
+
+  init?(stringValue: String) {
+    self.stringValue = stringValue
+    self.intValue = nil
+  }
+  init?(intValue: Int) {
+    self.stringValue = String(intValue)
+    self.intValue = intValue
+  }
+}
+
+public struct WidgetFolderConfig: Hashable, Decodable {
   public var name: String?
   public var icon: String?
   public var iconFolded: String?
   public var iconColor: String = "#cba6f7"
   public var direction: String = "below"  // "below" || "right" || "left"
   public var widgets: [WidgetInstance]
+
+  public init(
+    name: String? = nil,
+    icon: String? = nil,
+    iconFolded: String? = nil,
+    iconColor: String = "#cba6f7",
+    direction: String = "below",
+    widgets: [WidgetInstance]
+  ) {
+    self.name = name
+    self.icon = icon
+    self.iconFolded = iconFolded
+    self.iconColor = iconColor
+    self.direction = direction
+    self.widgets = widgets
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case name, icon, iconFolded, iconColor, direction, widgets
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.init(
+      name: try container.decodeIfPresent(String.self, forKey: .name),
+      icon: try container.decodeIfPresent(String.self, forKey: .icon),
+      iconFolded: try container.decodeIfPresent(String.self, forKey: .iconFolded),
+      iconColor: try container.decodeIfPresent(String.self, forKey: .iconColor) ?? "#cba6f7",
+      direction: try container.decodeIfPresent(String.self, forKey: .direction) ?? "below",
+      widgets: try container.decodeIfPresent([WidgetInstance].self, forKey: .widgets) ?? []
+    )
+  }
 }
 
 // Make all existing configs Hashable so we can use them in ForEach
@@ -171,7 +244,7 @@ public struct BluetoothWidgetConfig: Codable {
 
 // MARK: - Layout Configuration
 
-public struct DisplayLayoutConfig {
+public struct DisplayLayoutConfig: Decodable {
   public var style: WidgetStyleConfig = WidgetStyleConfig.defaultNormal
   public var left: [WidgetInstance] = []
   public var center: [WidgetInstance] = []
@@ -180,7 +253,7 @@ public struct DisplayLayoutConfig {
 
 // MARK: - Main Config Struct
 
-public struct Config {
+public struct Config: Decodable {
   public let UserConfigPath: String = ""
   public let barTopPadding: Int64 = 5
   public var colors: GlobalColorsConfig = GlobalColorsConfig()
@@ -299,6 +372,24 @@ public struct Config {
   )
 
   public init() {}
+
+  private enum CodingKeys: String, CodingKey {
+    case colors, externalDisplay, builtInDisplay
+  }
+
+  public init(from decoder: Decoder) throws {
+    let defaults = Config()
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.init()
+    colors =
+      try container.decodeIfPresent(GlobalColorsConfig.self, forKey: .colors) ?? defaults.colors
+    externalDisplay =
+      try container.decodeIfPresent(DisplayLayoutConfig.self, forKey: .externalDisplay)
+      ?? defaults.externalDisplay
+    builtInDisplay =
+      try container.decodeIfPresent(DisplayLayoutConfig.self, forKey: .builtInDisplay)
+      ?? defaults.builtInDisplay
+  }
 }
 
 public struct GlobalColorsConfig: Codable {
@@ -354,10 +445,6 @@ extension Color {
   }
 }
 
-// TODO:
-// - [x] define default value
-// - [ ] load value from config file
-// - [ ] set config to program / (half done)
 public class ConfigManager {
 
   public static let shared = ConfigManager()
@@ -366,6 +453,29 @@ public class ConfigManager {
   public static let MAIN_CONFIG_FILE_NAME = "config.yaml"
   public static let CONFIG_PARENT_DIR_NAME = ".config"
   public static let CONFIG_DIR_NAME = "kamidana"
+
+  public init() {
+    loadConfig()
+  }
+
+  public func loadConfig() {
+    let url = resolveConfigFileURL()
+    print("[LOG] CONFIG PATH URL: \(url)")
+
+    guard FileManager.default.fileExists(atPath: url.path) else {
+      print("Config file not found at \(url.path), using defaults")
+      return
+    }
+    do {
+      let yamlData = try String(contentsOf: url, encoding: .utf8)
+      let decoder = YAMLDecoder()
+      self.currentConfig = try decoder.decode(Config.self, from: yamlData)
+      print(self.currentConfig)
+      print("[LOG] Successfully load config from YAML. path \(url.path)")
+    } catch {
+      print("Failed to decode config \(error)")
+    }
+  }
 
   /// Resolves the fixed configuration directory: ~/.config/kamidana/
   public func resolveConfigDirectory(

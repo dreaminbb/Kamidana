@@ -67,5 +67,5 @@ fastlane/test_output
 /Kamidana.app/Contents/_CodeSignature
 /Tests/KamidanaTests/musicTest.swift
 /.DS_Store
-.personal
+personal
 /readmepic/.DS_Store
