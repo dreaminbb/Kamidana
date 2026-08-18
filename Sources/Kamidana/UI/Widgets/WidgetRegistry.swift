@@ -53,12 +53,6 @@ public class WidgetRegistry {
         tabNameMaker: { config in config.name ?? "System Action" }
       ))
     register(
-      factory: GenericWidgetFactory<WifiWidgetConfig, WiFiWidget>(
-        typeID: "wifi",
-        viewMaker: { config in WiFiWidget(config: config) },
-        tabNameMaker: { _ in "WiFi" }
-      ))
-    register(
       factory: GenericWidgetFactory<AudioWidgetConfig, AudioWidget>(
         typeID: "audio",
         viewMaker: { config in AudioWidget(config: config) },

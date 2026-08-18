@@ -34,9 +34,9 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
               icon: "sleep"
               style:
                 icon_color: "#aaaaaa"
-        - id: wifi-main
-          type: wifi
-          format: "wifi {ssid}"
+        - id: network-main
+          type: network
+          format: "{connection_icon} {upload} {upload_icon} {download} {download_icon}"
     center:
       activate: hover
       center_default: music-main
@@ -90,8 +90,8 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
   func testRejectsIconPropertyOnRegularWidget() {
     let yaml = validYAML.replacingOccurrences(
-      of: "      format: \"wifi {ssid}\"\n",
-      with: "      format: \"wifi {ssid}\"\n      icon: \"wifi\"\n"
+      of: "      format: \"{connection_icon} {upload} {upload_icon} {download} {download_icon}\"\n",
+      with: "      format: \"{connection_icon} {upload} {upload_icon} {download} {download_icon}\"\n      icon: \"network\"\n"
     )
     assertError(
       yaml,
@@ -181,7 +181,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
   }
 
   func testRejectsUnsupportedWidgetType() {
-    let yaml = validYAML.replacingOccurrences(of: "type: wifi", with: "type: not-a-widget")
+    let yaml = validYAML.replacingOccurrences(of: "type: network", with: "type: not-a-widget")
     assertError(
       yaml,
       matches: {
@@ -279,8 +279,8 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
   func testRejectsKindSpecificFieldsOnWrongWidget() {
     let yaml = validYAML.replacingOccurrences(
-      of: "      type: wifi\n",
-      with: "      type: wifi\n      command: \"uname\"\n"
+      of: "      type: network\n",
+      with: "      type: network\n      command: \"uname\"\n"
     )
     assertError(
       yaml,
@@ -371,7 +371,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
       Set(KamidanaWidgetKind.allCases.map(\.rawValue)),
       Set([
         "music", "volume", "cpu", "gpu", "memory", "network", "disk", "battery", "clock",
-        "wifi", "bluetooth", "custom", "widget-folder", "system-action", "btop",
+        "bluetooth", "custom", "widget-folder", "system-action", "btop",
       ])
     )
   }

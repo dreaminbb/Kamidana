@@ -110,6 +110,32 @@
         - [x] hover離脱・アプリ非アクティブ化・別Widget展開時に展開UIを閉じる
         - [x] 既存設定との互換性を持たない新しい1.0 YAMLスキーマとして定義
     - [x] 共通スタイルリゾルバとSwiftUI ViewModifierを実装
+    - [ ] 全Widgetの通常・空・無効・読み込み・エラー・展開状態UIをアプリ側で定義し、ユーザーと実機合格するまで反復
+        - [x] 通常情報Widgetの状態一覧を作成
+        - [x] center Widgetの状態一覧を作成
+        - [x] 展開・操作Widgetの状態一覧を作成
+        - [ ] 1状態ずつ実装・自動テスト・ユーザー実機確認を行う
+            - [x] volumeの`input_management: false`で入力UIを表示しない
+                - [x] 内部設定への適用とSwiftUI分岐を実装
+                - [x] 設定変換の自動テストを追加
+                - [x] ユーザーレビューに合わせてcompact表示のアイコンと文字サイズを調整
+                - [x] 通常Widgetとcenter compact背景の合計横幅を5px拡張
+                - [x] format表示を含むデフォルトNerd Fontアイコンを20pxに統一
+                - [x] ユーザー実機確認で合格
+            - [ ] volumeの`output_management: false`で出力UIを表示しない
+                - [x] 内部設定への適用とSwiftUI分岐を実装
+                - [x] 設定変換の自動テストとExample設定を追加
+                - [x] 入力のみ状態の文字とアイコンを標準サイズに統一
+                - [ ] ユーザー実機確認で合格
+            - [ ] Network Widgetへ接続情報と通信速度UIを統合
+                - [x] compact表示にupload・download速度を表示
+                - [x] 展開UIにLocal IP・DNS・Public IPを表示
+                - [x] Wi-Fi接続UIをNetwork Widgetへ統合
+                - [x] 有線LAN接続中のWi-Fiスキャンを停止
+                - [x] 自動テストとExample設定を更新
+                - [x] 有線は情報のみ、無線は情報と接続UIを横並びに配置
+                - [x] wifi Widgetを削除し、Networkの既定formatを接続種別と通信速度に統一
+                - [ ] ユーザー実機確認で合格
     - [ ] hover・pressed・expanded状態とプリセットアニメーションを実装
     - [ ] テーマファイルの監視、検証、フォールバックを実装
     - [ ] カテゴリ単位で軽量モデルのエージェントに実装を分担し、各完了後にユーザーレビューを実施

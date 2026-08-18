@@ -49,6 +49,9 @@ public struct DiskWidgetConfig: Codable {
 }
 
 public struct NetworkWidgetConfig: Codable {
+  public var wiredIcon: String = "󰲝"
+  public var wirelessIcon: String = "󰤨"
+  public var offlineIcon: String = "󰤭"
   public var uploadIcon: String = "󰁝"  // arrowUpRight
   public var downloadIcon: String = "󰁅"  // arrowDownRight
   public var iconColor: String = "#94e2d5"
@@ -81,15 +84,6 @@ public struct ClockWidgetConfig: Codable {
   public var textColor: String = "#cdd6f4"
 }
 
-public struct WifiWidgetConfig: Codable {
-  public var connectedIcon: String = "󰤨"
-  public var disconnectedIcon: String = "󰤭"
-  public var lanIcon: String = "󰲝"
-  public var iconColor: String = "#f5c2e7"
-  public var textColor: String = "#cdd6f4"
-  public var disconnectedTextColor: String = "#a6adc8"
-}
-
 public struct AudioWidgetConfig: Codable {
   public var speakerIcon: String = ""  // speakerWave
   public var speakerMutedIcon: String = "󰟎"  // speakerSlash? Actually speaker is 󰕮
@@ -99,6 +93,16 @@ public struct AudioWidgetConfig: Codable {
   public var micActiveColor: String = "#fab387"
   public var mutedColor: String = "#f38ba8"
   public var textColor: String = "#cdd6f4"
+  public var inputManagement: Bool? = true
+  public var outputManagement: Bool? = true
+
+  public var showsInputManagement: Bool {
+    inputManagement != false
+  }
+
+  public var showsOutputManagement: Bool {
+    outputManagement != false
+  }
 }
 
 public struct SystemActionWidgetConfig: Codable, Hashable {
@@ -239,7 +243,6 @@ public struct WidgetFolderConfig: Hashable, Decodable {
 }
 
 // Make all existing configs Hashable so we can use them in ForEach
-extension WifiWidgetConfig: Hashable {}
 extension AudioWidgetConfig: Hashable {}
 extension MusicWidgetConfig: Hashable {}
 extension NetworkWidgetConfig: Hashable {}
@@ -307,7 +310,6 @@ public struct Config: Decodable {
               config: SystemActionWidgetConfig(
                 action: "lockScreen", name: "Screen Lock", icon: "󰌾", iconColor: "#f5c2e7")),
           ])),
-      WidgetInstance(typeID: "wifi", config: WifiWidgetConfig()),
       WidgetInstance(typeID: "audio", config: AudioWidgetConfig()),
     ],
     center: [
@@ -381,7 +383,6 @@ public struct Config: Decodable {
               WidgetInstance(typeID: "disk", config: DiskWidgetConfig()),
             ])),
       WidgetInstance(typeID: "bluetooth", config: BluetoothWidgetConfig()),
-      WidgetInstance(typeID: "wifi", config: WifiWidgetConfig()),
       WidgetInstance(typeID: "battery", config: BatteryWidgetConfig()),
       WidgetInstance(typeID: "clock", config: ClockWidgetConfig()),
     ]

@@ -1,65 +1,183 @@
 import Combine
-import CoreWLAN
 import XCTest
 
 @testable import Kamidana
 
-final class NetworkManagerTests: XCTestCase {
-    var cancellables = Set<AnyCancellable>()
+private final class StubNetworkAddressSource: NetworkAddressSource {
+    let snapshots: [NetworkInterfaceSnapshot]
+    let dns: [String]
 
-    func testNetworkConnectionStatus() {
-        let manager = NetworkManager()
-        let expectation = XCTestExpectation(description: "ネットワーク状態の更新を待機")
-
-        manager.$currentConnection
-            .sink { connection in
-                if connection != "OFF" {
-                    print("✅ 現在のネットワーク接続状態: \(connection)")
-                    expectation.fulfill()
-                }
-            }
-            .store(in: &cancellables)
-
-        let result = XCTWaiter.wait(for: [expectation], timeout: 3.0)
-        if result == .timedOut {
-            print("⚠️ ネットワーク状態が OFF のままか、モニターの応答がタイムアウトしました。")
-        }
+    init(snapshots: [NetworkInterfaceSnapshot], dns: [String]) {
+        self.snapshots = snapshots
+        self.dns = dns
     }
 
-    // FIX: 位置情報を許可出来ていないからWIFIが取得出来ない
-    func testFetchAvailableNetworks() {
-        let manager = NetworkManager()
+    func interfaceSnapshots() -> [NetworkInterfaceSnapshot] { snapshots }
+    func dnsServers() -> [String] { dns }
+}
 
-        let exp = XCTestExpectation(description: "Wait for Wi-Fi Scan")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            let result = manager.fetchAvailableNetwork()
+private final class StubPublicIPClient: PublicIPClient {
+    var requestCount = 0
+    let result: Result<String, Error>
 
-            switch result {
-            case .success(let networks):
-                print("✅ 成功: \(networks.count) 件のWi-Fiネットワークが見つかりました。")
+    init(result: Result<String, Error>) { self.result = result }
 
-                if networks.isEmpty {
-                    print(
-                        "⚠️ Wi-Fiが0件です。ターミナル（またはXcode）に「位置情報」のアクセス許可がないため、macOSがセキュリティ機能でSSIDをブロックしています。"
-                    )
-                    print(
-                        "👉 対策: Macの「システム設定」>「プライバシーとセキュリティ」>「位置情報サービス」から、使用しているターミナルアプリに許可を与えてください。"
-                    )
-                }
+    func fetch(completion: @escaping (Result<String, Error>) -> Void) {
+        requestCount += 1
+        completion(result)
+    }
+}
 
-                for network in networks.prefix(5) {
-                    let ssid = network.ssid ?? "非公開ネットワーク (Hidden)"
-                    print("   - SSID: \(ssid) (電波強度: \(network.rssiValue) dBm)")
-                }
+final class NetworkManagerTests: XCTestCase {
+    func testWiredConnectionTakesPriorityOverWiFi() {
+        XCTAssertEqual(
+            NetworkManager.connectionState(
+                statusIsSatisfied: true,
+                usesWiredEthernet: true,
+                usesWiFi: true
+            ),
+            "LAN"
+        )
+        XCTAssertEqual(
+            NetworkManager.connectionState(
+                statusIsSatisfied: true,
+                usesWiredEthernet: false,
+                usesWiFi: true
+            ),
+            "WIFI"
+        )
+        XCTAssertEqual(
+            NetworkManager.connectionState(
+                statusIsSatisfied: false,
+                usesWiredEthernet: true,
+                usesWiFi: true
+            ),
+            "OFF"
+        )
+    }
 
-                XCTAssertNotNil(networks)
+  func testNetworkDisplayNameUsesConnectionSpecificNames() {
+        XCTAssertEqual(
+            NetworkManager.networkDisplayName(
+                connection: "LAN",
+                interfaceName: "en5",
+                ssid: nil
+            ),
+            "Ethernet (en5)"
+        )
+        XCTAssertEqual(
+            NetworkManager.networkDisplayName(
+                connection: "WIFI",
+                interfaceName: "en0",
+                ssid: "Kamidana"
+            ),
+            "Kamidana"
+        )
+        XCTAssertEqual(
+            NetworkManager.networkDisplayName(
+                connection: "OFF",
+                interfaceName: nil,
+                ssid: nil
+            ),
+            "Offline"
+        )
+  }
 
-            case .failure(let error):
-                print("⚠️ 失敗または権限なし: Wi-Fiスキャンに失敗しました。")
-                print("   詳細: \(error.localizedDescription)")
-            }
-            exp.fulfill()
+  func testSSIDIsOnlyAvailableForWiFiConnections() {
+    XCTAssertEqual(NetworkManager.displaySSID(connection: "WIFI", ssid: "Office Wi-Fi"), "Office Wi-Fi")
+    XCTAssertEqual(NetworkManager.displaySSID(connection: "LAN", ssid: "Office Wi-Fi"), "")
+    XCTAssertEqual(NetworkManager.displaySSID(connection: "OFF", ssid: "Office Wi-Fi"), "")
+    XCTAssertEqual(NetworkManager.displaySSID(connection: "WIFI", ssid: "   "), "")
+  }
+
+    func testWiFiScanIsDisabledForWiredConnection() {
+        let source = StubNetworkAddressSource(snapshots: [], dns: [])
+        let client = StubPublicIPClient(result: .failure(NetworkManagerError.invalidPublicIPResponse))
+        let manager = NetworkManager(addressSource: source, publicIPClient: client, startMonitoring: false)
+        manager.currentConnection = "LAN"
+
+        XCTAssertFalse(manager.canScanWiFi)
+        guard case .failure(let error) = manager.fetchAvailableNetwork() else {
+            return XCTFail("Expected wired scan to fail before accessing CoreWLAN")
         }
-        wait(for: [exp], timeout: 5.0)
+        XCTAssertEqual(error as? NetworkManagerError, .wiredConnectionActive)
+    }
+
+    func testWiFiScanIsAllowedWhenConnectionIsOff() {
+        let source = StubNetworkAddressSource(snapshots: [], dns: [])
+        let client = StubPublicIPClient(result: .failure(NetworkManagerError.invalidPublicIPResponse))
+        let manager = NetworkManager(addressSource: source, publicIPClient: client, startMonitoring: false)
+        manager.currentConnection = "OFF"
+
+        XCTAssertTrue(manager.canScanWiFi)
+    }
+
+    func testNetworkDetailsPreferActiveInterfaceAndPublishStates() {
+        let source = StubNetworkAddressSource(
+            snapshots: [
+                NetworkInterfaceSnapshot(name: "en1", ipv4: "192.168.1.9", isActive: false),
+                NetworkInterfaceSnapshot(name: "en0", ipv4: "10.0.0.4", isActive: true)
+            ],
+            dns: ["1.1.1.1", "8.8.8.8"])
+        let client = StubPublicIPClient(result: .success("203.0.113.5"))
+        let manager = NetworkManager(addressSource: source, publicIPClient: client, startMonitoring: false)
+
+        XCTAssertEqual(manager.localIPv4State, .available("10.0.0.4"))
+        XCTAssertEqual(manager.dnsServersState, .available("1.1.1.1, 8.8.8.8"))
+        let publicIPExpectation = expectation(description: "Public IP state becomes available")
+        var cancellable: AnyCancellable?
+        cancellable = manager.$publicIPState.sink { state in
+            if state == .available("203.0.113.5") {
+                publicIPExpectation.fulfill()
+                cancellable?.cancel()
+            }
+        }
+        wait(for: [publicIPExpectation], timeout: 1.0)
+        XCTAssertEqual(manager.publicIPState, .available("203.0.113.5"))
+        XCTAssertEqual(client.requestCount, 1)
+
+        manager.refreshNetworkDetails(forcePublicIP: false)
+        XCTAssertEqual(client.requestCount, 1)
+    }
+
+    func testPreferredInterfaceIsSelectedBeforeOtherActiveInterfaces() {
+        let snapshots = [
+            NetworkInterfaceSnapshot(name: "en0", ipv4: "192.168.1.4", isActive: true),
+            NetworkInterfaceSnapshot(name: "en5", ipv4: "10.0.0.4", isActive: true)
+        ]
+
+        XCTAssertEqual(
+            NetworkManager.selectIPv4(from: snapshots, preferredInterfaceName: "en5"),
+            "10.0.0.4"
+        )
+        XCTAssertEqual(
+            NetworkManager.selectIPv4(from: snapshots, preferredInterfaceName: "en9"),
+            "192.168.1.4"
+        )
+    }
+
+    func testLoopbackInterfacesAreExcludedFromLocalIPv4Candidates() {
+        XCTAssertFalse(
+            NetworkManager.isUsableIPv4Interface(name: "lo0", ipv4: "127.0.0.1")
+        )
+        XCTAssertFalse(
+            NetworkManager.isUsableIPv4Interface(name: "en0", ipv4: "127.0.0.1")
+        )
+        XCTAssertTrue(
+            NetworkManager.isUsableIPv4Interface(name: "en0", ipv4: "192.168.1.4")
+        )
+    }
+
+    func testPublicIPAddressValidationAcceptsIPv4AndIPv6Only() {
+        XCTAssertEqual(
+            NetworkManager.validPublicIPAddress(" 203.0.113.5\n"),
+            "203.0.113.5"
+        )
+        XCTAssertEqual(
+            NetworkManager.validPublicIPAddress("2001:db8::5"),
+            "2001:db8::5"
+        )
+        XCTAssertNil(NetworkManager.validPublicIPAddress("not-an-ip-address"))
+        XCTAssertNil(NetworkManager.validPublicIPAddress(""))
     }
 }

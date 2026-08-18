@@ -88,6 +88,57 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(folder.widgets.first?.v1Style?.iconColor, "#654321")
   }
 
+  func testAdapterDisablesVolumeInputManagement() throws {
+    let yaml = """
+      left:
+        widgets:
+          - id: output-only
+            type: volume
+            format: "󰕾 {volume}%"
+            input_management: false
+            output_management: true
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let audio = try XCTUnwrap(runtime.externalDisplay.left.first?.config as? AudioWidgetConfig)
+
+    XCTAssertEqual(audio.inputManagement, false)
+    XCTAssertFalse(audio.showsInputManagement)
+  }
+
+  func testAdapterDisablesVolumeOutputManagement() throws {
+    let yaml = """
+      left:
+        widgets:
+          - id: input-only
+            type: volume
+            format: "{volume}%"
+            input_management: true
+            output_management: false
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let audio = try XCTUnwrap(runtime.externalDisplay.left.first?.config as? AudioWidgetConfig)
+
+    XCTAssertEqual(audio.outputManagement, false)
+    XCTAssertTrue(audio.showsInputManagement)
+    XCTAssertFalse(audio.showsOutputManagement)
+  }
+
   func testStyleStateOverridesBaseStyle() {
     let base = KamidanaStyle(
       background: "#111111",
@@ -114,6 +165,25 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
         KamidanaFormatSegment(value: " 42.5%", isIcon: false),
       ]
     )
+  }
+
+  func testNetworkDefaultFormatIncludesTheConnectionIcon() {
+    let config = NetworkWidgetConfig()
+    let rendered = KamidanaFormatRenderer.render(
+      NetworkWidget.defaultFormat,
+      values: [
+        "connection_icon": config.wiredIcon,
+        "ssid": "",
+        "upload": "1 KB",
+        "upload_icon": config.uploadIcon,
+        "download": "2 KB",
+        "download_icon": config.downloadIcon,
+      ]
+    )
+
+    XCTAssertEqual(rendered, "\(config.wiredIcon)  1 KB \(config.uploadIcon) 2 KB \(config.downloadIcon)")
+    XCTAssertEqual(KamidanaFormatRenderer.segments(in: rendered).first?.value, config.wiredIcon)
+    XCTAssertTrue(KamidanaFormatRenderer.segments(in: rendered).first?.isIcon ?? false)
   }
 
   func testConfigManagerAppliesV1ConfigurationAtomically() throws {

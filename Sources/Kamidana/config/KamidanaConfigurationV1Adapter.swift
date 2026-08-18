@@ -154,8 +154,11 @@ public enum KamidanaConfigurationV1Adapter {
         typeID: "music", config: value, v1Style: style, v1Format: displayFormat)
 
     case .volume:
+      var value = AudioWidgetConfig()
+      value.inputManagement = widget.inputManagement
+      value.outputManagement = widget.outputManagement
       return WidgetInstance(
-        typeID: "audio", config: AudioWidgetConfig(), v1Style: style, v1Format: displayFormat)
+        typeID: "audio", config: value, v1Style: style, v1Format: displayFormat)
 
     case .cpu:
       var value = CpuWidgetConfig()
@@ -203,13 +206,6 @@ public enum KamidanaConfigurationV1Adapter {
       if let color = style.color { value.textColor = color }
       return WidgetInstance(
         typeID: "clock", config: value, v1Style: style, v1Format: displayFormat)
-
-    case .wifi:
-      var value = WifiWidgetConfig()
-      if let color = style.iconColor { value.iconColor = color }
-      if let color = style.color { value.textColor = color }
-      return WidgetInstance(
-        typeID: "wifi", config: value, v1Style: style, v1Format: displayFormat)
 
     case .bluetooth:
       var value = BluetoothWidgetConfig()

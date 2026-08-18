@@ -49,7 +49,7 @@ MacBook built-in displays feature a physical camera notch in the top-center of t
 ### 1. Left Section (Utility Controls)
 Hosts essential system operation and connectivity widgets:
 - **System Control Widget**: Power controls (Sleep, Restart, Shutdown, Lock, About This Mac) and btop terminal launcher.
-- **Wi-Fi Widget**: Network status, local IP, and nearby network connection manager.
+- **Network Widget**: Wired and wireless status, address details, transfer speed, and Wi-Fi connection manager.
 - **Audio Widget**: Volume levels, microphone mute toggle, and input/output device selector.
 
 ### 2. Center Section (Kamidana Island)

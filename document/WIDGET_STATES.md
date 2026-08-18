@@ -1,0 +1,54 @@
+# Widget UI State Matrix
+
+This document tracks the application-defined UI states required by the customization boundary in `UI_DESIGN.md`. Each missing state is implemented and accepted separately.
+
+## Acceptance Workflow
+
+1. Select one missing state.
+2. Implement only that state and its configuration path.
+3. Add automated coverage for state selection where practical.
+4. Provide an exact configuration and visual checklist for user testing.
+5. Mark the state accepted only after the user confirms the UI on a real device.
+
+## Regular Information Widgets
+
+| Widget | Defined states | Missing states |
+|---|---|---|
+| CPU | value, details | loading, unavailable, collection error, tooltip disabled |
+| GPU | value, details | loading, unsupported hardware, collection error, tooltip disabled |
+| Memory | value, details, process-list loading | value loading, unavailable, empty process list, collection error |
+| Network | wired and wireless compact indicators, transfer values, initial fallback, network name and address details, detail loading and unavailable, Wi-Fi side panel, wired scan disabled | collection error, tooltip disabled |
+| Disk | used space, I/O details, process-list loading | value loading, unavailable volume, missing I/O data, empty process list |
+| Battery | charging, discharging, details | battery unavailable, missing power data, missing thermal data |
+| Clock | date and time | invalid format fallback, wake refresh failure |
+| Custom | idle, running, command failure | empty output, explicit completion state |
+
+## Center Widgets
+
+| Widget | Defined states | Missing states |
+|---|---|---|
+| Island | compact, expanded, selected tab | click activation, expansion disabled, empty center |
+| Music | playing, paused, no track, no artwork, no track duration | deterministic previews and automated state selection tests |
+| btop | executable available | executable unavailable |
+| Regular center widget | compact format, expanded factory view | unavailable data and empty compact content |
+
+## Interactive and Expanding Widgets
+
+| Widget | Defined states | Missing states |
+|---|---|---|
+| Volume | input and output controls, mute, device lists | input disabled, output disabled, both disabled, empty device list, device error |
+| Bluetooth | on, off, paired devices | unavailable hardware, permission denied, refresh error |
+| Widget Folder | collapsed, expanded, supported directions | unavailable child factory |
+| System Action | action buttons | execution failure feedback |
+
+## Ordered Acceptance Queue
+
+1. Volume input disabled (`input_management: false`, `output_management: true`)
+2. Volume output disabled (`input_management: true`, `output_management: false`)
+3. Volume fully disabled (`input_management: false`, `output_management: false`)
+4. CPU data unavailable
+5. GPU data unavailable
+6. Music artwork unavailable
+7. Center activation set to click
+
+Additional states are selected from the matrix after these states pass user acceptance.

@@ -324,7 +324,6 @@ public enum KamidanaWidgetKind: String, Codable, Equatable, CaseIterable {
   case disk
   case battery
   case clock
-  case wifi
   case bluetooth
   case custom
   case widgetFolder = "widget-folder"
@@ -823,7 +822,7 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
   }
 
   private func isExpandingWidget(_ widget: KamidanaWidget) -> Bool {
-    if [.music, .volume, .wifi, .bluetooth, .widgetFolder, .systemAction].contains(widget.kind) {
+    if [.music, .volume, .network, .bluetooth, .widgetFolder, .systemAction].contains(widget.kind) {
       return true
     }
     return widget.activate != nil || widget.tooltip == true

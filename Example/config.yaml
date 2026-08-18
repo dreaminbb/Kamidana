@@ -49,15 +49,11 @@ left:
           icon: "󰌾"
           style:
             icon_color: "#f5c2e7"
-    - id: wifi
-      type: wifi
-      format: "󰤨 {ssid}"
-      style:
-        color: "#cdd6f4"
-        icon_color: "#f5c2e7"
     - id: volume
       type: volume
       format: "󰕾 {volume}%"
+      input_management: true
+      output_management: false
       style:
         color: "#cdd6f4"
         icon_color: "#89b4fa"
@@ -91,7 +87,7 @@ right:
   widgets:
     - id: network
       type: network
-      format: "󰕝 {upload}/s 󰓅 {download}/s"
+      format: "{connection_icon} {ssid} {upload} {upload_icon} {download} {download_icon}"
       style:
         color: "#cdd6f4"
         icon_color: "#94e2d5"
@@ -115,7 +111,7 @@ right:
         icon_color: "#89b4fa"
     - id: memory
       type: memory
-      format: "󰘚 {used_gb} GB"
+      format: " {used_gb} GB"
       style:
         color: "#cba6f7"
         icon_color: "#cba6f7"
