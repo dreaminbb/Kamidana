@@ -2,6 +2,8 @@ import SwiftUI
 
 struct AudioWidget: View {
     @EnvironmentObject var audioVM: AudioViewModel
+    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     let config: AudioWidgetConfig
     
     @State private var showAudioPopover = false
@@ -13,25 +15,21 @@ struct AudioWidget: View {
         HStack(spacing: 12) {
             // Output (Speaker)
             HStack(spacing: 6) {
-                Button(action: { audioVM.toggleOutputMute() }) {
-                    NerdFontIcon(audioVM.isOutputMuted ? config.speakerMutedIcon : config.speakerIcon)
-                    .foregroundColor(audioVM.isOutputMuted ? Color(hex: config.mutedColor) : Color(hex: config.activeColor))
-                }
-                .buttonStyle(.plain)
-
                 Button(action: { showAudioPopover.toggle() }) {
-                    HStack(spacing: 4) {
-                        Text(String(format: "%.0f%%", audioVM.outputVolume * 100))
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(Color(hex: colors.textPrimary))
-                            .frame(width: 30, alignment: .trailing)
-
-                        if isHovered {
-                            Text(audioVM.outputFormat)
-                                .font(.system(size: 9))
-                                .foregroundColor(Color(hex: colors.textTertiary))
-                        }
-                    }
+                    FormattedWidgetLabel(
+                        format: widgetFormat ?? "{icon} {volume}%",
+                        values: [
+                            "icon": audioVM.isOutputMuted
+                                ? config.speakerMutedIcon : config.speakerIcon,
+                            "volume": String(format: "%.0f", audioVM.outputVolume * 100),
+                            "device": audioVM.outputFormat
+                        ],
+                        iconColor: Color(
+                            hex: v1Style?.iconColor
+                                ?? (audioVM.isOutputMuted ? config.mutedColor : config.activeColor)),
+                        textColor: Color(hex: v1Style?.color ?? colors.textPrimary)
+                    )
+                    .font(.system(size: 10, weight: .bold))
                 }
                 .buttonStyle(.plain)
                 .popover(isPresented: $showAudioPopover, arrowEdge: .bottom) {
@@ -42,7 +40,15 @@ struct AudioWidget: View {
                             .padding(.bottom, 5)
 
                         HStack {
-                            NerdFontIcon(config.speakerMutedIcon, size: 10).foregroundColor(Color(hex: colors.textTertiary))
+                            Button(action: { audioVM.toggleOutputMute() }) {
+                                NerdFontIcon(
+                                    audioVM.isOutputMuted
+                                        ? config.speakerMutedIcon : config.speakerIcon,
+                                    size: 10
+                                )
+                                .foregroundColor(Color(hex: colors.textTertiary))
+                            }
+                            .buttonStyle(.plain)
                             Slider(
                                 value: Binding(
                                     get: { audioVM.outputVolume },
@@ -91,7 +97,12 @@ struct AudioWidget: View {
             HStack(spacing: 6) {
                 Button(action: { audioVM.toggleInputMute() }) {
                     NerdFontIcon(audioVM.isInputMuted ? config.micMutedIcon : config.micIcon)
-                        .foregroundColor(audioVM.isInputMuted ? Color(hex: config.mutedColor) : Color(hex: config.micActiveColor))
+                        .foregroundColor(
+                            Color(
+                                hex: v1Style?.iconColor
+                                    ?? (audioVM.isInputMuted
+                                        ? config.mutedColor : config.micActiveColor))
+                        )
                 }
                 .buttonStyle(.plain)
 
@@ -99,13 +110,13 @@ struct AudioWidget: View {
                     HStack(spacing: 4) {
                         Text(String(format: "%.0f%%", audioVM.inputVolume * 100))
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(Color(hex: colors.textPrimary))
+                            .foregroundColor(Color(hex: v1Style?.color ?? colors.textPrimary))
                             .frame(width: 30, alignment: .trailing)
 
                         if isHovered {
                             Text(audioVM.inputFormat)
                                 .font(.system(size: 9))
-                                .foregroundColor(Color(hex: colors.textTertiary))
+                                .foregroundColor(Color(hex: v1Style?.color ?? colors.textTertiary))
                         }
                     }
                 }

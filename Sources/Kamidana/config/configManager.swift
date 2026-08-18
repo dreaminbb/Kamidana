@@ -122,22 +122,38 @@ public struct TerminalWidgetConfig: Codable, Hashable {
   public var terminalPath: String
 }
 
+public struct GpuWidgetConfig: Codable, Hashable {
+  public var icon: String = "󰢮"
+}
+
 public struct WidgetInstance: Hashable, Decodable {
   public let id = UUID()
   public let typeID: String
   public let config: AnyHashable
+  public let v1Style: KamidanaStyle?
+  public let v1Format: String?
 
-  public init(typeID: String, config: AnyHashable) {
+  public init(
+    typeID: String,
+    config: AnyHashable,
+    v1Style: KamidanaStyle? = nil,
+    v1Format: String? = nil
+  ) {
     self.typeID = typeID
     self.config = config
+    self.v1Style = v1Style
+    self.v1Format = v1Format
   }
 
   public static func == (lhs: WidgetInstance, rhs: WidgetInstance) -> Bool {
-    lhs.typeID == rhs.typeID && lhs.config == rhs.config
+    lhs.typeID == rhs.typeID && lhs.config == rhs.config && lhs.v1Style == rhs.v1Style
+      && lhs.v1Format == rhs.v1Format
   }
   public func hash(into hasher: inout Hasher) {
     hasher.combine(typeID)
     hasher.combine(config)
+    hasher.combine(v1Style)
+    hasher.combine(v1Format)
   }
 
   public init(from decoder: Decoder) throws {
@@ -449,13 +465,16 @@ public class ConfigManager {
 
   public static let shared = ConfigManager()
   public var currentConfig = Config()
+  public private(set) var currentV1Config: KamidanaConfigurationV1?
 
   public static let MAIN_CONFIG_FILE_NAME = "config.yaml"
   public static let CONFIG_PARENT_DIR_NAME = ".config"
   public static let CONFIG_DIR_NAME = "kamidana"
 
-  public init() {
-    loadConfig()
+  public init(shouldLoadUserConfiguration: Bool = true) {
+    if shouldLoadUserConfiguration {
+      loadConfig()
+    }
   }
 
   public func loadConfig() {
@@ -468,13 +487,18 @@ public class ConfigManager {
     }
     do {
       let yamlData = try String(contentsOf: url, encoding: .utf8)
-      let decoder = YAMLDecoder()
-      self.currentConfig = try decoder.decode(Config.self, from: yamlData)
-      print(self.currentConfig)
-      print("[LOG] Successfully load config from YAML. path \(url.path)")
+      try applyV1Configuration(yaml: yamlData)
+      print("[LOG] Successfully loaded v1 config from YAML. path \(url.path)")
     } catch {
-      print("Failed to decode config \(error)")
+      print("Failed to decode v1 config \(error)")
     }
+  }
+
+  public func applyV1Configuration(yaml: String) throws {
+    let decoded = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtimeConfig = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: decoded)
+    currentV1Config = decoded
+    currentConfig = runtimeConfig
   }
 
   /// Resolves the fixed configuration directory: ~/.config/kamidana/

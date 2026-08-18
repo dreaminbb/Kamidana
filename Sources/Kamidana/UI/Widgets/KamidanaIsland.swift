@@ -7,24 +7,19 @@ struct windowSizeRequirements {
 
 struct KamidanaIsland: View {
     @EnvironmentObject var musicManager: MusicPlayingManager
+    @Environment(\.showsKamidanaWidgetSurface) private var showsWidgetSurface
     let centerWidgets: [WidgetInstance]
 
     @State private var isHovered = false
     @State private var selectedTab: WidgetInstance? = nil
 
-    @State private var rotation: Double = 0.0
     @State private var islandSize: windowSizeRequirements = windowSizeRequirements(
         width: nil, height: nil)
 
-    let rotationTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     static let defaultHoveredSize = CGSize(width: 600, height: 300)
-    static let defaultCompactSize = CGSize(width: 180, height: 32)
     static let terminalHoveredSize = CGSize(width: 800, height: 500)
 
-    // Calculate and return size
-    private func getIslandSize() -> CGSize {
-        if !isHovered { return Self.defaultCompactSize }
-
+    private func expandedIslandSize() -> CGSize {
         // If size change by tab is needed, calculate here
         if let tab = selectedTab {
             if tab.typeID == "terminal" {
@@ -40,6 +35,23 @@ struct KamidanaIsland: View {
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
+        let defaultStyle = centerWidgets.first?.v1Style
+        let background = defaultStyle?.background ?? colors.background
+        let backgroundOpacity = showsWidgetSurface ? (defaultStyle?.opacity ?? 0.8) : 0
+        let cornerRadius = defaultStyle?.cornerRadius ?? (isHovered ? 24 : 16)
+        let borderColor = defaultStyle?.border?.color ?? colors.surfaceBorder
+        let borderWidth = showsWidgetSurface ? (defaultStyle?.border?.width ?? 1) : 0
+        let material: AnyShapeStyle = {
+            guard showsWidgetSurface else { return AnyShapeStyle(Color.clear) }
+            switch defaultStyle?.material {
+            case .some(.none): return AnyShapeStyle(Color.clear)
+            case .thin: return AnyShapeStyle(.thinMaterial)
+            case .regular: return AnyShapeStyle(.regularMaterial)
+            case .thick: return AnyShapeStyle(.thickMaterial)
+            case .chrome: return AnyShapeStyle(.bar)
+            case .some(.ultraThin), nil: return AnyShapeStyle(.ultraThinMaterial)
+            }
+        }()
         VStack(spacing: 0) {
             if isHovered {
                 // Expanded UI
@@ -79,6 +91,8 @@ struct KamidanaIsland: View {
                     if let selected = selectedTab {
                         if let factory = WidgetRegistry.shared.factory(for: selected.typeID) {
                             factory.makeView(config: selected.config)
+                                .environment(\.kamidanaV1Style, selected.v1Style)
+                                .environment(\.kamidanaWidgetFormat, selected.v1Format)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             EmptyView()
@@ -88,51 +102,25 @@ struct KamidanaIsland: View {
 
             } else {
                 // Compact UI (collapsed state)
-                HStack(spacing: 0) {
-                    if !musicManager.title.isEmpty, let artwork = musicManager.artwork {
-                        // Display artwork when music is playing
-                        Image(nsImage: artwork)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .onReceive(rotationTimer) { _ in
-                                if musicManager.isPlaying {
-                                    rotation += 1.5
-                                    if rotation >= 360 { rotation = 0 }
-                                }
-                            }
-                            .rotationEffect(.degrees(rotation))
-                            .frame(width: 24, height: 24)
-                            .clipShape(Circle())
-                            .padding(.leading, 10)
-
-                        // TODO: Add audio visualizer here
-
-                    } else {
-                        // Default icon when no music or artwork is available
-                        let musicConfig = centerWidgets.first(where: { $0.typeID == "music" })?.config as? MusicWidgetConfig ?? MusicWidgetConfig()
-                        NerdFontIcon(musicConfig.defaultIcon)
-                            .foregroundColor(Color(hex: musicConfig.defaultIconColor))
+                HStack(spacing: 6) {
+                    if let defaultWidget = centerWidgets.first {
+                        compactContent(for: defaultWidget)
                     }
-
-                    Spacer()
-                    Text(musicManager.title.isEmpty ? "" : musicManager.title)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-
-                    Spacer()
                 }
-                .foregroundColor(Color(hex: colors.textPrimary))
-                .padding(.leading, 3)
+                .padding(.horizontal, 10)
             }
         }
-        // Dynamically change island size based on hover state
-        .frame(width: getIslandSize().width, height: getIslandSize().height)  // Pass computed size
-        .background(Color(hex: colors.background).opacity(0.8))
-        .background(.ultraThinMaterial)
-        .cornerRadius(isHovered ? 24 : 16)
+        .fixedSize(horizontal: !isHovered, vertical: !isHovered)
+        .frame(
+            width: isHovered ? expandedIslandSize().width : nil,
+            height: isHovered ? expandedIslandSize().height : 32
+        )
+        .background(Color(hex: background).opacity(backgroundOpacity))
+        .background(material)
+        .cornerRadius(cornerRadius)
         .overlay(
-            RoundedRectangle(cornerRadius: isHovered ? 24 : 16)
-                .stroke(Color(hex: colors.surfaceBorder), lineWidth: 1)
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color(hex: borderColor), lineWidth: borderWidth)
         )
         // Spring animation providing smooth expansion
         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isHovered)
@@ -150,5 +138,45 @@ struct KamidanaIsland: View {
 
     private func tabName(for widget: WidgetInstance) -> String {
         return WidgetRegistry.shared.factory(for: widget.typeID)?.getTabName(config: widget.config) ?? "Unknown"
+    }
+
+    @ViewBuilder
+    private func compactContent(for widget: WidgetInstance) -> some View {
+        let colors = ConfigManager.shared.currentConfig.colors
+        let style = widget.v1Style
+
+        if widget.typeID == "music" {
+            if !musicManager.title.isEmpty, let artwork = musicManager.artwork {
+                Image(nsImage: artwork)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 24, height: 24)
+                    .clipShape(Circle())
+            }
+
+            let musicConfig = widget.config as? MusicWidgetConfig ?? MusicWidgetConfig()
+            FormattedWidgetLabel(
+                format: widget.v1Format ?? "{icon} {title}",
+                values: [
+                    "icon": musicConfig.defaultIcon,
+                    "title": musicManager.title,
+                    "artist": musicManager.artist
+                ],
+                iconColor: Color(hex: style?.iconColor ?? musicConfig.defaultIconColor),
+                textColor: Color(hex: style?.color ?? colors.textPrimary)
+            )
+        } else if widget.typeID == "terminal" {
+            FormattedWidgetLabel(
+                format: widget.v1Format ?? "",
+                values: [:],
+                iconColor: Color(hex: style?.iconColor ?? colors.accent),
+                textColor: Color(hex: style?.color ?? colors.textPrimary)
+            )
+        } else if let factory = WidgetRegistry.shared.factory(for: widget.typeID) {
+            factory.makeView(config: widget.config)
+                .environment(\.kamidanaV1Style, style)
+                .environment(\.kamidanaWidgetFormat, widget.v1Format)
+                .environment(\.showsKamidanaWidgetSurface, false)
+        }
     }
 }

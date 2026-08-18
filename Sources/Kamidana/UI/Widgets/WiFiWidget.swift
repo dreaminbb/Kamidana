@@ -3,6 +3,8 @@ import SwiftUI
 
 struct WiFiWidget: View {
     @EnvironmentObject var netManager: NetworkManager
+    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @State private var showPopover = false
     @State private var selectedSSID: String? = nil
     @State private var wifiPassword = ""
@@ -19,16 +21,22 @@ struct WiFiWidget: View {
                 netManager.scanForNetworks()
             }
         }) {
-            HStack(spacing: 4) {
-                NerdFontIcon(
-                    netManager.currentConnection == "WIFI"
-                        ? config.connectedIcon
-                        : (netManager.currentConnection == "LAN" ? config.lanIcon : config.disconnectedIcon)
-                )
-                .foregroundColor(Color(hex: config.iconColor))
-            }
-            .foregroundColor(
-                netManager.currentConnection != "OFF" ? Color(hex: config.textColor) : Color(hex: config.disconnectedTextColor))
+            let icon =
+                netManager.currentConnection == "WIFI"
+                ? config.connectedIcon
+                : (netManager.currentConnection == "LAN" ? config.lanIcon : config.disconnectedIcon)
+            let textColor = netManager.currentConnection != "OFF"
+                ? Color(hex: config.textColor) : Color(hex: config.disconnectedTextColor)
+            FormattedWidgetLabel(
+                format: widgetFormat ?? "{icon} {ssid}",
+                values: [
+                    "icon": icon,
+                    "ssid": currentSSID,
+                    "connection": netManager.currentConnection.lowercased()
+                ],
+                iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? Color(hex: config.iconColor),
+                textColor: v1Style?.color.map(Color.init(hex:)) ?? textColor
+            )
         }
         .buttonStyle(.plain)
         .SmoothUIModule()
@@ -183,5 +191,9 @@ struct WiFiWidget: View {
             .padding()
             .background(Color(hex: colors.background))
         }
+    }
+
+    private var currentSSID: String {
+        CWWiFiClient.shared().interface()?.ssid() ?? netManager.currentConnection
     }
 }

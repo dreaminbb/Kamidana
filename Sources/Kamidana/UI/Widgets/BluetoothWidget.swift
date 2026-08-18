@@ -3,6 +3,8 @@ import SwiftUI
 
 struct BluetoothWidget: View {
     @EnvironmentObject var bluetooth: BluetoothManager
+    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @State private var showPopover = false
     @State private var isButtonHovered = false
     @State private var isPopoverHovered = false
@@ -17,10 +19,18 @@ struct BluetoothWidget: View {
                 bluetooth.refreshPairedDevices()
             }
         }) {
-            HStack(spacing: 4) {
-                NerdFontIcon(bluetooth.isBluetoothOn ? config.iconConnected : config.iconDisconnected)
-                    .foregroundColor(bluetooth.isBluetoothOn ? Color(hex: config.connectedColor) : Color(hex: config.disconnectedColor))
-            }
+            let statusColor = bluetooth.isBluetoothOn
+                ? Color(hex: config.connectedColor) : Color(hex: config.disconnectedColor)
+            FormattedWidgetLabel(
+                format: widgetFormat ?? "{icon}",
+                values: [
+                    "icon": bluetooth.isBluetoothOn ? config.iconConnected : config.iconDisconnected,
+                    "status": bluetooth.isBluetoothOn ? "on" : "off",
+                    "device_count": "\(bluetooth.pairedDevices.count)"
+                ],
+                iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? statusColor,
+                textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
+            )
         }
         .buttonStyle(.plain)
         .focusable(false)

@@ -126,5 +126,17 @@ public class WidgetRegistry {
         viewMaker: { config in WidgetFolder(config: config) },
         tabNameMaker: { _ in "Folder" }
       ))
+    register(
+      factory: GenericWidgetFactory<CustomWidgetConfig, CustomWidget>(
+        typeID: "custom",
+        viewMaker: { config in CustomWidget(config: config) },
+        tabNameMaker: { _ in "Custom" }
+      ))
+    register(
+      factory: GenericWidgetFactory<GpuWidgetConfig, GpuWidget>(
+        typeID: "gpu",
+        viewMaker: { config in GpuWidget(config: config) },
+        tabNameMaker: { _ in "GPU" }
+      ))
   }
 }

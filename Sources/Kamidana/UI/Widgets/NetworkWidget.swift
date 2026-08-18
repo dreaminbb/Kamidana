@@ -2,6 +2,8 @@ import SwiftUI
 
 struct NetworkWidget: View {
     @EnvironmentObject var matrix: SystemMatrix
+    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @State private var showPopover = false
     @State private var isHovered = false
 
@@ -11,18 +13,16 @@ struct NetworkWidget: View {
         let colors = ConfigManager.shared.currentConfig.colors
         if let net = matrix.data.internetUsage {
             Button(action: { showPopover.toggle() }) {
-                HStack(spacing: 2) {
-                    HStack(spacing: 3) {
-                        NerdFontIcon(config.uploadIcon).foregroundColor(Color(hex: config.iconColor))
-                        Text(formatBytes(net.uploadBytesPerSecond) + "/s")
-                            .foregroundColor(Color(hex: config.textColor))
-                    }
-                    HStack(spacing: 3) {
-                        NerdFontIcon(config.downloadIcon).foregroundColor(Color(hex: config.iconColor))
-                        Text(formatBytes(net.downloadBytesPerSecond) + "/s")
-                            .foregroundColor(Color(hex: config.textColor))
-                    }
-                }
+                FormattedWidgetLabel(
+                    format: widgetFormat ?? "󰔝 {upload}/s 󰓅 {download}/s",
+                    values: [
+                        "upload": formatBytes(net.uploadBytesPerSecond),
+                        "download": formatBytes(net.downloadBytesPerSecond)
+                    ],
+                    iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? Color(hex: config.iconColor),
+                    textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor),
+                    iconSize: 12
+                )
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
             }
             .buttonStyle(.plain)

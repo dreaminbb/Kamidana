@@ -28,7 +28,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     )
 
     statusBarWindow.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
-    statusBarWindow.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+    var collectionBehavior: NSWindow.CollectionBehavior = [
+      .canJoinAllSpaces, .stationary, .ignoresCycle,
+    ]
+    if ConfigManager.shared.currentV1Config?.global.hideInFullscreen != true {
+      collectionBehavior.insert(.fullScreenAuxiliary)
+    }
+    statusBarWindow.collectionBehavior = collectionBehavior
     statusBarWindow.backgroundColor = .clear
     statusBarWindow.hasShadow = false
     statusBarWindow.isOpaque = false
@@ -111,19 +117,34 @@ struct StatusBarView: View {
   @State private var isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
 
   var body: some View {
+    let v1Configuration = ConfigManager.shared.currentV1Config
     let currentLayout: DisplayLayoutConfig =
       isBuiltInDisplay
       ? ConfigManager.shared.currentConfig.builtInDisplay
       : ConfigManager.shared.currentConfig.externalDisplay
+    let globalMode = v1Configuration?.global.backgroundMode ?? .perWidget
+    let leftMode = v1Configuration?.left.backgroundMode ?? globalMode
+    let centerMode = v1Configuration?.center.backgroundMode ?? globalMode
+    let rightMode = v1Configuration?.right.backgroundMode ?? globalMode
+    let globalStyle = v1Configuration?.global.style
+    let leftStyle = mergedStyle(globalStyle, v1Configuration?.left.style)
+    let centerStyle = mergedStyle(globalStyle, v1Configuration?.center.style)
+    let rightStyle = mergedStyle(globalStyle, v1Configuration?.right.style)
 
     ZStack(alignment: .top) {
       // Left widget group
       HStack(alignment: .top, spacing: 8) {
-        ForEach(currentLayout.left, id: \.id) { instance in
-          if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
-            factory.makeView(config: instance.config)
+        HStack(spacing: CGFloat(v1Configuration?.left.style.spacing ?? 8)) {
+          ForEach(currentLayout.left, id: \.id) { instance in
+            if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
+              factory.makeView(config: instance.config)
+                .environment(\.kamidanaV1Style, instance.v1Style)
+                .environment(\.kamidanaWidgetFormat, instance.v1Format)
+                .environment(\.showsKamidanaWidgetSurface, leftMode == .perWidget)
+            }
           }
         }
+        .kamidanaSectionSurface(style: leftStyle, isEnabled: leftMode == .perSection)
 
         // In built-in display mode, place island from right of audio widget toward center camera
         if isBuiltInDisplay {
@@ -131,7 +152,10 @@ struct StatusBarView: View {
             .frame(width: 32, height: 32)
             .overlay(
               KamidanaIsland(centerWidgets: currentLayout.center)
-                .fixedSize(), alignment: .topLeading
+                .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
+                .fixedSize()
+                .kamidanaSectionSurface(style: centerStyle, isEnabled: centerMode == .perSection),
+              alignment: .topLeading
             )
             .zIndex(100)
         }
@@ -144,15 +168,19 @@ struct StatusBarView: View {
       // Right widget group
       HStack(
         alignment: .top,
-        spacing: 8,
+        spacing: CGFloat(v1Configuration?.right.style.spacing ?? 8),
         content: {
           ForEach(currentLayout.right, id: \.id) { instance in
             if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
               factory.makeView(config: instance.config)
+                .environment(\.kamidanaV1Style, instance.v1Style)
+                .environment(\.kamidanaWidgetFormat, instance.v1Format)
+                .environment(\.showsKamidanaWidgetSurface, rightMode == .perWidget)
             }
           }
         }
       )
+      .kamidanaSectionSurface(style: rightStyle, isEnabled: rightMode == .perSection)
       .frame(height: 40)
       .frame(maxWidth: .infinity, alignment: .trailing)
       .padding(.trailing, 10)
@@ -161,11 +189,18 @@ struct StatusBarView: View {
       // In external display mode, place in the top center of the screen
       if !isBuiltInDisplay {
         KamidanaIsland(centerWidgets: currentLayout.center)
+          .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
           .fixedSize()
+          .kamidanaSectionSurface(style: centerStyle, isEnabled: centerMode == .perSection)
           .padding(.top, 7)
           .zIndex(100)
       }
     }
+    .kamidanaSectionSurface(
+      style: globalStyle,
+      isEnabled: globalMode == .singleBar,
+      includesPadding: false
+    )
     .environment(\.widgetStyle, currentLayout.style)
     .environmentObject(netManager)
     .environmentObject(audioVM)
@@ -191,5 +226,14 @@ struct StatusBarView: View {
         // print("Updated isBuiltInDisplay: \(isBuiltInDisplay)")
       }
     }
+  }
+
+  private func mergedStyle(
+    _ parent: KamidanaStyle?,
+    _ child: KamidanaStyle?
+  ) -> KamidanaStyle? {
+    guard let parent else { return child }
+    guard let child else { return parent }
+    return KamidanaConfigurationV1Adapter.mergedStyle(parent, child)
   }
 }

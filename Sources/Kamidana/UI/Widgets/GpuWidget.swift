@@ -2,21 +2,22 @@ import AppKit
 import SwiftUI
 
 struct GpuWidget: View {
-    @ObservedObject var matrix: SystemMatrix
+    @EnvironmentObject var matrix: SystemMatrix
+    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @State private var showPopover = false
+    let config: GpuWidgetConfig
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
         if let gpu = matrix.data.gpuUsage {
             Button(action: { showPopover.toggle() }) {
-                HStack(spacing: 1) {
-                    NerdFontIcon("󰢮")
-                        .foregroundColor(Color(hex: colors.info))
-                        .frame(width: 14, height: 14, alignment: .center)
-                        .clipped()
-                    Text(String(format: "%5.1f%%", gpu.activeRatio))
-                        .foregroundColor(Color(hex: colors.info))
-                }
+                FormattedWidgetLabel(
+                    format: widgetFormat ?? "󰢮 {usage}%",
+                    values: ["usage": String(format: "%.1f", gpu.activeRatio)],
+                    iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? Color(hex: colors.info),
+                    textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: colors.info)
+                )
             }
             .buttonStyle(.plain)
             .SmoothUIModule()
@@ -73,17 +74,7 @@ struct GpuWidget: View {
     @ViewBuilder
     private var gpuIcon: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        if NSFont(name: "JetBrainsMono Nerd Font Mono", size: 12) != nil {
-            Text("󰾲")
-                .font(.custom("JetBrainsMono Nerd Font Mono", size: 25))
-                .foregroundColor(Color(hex: colors.info))
-                .frame(width: 14, height: 14, alignment: .center)
-                .clipped()
-        } else {
-            Text("GPU")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundColor(Color(hex: colors.info))
-                .frame(width: 14, height: 14, alignment: .center)
-        }
+        NerdFontIcon("󰢮", size: 20)
+            .foregroundColor(Color(hex: colors.info))
     }
 }

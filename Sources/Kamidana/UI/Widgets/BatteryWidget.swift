@@ -2,6 +2,8 @@ import SwiftUI
 
 struct BatteryWidget: View {
   @EnvironmentObject var matrix: SystemMatrix
+  @Environment(\.kamidanaV1Style) private var v1Style
+  @Environment(\.kamidanaWidgetFormat) private var widgetFormat
   @State private var showPopover = false
   @State private var isHovered = false
 
@@ -30,18 +32,21 @@ struct BatteryWidget: View {
     let colors = ConfigManager.shared.currentConfig.colors
     if let battery = matrix.data.batteryUsage {
       Button(action: { showPopover.toggle() }) {
-        HStack(spacing: 6) {
-          // Compact display
-          NerdFontIcon(
-            resolveBatteryIcon(capacity: battery.currentCapacity, isCharging: battery.isCharging)
-          )
-          .foregroundColor(
-            battery.isCharging
-              ? Color(hex: config.chargingColor) : Color(hex: config.dischargingColor))
-
-          Text("\(battery.currentCapacity)%")
-            .foregroundColor(Color(hex: config.dischargingColor))
-        }
+        let statusColor = battery.isCharging
+          ? Color(hex: config.chargingColor) : Color(hex: config.dischargingColor)
+        FormattedWidgetLabel(
+          format: widgetFormat ?? "{icon} {capacity}%",
+          values: [
+            "icon": resolveBatteryIcon(
+              capacity: battery.currentCapacity,
+              isCharging: battery.isCharging
+            ),
+            "capacity": "\(battery.currentCapacity)",
+            "status": battery.isCharging ? "charging" : "discharging"
+          ],
+          iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? statusColor,
+          textColor: v1Style?.color.map(Color.init(hex:)) ?? statusColor
+        )
       }
       .buttonStyle(.plain)
       .SmoothUIModule()

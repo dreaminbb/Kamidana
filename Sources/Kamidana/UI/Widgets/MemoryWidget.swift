@@ -2,6 +2,8 @@ import SwiftUI
 
 struct MemoryWidget: View {
     @EnvironmentObject var matrix: SystemMatrix
+    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @State private var showPopover = false
     @State private var isHovered = false
     let config: MemoryWidgetConfig
@@ -10,11 +12,17 @@ struct MemoryWidget: View {
         let colors = ConfigManager.shared.currentConfig.colors
         if let mem = matrix.data.memoryMB {
             Button(action: { showPopover.toggle() }) {
-                HStack(spacing: 4) {
-                    NerdFontIcon(config.icon).foregroundColor(Color(hex: config.iconColor))
-                    Text(String(format: "%.1f GB", Double(mem) / 1024.0))
-                        .foregroundColor(Color(hex: config.textColor))
-                }
+                let usedGB = Double(mem) / 1024.0
+                let totalMB = Double(ProcessInfo.processInfo.physicalMemory) / 1_048_576.0
+                FormattedWidgetLabel(
+                    format: widgetFormat ?? "󰘚 {used_gb} GB",
+                    values: [
+                        "used_gb": String(format: "%.1f", usedGB),
+                        "usage": String(format: "%.1f", Double(mem) / totalMB * 100)
+                    ],
+                    iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? Color(hex: config.iconColor),
+                    textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
+                )
             }
             .buttonStyle(.plain)
             .SmoothUIModule()

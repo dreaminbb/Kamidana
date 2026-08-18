@@ -109,7 +109,7 @@ public enum KamidanaWidgetFolderDirection: String, Codable, Equatable {
   case right
 }
 
-public struct KamidanaInsets: Codable, Equatable {
+public struct KamidanaInsets: Codable, Hashable {
   public var top: Double
   public var bottom: Double
   public var leading: Double
@@ -143,7 +143,7 @@ public struct KamidanaInsets: Codable, Equatable {
   }
 }
 
-public struct KamidanaBorder: Codable, Equatable {
+public struct KamidanaBorder: Codable, Hashable {
   public var width: Double
   public var color: String?
 
@@ -166,7 +166,7 @@ public struct KamidanaBorder: Codable, Equatable {
   }
 }
 
-public struct KamidanaShadow: Codable, Equatable {
+public struct KamidanaShadow: Codable, Hashable {
   public var color: String?
   public var radius: Double
   public var x: Double
@@ -200,7 +200,7 @@ public struct KamidanaShadow: Codable, Equatable {
   }
 }
 
-public struct KamidanaAnimation: Codable, Equatable {
+public struct KamidanaAnimation: Codable, Hashable {
   public var preset: KamidanaAnimationPreset
   public var durationSeconds: Double?
   public var damping: Double?
@@ -243,7 +243,7 @@ public struct KamidanaAnimation: Codable, Equatable {
 }
 
 /// A deliberately small, typed appearance model. It is not a CSS or cascade engine.
-public struct KamidanaStyle: Codable, Equatable {
+public struct KamidanaStyle: Codable, Hashable {
   public var background: String?
   public var color: String?
   public var iconColor: String?
@@ -773,6 +773,12 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
     }
 
     if widget.kind != .widgetFolder && widget.kind != .systemAction {
+      if widget.icon != nil {
+        throw KamidanaConfigurationV1Error.invalidWidget(
+          path: path,
+          reason: "icon is valid only for widget-folder and system-action; include Nerd Font icons in format for regular widgets"
+        )
+      }
       if widget.foldedIcon != nil {
         throw KamidanaConfigurationV1Error.invalidWidget(
           path: path,

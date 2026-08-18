@@ -1,294 +1,144 @@
-# ==========================================
-# Kamidana Configuration File
-# 
-# Place this file at: ~/.config/kamidana/config.yaml
-# ==========================================
-
-# ------------------------------------------
-# Global Colors (Catppuccin Mocha defaults)
-# ------------------------------------------
-colors:
-  background: "#1e1e2e"
-  surface: "#313244"
-  surfaceHighlight: "#45475a"
-  surfaceBorder: "#585b70"
-  textPrimary: "#cdd6f4"
-  textSecondary: "#bac2de"
-  textTertiary: "#a6adc8"
-  primary: "#89b4fa"
-  secondary: "#cba6f7"
-  accent: "#f5c2e7"
-  success: "#a6e3a1"
-  warning: "#fab387"
-  danger: "#f38ba8"
-  info: "#94e2d5"
-  caution: "#f9e2af"
-
-# ==========================================
-# External Display Layout
-# (Used when connected to an external monitor)
-# ==========================================
-externalDisplay:
+# Kamidana v1 configuration. Place this file at ~/.config/kamidana/config.yaml.
+global:
+  background_mode: per_widget
+  hide_in_fullscreen: true
   style:
-    paddingHorizontal: 12.0
-    paddingTop: 6.0
-    paddingBottom: 9.0
-    cornerRadius: 12.0
-    backgroundColorOpacity: 0.6
-    hoverBackgroundColorOpacity: 0.8
+    background: "#1e1e2e"
+    color: "#cdd6f4"
+    opacity: 0.6
+    padding: 6
+    corner_radius: 12
+    material: ultra_thin
 
-  left:
-    - widgetFolder:
-        iconFolded: "󰉋"
-        icon: "󰝖"
-        iconColor: "#cba6f7"
-        direction: "below"
-        widgets:
-          - systemAction:
-              action: "aboutThisMac"
-              name: "About this Mac"
-              icon: "󰌢"
-              iconColor: "#94e2d5"
-          - systemAction:
-              action: "sleep"
-              name: "Sleep"
-              icon: "󰒲"
-              iconColor: "#94e2d5"
-          - systemAction:
-              action: "shutdown"
-              name: "Shutdown"
-              icon: "⏻"
-              iconColor: "#f38ba8"
-          - systemAction:
-              action: "reboot"
-              name: "Reboot"
-              icon: "󰑐"
-              iconColor: "#fab387"
-          - systemAction:
-              action: "logout"
-              name: "Logout"
-              icon: "󰈆"
-              iconColor: "#89b4fa"
-          - systemAction:
-              action: "lockScreen"
-              name: "Screen Lock"
-              icon: "󰌾"
-              iconColor: "#f5c2e7"
-    - wifi:
-        connectedIcon: "󰤨"
-        disconnectedIcon: "󰤭"
-        lanIcon: "󰲝"
-        iconColor: "#f5c2e7"
-        textColor: "#cdd6f4"
-        disconnectedTextColor: "#a6adc8"
-    - audio:
-        speakerIcon: ""
-        speakerMutedIcon: "󰟎"
-        micIcon: "󰍬"
-        micMutedIcon: "󰍭"
-        activeColor: "#89b4fa"
-        micActiveColor: "#fab387"
-        mutedColor: "#f38ba8"
-        textColor: "#cdd6f4"
-
-  center:
-    - music:
-        defaultIcon: "󰝚"
-        defaultIconColor: "#f5c2e7"
-        playIcon: "󰐊"
-        pauseIcon: "󰏤"
-        forwardIcon: "󰒭"
-        backwardIcon: "󰒮"
-    - terminal:
-        name: "btop"
-        terminalPath: "/opt/homebrew/bin/btop"
-
-  right:
-    - network:
-        uploadIcon: "󰁝"
-        downloadIcon: "󰁅"
-        iconColor: "#94e2d5"
-        textColor: "#cdd6f4"
-    - cpu:
-        icon: "󰍛"
-        successColor: "#a6e3a1"
-        cautionColor: "#f9e2af"
-        dangerColor: "#f38ba8"
-        successThreshold: 30.0
-        dangerThreshold: 70.0
-    - memory:
-        icon: "󰘚"
-        iconColor: "#cba6f7"
-        textColor: "#cba6f7"
-        displayFormat: "xx %"
-    - disk:
-        icon: "󰋊"
-        iconColor: "#fab387"
-        textColor: "#fab387"
-        readIcon: "󰁅"
-        writeIcon: "󰁝"
-        displayFormat: "x/a"
-    - bluetooth:
-        iconConnected: "󰂯"
-        iconDisconnected: "󰂲"
-        connectedColor: "#89b4fa"
-        disconnectedColor: "#a6adc8"
-        textColor: "#cdd6f4"
-    - battery:
-        chargingColor: "#a6e3a1"
-        dischargingColor: "#cdd6f4"
-        warningColor: "#fab387"
-        dangerColor: "#f38ba8"
-        charging_right_now: "󰂄"
-        _100_capacity: "󰁹"
-        _90_capacity: "󰂂"
-        _80_capacity: "󰂁"
-        _70_capacity: "󰂀"
-        _60_capacity: "󰁿"
-        _50_capacity: "󰁾"
-        _40_capacity: "󰁽"
-        _30_capacity: "󰁼"
-        _20_capacity: "󰁹"
-        _10_capacity: "󰁻"
-        _sub_10_charged: "󰂃"
-    - clock:
-        dateFormat: "yyyy-MM-dd"
-        timeFormat: "HH:mm:ss"
-        locale: "ja_JP"
-        textColor: "#cdd6f4"
-
-# ==========================================
-# Built-In Display Layout
-# (Used on the MacBook built-in screen)
-# ==========================================
-builtInDisplay:
+left:
   style:
-    paddingHorizontal: 8.0 # Compact padding for limited space
-    paddingTop: 6.0
-    paddingBottom: 9.0
-    cornerRadius: 8.0
-    backgroundColorOpacity: 0.6
-    hoverBackgroundColorOpacity: 0.8
+    spacing: 8
+  widgets:
+    - id: system-actions
+      type: system-action
+      icon: "󰀵"
+      folded_icon: "󰉋"
+      children:
+        - id: about-this-mac
+          type: about-this-mac
+          format: "About this Mac"
+          icon: "󰌢"
+          style:
+            icon_color: "#94e2d5"
+        - id: sleep
+          type: sleep
+          format: "Sleep"
+          icon: "󰒲"
+          style:
+            icon_color: "#94e2d5"
+        - id: reboot
+          type: reboot
+          format: "Reboot"
+          icon: "󰑐"
+          style:
+            icon_color: "#fab387"
+        - id: shutdown
+          type: shutdown
+          format: "Shutdown"
+          icon: "⏻"
+          style:
+            icon_color: "#f38ba8"
+        - id: lock-screen
+          type: lock-screen
+          format: "Lock Screen"
+          icon: "󰌾"
+          style:
+            icon_color: "#f5c2e7"
+    - id: wifi
+      type: wifi
+      format: "󰤨 {ssid}"
+      style:
+        color: "#cdd6f4"
+        icon_color: "#f5c2e7"
+    - id: volume
+      type: volume
+      format: "󰕾 {volume}%"
+      style:
+        color: "#cdd6f4"
+        icon_color: "#89b4fa"
 
-  left:
-    - widgetFolder:
-        iconFolded: "󰉋"
-        icon: "󰝖"
-        iconColor: "#cba6f7"
-        direction: "below"
-        widgets:
-          - systemAction:
-              action: "aboutThisMac"
-              name: "About this Mac"
-              icon: "󰌢"
-              iconColor: "#94e2d5"
-          - systemAction:
-              action: "sleep"
-              name: "Sleep"
-              icon: "󰒲"
-              iconColor: "#94e2d5"
-          - systemAction:
-              action: "shutdown"
-              name: "Shutdown"
-              icon: "⏻"
-              iconColor: "#f38ba8"
-          - systemAction:
-              action: "reboot"
-              name: "Reboot"
-              icon: "󰑐"
-              iconColor: "#fab387"
-          - systemAction:
-              action: "logout"
-              name: "Logout"
-              icon: "󰈆"
-              iconColor: "#89b4fa"
-          - systemAction:
-              action: "lockScreen"
-              name: "Screen Lock"
-              icon: "󰌾"
-              iconColor: "#f5c2e7"
-    - wifi:
-        connectedIcon: "󰤨"
-        disconnectedIcon: "󰤭"
-        lanIcon: "󰲝"
-        iconColor: "#f5c2e7"
-        textColor: "#cdd6f4"
-        disconnectedTextColor: "#a6adc8"
-    - audio:
-        speakerIcon: ""
-        speakerMutedIcon: "󰟎"
-        micIcon: "󰍬"
-        micMutedIcon: "󰍭"
-        activeColor: "#89b4fa"
-        micActiveColor: "#fab387"
-        mutedColor: "#f38ba8"
-        textColor: "#cdd6f4"
+center:
+  center_default: music
+  style:
+    corner_radius: 16
+  widgets:
+    - id: music
+      type: music
+      format: "󰝚 {title}"
+      compact_format: "󰝚 {title}"
+      style:
+        color: "#cdd6f4"
+        icon_color: "#f5c2e7"
+      part_styles:
+        media:
+          color: "#cdd6f4"
+        media_slider:
+          opacity: 0.85
+        sound_visualizer:
+          color: "#89b4fa"
+    - id: btop
+      type: btop
+      compact_format: ""
 
-  center:
-    - music:
-        defaultIcon: "󰝚"
-        defaultIconColor: "#f5c2e7"
-        playIcon: "󰐊"
-        pauseIcon: "󰏤"
-        forwardIcon: "󰒭"
-        backwardIcon: "󰒮"
-
-  right:
-    - widgetFolder:
-        name: "Stats"
-        icon: "󰉋"
-        iconColor: "#cba6f7"
-        direction: "below"
-        widgets:
-          - network:
-              uploadIcon: "󰁝"
-              downloadIcon: "󰁅"
-              iconColor: "#94e2d5"
-              textColor: "#cdd6f4"
-          - cpu:
-              icon: "󰍛"
-              successColor: "#a6e3a1"
-              cautionColor: "#f9e2af"
-              dangerColor: "#f38ba8"
-              successThreshold: 30.0
-              dangerThreshold: 70.0
-          - memory:
-              icon: "󰘚"
-              iconColor: "#cba6f7"
-              textColor: "#cba6f7"
-              displayFormat: "xx %"
-          - disk:
-              icon: "󰋊"
-              iconColor: "#fab387"
-              textColor: "#fab387"
-              readIcon: "󰁅"
-              writeIcon: "󰁝"
-              displayFormat: "x/a"
-    - bluetooth:
-        iconConnected: "󰂯"
-        iconDisconnected: "󰂲"
-        connectedColor: "#89b4fa"
-        disconnectedColor: "#a6adc8"
-        textColor: "#cdd6f4"
-    - battery:
-        chargingColor: "#a6e3a1"
-        dischargingColor: "#cdd6f4"
-        warningColor: "#fab387"
-        dangerColor: "#f38ba8"
-        charging_right_now: "󰂄"
-        _100_capacity: "󰁹"
-        _90_capacity: "󰂂"
-        _80_capacity: "󰂁"
-        _70_capacity: "󰂀"
-        _60_capacity: "󰁿"
-        _50_capacity: "󰁾"
-        _40_capacity: "󰁽"
-        _30_capacity: "󰁼"
-        _20_capacity: "󰁹"
-        _10_capacity: "󰁻"
-        _sub_10_charged: "󰂃"
-    - clock:
-        dateFormat: "yyyy-MM-dd"
-        timeFormat: "HH:mm:ss"
-        locale: "ja_JP"
-        textColor: "#cdd6f4"
+right:
+  style:
+    spacing: 8
+  widgets:
+    - id: network
+      type: network
+      format: "󰕝 {upload}/s 󰓅 {download}/s"
+      style:
+        color: "#cdd6f4"
+        icon_color: "#94e2d5"
+      tooltip: true
+      tooltip_format: "Network"
+    - id: cpu
+      type: cpu
+      format: "󰍛 {usage}%"
+      # color styles text and placeholder values; icon_color styles Nerd Font glyphs.
+      style:
+        color: "#a6e3a1"
+        icon_color: "#a6e3a1"
+      tooltip: true
+      tooltip_format: "{usage}%"
+      interval: 2
+    - id: gpu
+      type: gpu
+      format: "󰢮 {usage}%"
+      style:
+        color: "#89b4fa"
+        icon_color: "#89b4fa"
+    - id: memory
+      type: memory
+      format: "󰘚 {used_gb} GB"
+      style:
+        color: "#cba6f7"
+        icon_color: "#cba6f7"
+    - id: disk
+      type: disk
+      format: "󰋊 {used}"
+      style:
+        color: "#fab387"
+        icon_color: "#fab387"
+    - id: bluetooth
+      type: bluetooth
+      format: "󰂯"
+      style:
+        color: "#cdd6f4"
+        icon_color: "#89b4fa"
+    - id: battery
+      type: battery
+      format: "󰁹 {capacity}%"
+      style:
+        color: "#cdd6f4"
+        icon_color: "#a6e3a1"
+    - id: clock
+      type: clock
+      format: "{date} {time}"
+      style:
+        color: "#cdd6f4"

@@ -36,16 +36,15 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
                 icon_color: "#aaaaaa"
         - id: wifi-main
           type: wifi
-          format: "{icon} {ssid}"
-          icon: "wifi"
+          format: "wifi {ssid}"
     center:
       activate: hover
       center_default: music-main
       widgets:
         - id: music-main
           type: music
-          compact_format: "{icon} {title}"
-          format: "{icon} {title}"
+          compact_format: "music {title}"
+          format: "music {title}"
           part_styles:
             media:
               color: "#ffffff"
@@ -53,7 +52,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
               opacity: 0.8
         - id: terminal-main
           type: btop
-          compact_format: "{icon}"
+          compact_format: "btop"
     right:
       widgets:
         - id: cpu-main
@@ -89,6 +88,22 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
       })
   }
 
+  func testRejectsIconPropertyOnRegularWidget() {
+    let yaml = validYAML.replacingOccurrences(
+      of: "      format: \"wifi {ssid}\"\n",
+      with: "      format: \"wifi {ssid}\"\n      icon: \"wifi\"\n"
+    )
+    assertError(
+      yaml,
+      matches: {
+        if case .invalidWidget(_, let reason) = $0 {
+          return reason.contains("include Nerd Font icons in format")
+        }
+        return false
+      }
+    )
+  }
+
   func testRejectsMissingOrInvalidCenterDefault() {
     let missing = validYAML.replacingOccurrences(
       of: "center_default: music-main\n", with: "center_default: missing\n")
@@ -102,7 +117,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
   func testRejectsCenterDefaultWithoutCompactFormat() {
     let yaml = validYAML.replacingOccurrences(
-      of: "      compact_format: \"{icon} {title}\"\n", with: "")
+      of: "      compact_format: \"music {title}\"\n", with: "")
     assertError(
       yaml,
       matches: {
@@ -115,13 +130,13 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     let yaml =
       validYAML
       .replacingOccurrences(
-        of: "    - id: terminal-main\n      type: btop\n      compact_format: \"{icon}\"\n",
+        of: "    - id: terminal-main\n      type: btop\n      compact_format: \"btop\"\n",
         with: ""
       )
       .replacingOccurrences(
         of: "    - id: custom-main\n",
         with:
-          "    - id: btop-right\n      type: btop\n      compact_format: \"{icon}\"\n    - id: custom-main\n"
+          "    - id: btop-right\n      type: btop\n      compact_format: \"btop\"\n    - id: custom-main\n"
       )
     assertError(
       yaml,
@@ -133,9 +148,9 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
   func testRejectsTooltipOnMusic() {
     let yaml = validYAML.replacingOccurrences(
-      of: "      format: \"{icon} {title}\"\n",
+      of: "      format: \"music {title}\"\n",
       with:
-        "      format: \"{icon} {title}\"\n      tooltip: true\n      tooltip_format: \"music\"\n",
+        "      format: \"music {title}\"\n      tooltip: true\n      tooltip_format: \"music\"\n",
       options: .caseInsensitive)
     assertError(
       yaml,

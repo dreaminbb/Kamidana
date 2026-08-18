@@ -2,6 +2,8 @@ import SwiftUI
 
 struct DiskWidget: View {
     @EnvironmentObject var matrix: SystemMatrix
+    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @State private var showPopover = false
     @State private var isHovered = false
     let config: DiskWidgetConfig
@@ -10,11 +12,12 @@ struct DiskWidget: View {
         let colors = ConfigManager.shared.currentConfig.colors
         if let diskSpace = matrix.data.diskSpace {
             Button(action: { showPopover.toggle() }) {
-                HStack(spacing: 4) {
-                    NerdFontIcon(config.icon).foregroundColor(Color(hex: config.iconColor))
-                    Text(diskSpace)
-                        .foregroundColor(Color(hex: config.textColor))
-                }
+                FormattedWidgetLabel(
+                    format: widgetFormat ?? "󰃊 {used}",
+                    values: ["used": diskSpace],
+                    iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? Color(hex: config.iconColor),
+                    textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
+                )
             }
             .buttonStyle(.plain)
             .SmoothUIModule()

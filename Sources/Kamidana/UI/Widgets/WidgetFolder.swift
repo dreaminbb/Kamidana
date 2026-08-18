@@ -5,7 +5,7 @@ struct WidgetFolder: View {
   private let verticalContentWidth: CGFloat = 220
   private let statusBarHeight: CGFloat = 40
 
-  @State private var isExpandedInline: Bool = true
+  @State private var isExpandedInline: Bool = false
   @State private var showPopover = false
 
   var body: some View {
@@ -30,7 +30,8 @@ struct WidgetFolder: View {
               if let name = config.name {
                 Text(name)
                   .font(.headline)
-                  .foregroundColor(Color(hex: ConfigManager.shared.currentConfig.colors.textPrimary))
+                  .foregroundColor(
+                    Color(hex: ConfigManager.shared.currentConfig.colors.textPrimary))
               }
               nestedWidgets(fillWidth: true)
                 .focusable(false)
@@ -81,9 +82,15 @@ struct WidgetFolder: View {
       if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
         if fillWidth {
           factory.makeView(config: instance.config)
+            .environment(\.kamidanaV1Style, instance.v1Style)
+            .environment(\.kamidanaWidgetFormat, instance.v1Format)
+            .environment(\.isInsideWidgetFolder, true)
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
           factory.makeView(config: instance.config)
+            .environment(\.kamidanaV1Style, instance.v1Style)
+            .environment(\.kamidanaWidgetFormat, instance.v1Format)
+            .environment(\.isInsideWidgetFolder, true)
         }
       }
     }

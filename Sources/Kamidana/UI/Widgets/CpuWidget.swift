@@ -2,6 +2,8 @@ import SwiftUI
 
 struct CpuWidget: View {
     @EnvironmentObject var matrix: SystemMatrix
+    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @State private var showPopover = false
     let config: CpuWidgetConfig
     
@@ -9,10 +11,12 @@ struct CpuWidget: View {
         let colors = ConfigManager.shared.currentConfig.colors
         if let cpu = matrix.data.cpuUsage {
             Button(action: { showPopover.toggle() }) {
-                HStack(spacing: 4) {
-                    NerdFontIcon(config.icon).foregroundColor(getCPUColor(cpu.total))
-                    Text(String(format: "%5.1f%%", cpu.total)).foregroundColor(getCPUColor(cpu.total))
-                }
+                FormattedWidgetLabel(
+                    format: widgetFormat ?? "󰝛 {usage}%",
+                    values: ["usage": String(format: "%.1f", cpu.total)],
+                    iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? getCPUColor(cpu.total),
+                    textColor: v1Style?.color.map(Color.init(hex:)) ?? getCPUColor(cpu.total)
+                )
             }
             .buttonStyle(.plain)
             .SmoothUIModule()

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SystemActionWidget: View {
+    @Environment(\.kamidanaV1Style) private var v1Style
     let systemController = SystemController()
     let config: SystemActionWidgetConfig
     
@@ -16,7 +17,7 @@ struct SystemActionWidget: View {
                 if let name = config.name, !name.isEmpty {
                     let colors = ConfigManager.shared.currentConfig.colors
                     Text(name)
-                        .foregroundColor(Color(hex: colors.textPrimary))
+                        .foregroundColor(Color(hex: v1Style?.color ?? colors.textPrimary))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

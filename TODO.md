@@ -72,6 +72,11 @@
     - [x] WaybarとYASBのスタイル・アニメーション設定方式を調査
     - [ ] YAMLベースの型付きスタイル仕様と優先順位を定義
         - [x] 独立したv1設定モデル・YAMLデコーダ・意味検証を実装
+        - [x] v1設定をConfigManagerとWidgetRegistryの実行時構成へ接続
+            - [x] v1 Widgetを既存SwiftUI Widgetの内部設定へ変換
+            - [x] center_default・section/global/widget styleを実行時UIへ適用
+            - [x] Example/config.yamlをv1スキーマへ更新
+            - [x] v1実行時統合の回帰テストを追加
         - [x] ユーザー公開する全ウィジェットIDを確定
             - [x] audioの公開Widget IDをvolumeへ変更
             - [x] shellを廃止してcustomへ統合
@@ -86,13 +91,16 @@
         - [x] global・section・widget・内部パーツ・状態の順でスタイルを継承
         - [x] center外のmusicは基本情報から内側へ自動サイズで横展開
         - [ ] formatで利用できるプレースホルダーを定義
-            - [x] WidgetFolder以外のアイコン表示をformatへ統合
+            - [x] WidgetFolder以外のアイコン表示をNerd Font文字を含むformatへ統合
             - [x] center_defaultで指定したWidgetにcompact_formatを適用
-            - [x] 通常Widgetは{icon}とicon_colorでアイコン表示と色を分離
+            - [x] 通常Widgetのicon専用プロパティを廃止し、formatの内容にUIの横幅を自動追従させる
+            - [x] format内の文字・値にstyle.color、Nerd Fontアイコンにstyle.icon_colorを適用
             - [x] WidgetFolderのみiconとfolded_iconを専用プロパティとして保持
-        - [ ] CPU・GPUのformatとtooltip-formatプレースホルダーを定義
+        - [ ] CPU・GPU等のformatとtooltip-formatプレースホルダーを定義
+            - [x] CPU・GPUは`format: "<Nerd Font icon> {usage}%"`を内部UIに適用
             - [x] intervalの単位を秒として定義
             - [x] tooltipをCPU・GPU・Memory・Networkのactivate UIに限定
+        - [x] background_mode: per_sectionで縦展開WidgetFolderをクリップしない
         - [ ] audioの下展開UIと内部スライダー・デバイス一覧のスタイル項目を定義
         - [x] music内sound-visualizerはmacOS 14.2以降のCore Audio Process Tapを使用
         - [ ] macOSの最小対応バージョンを14.2へ更新
@@ -101,7 +109,7 @@
         - [x] fullscreen時はbarを非表示として定義
         - [x] hover離脱・アプリ非アクティブ化・別Widget展開時に展開UIを閉じる
         - [x] 既存設定との互換性を持たない新しい1.0 YAMLスキーマとして定義
-    - [ ] 共通スタイルリゾルバとSwiftUI ViewModifierを実装
+    - [x] 共通スタイルリゾルバとSwiftUI ViewModifierを実装
     - [ ] hover・pressed・expanded状態とプリセットアニメーションを実装
     - [ ] テーマファイルの監視、検証、フォールバックを実装
     - [ ] カテゴリ単位で軽量モデルのエージェントに実装を分担し、各完了後にユーザーレビューを実施
