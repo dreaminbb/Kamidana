@@ -69,6 +69,42 @@
 - [ ] [#サーバー]のテンプレートのダウンロードボタン
 - [ ] 表示するUIの設定
 - [ ] テーマファイルのフォーマット定義（JSON/YAML/Luaなど、カスタマイズ用の仕様策定）
+    - [x] WaybarとYASBのスタイル・アニメーション設定方式を調査
+    - [ ] YAMLベースの型付きスタイル仕様と優先順位を定義
+        - [x] 独立したv1設定モデル・YAMLデコーダ・意味検証を実装
+        - [x] ユーザー公開する全ウィジェットIDを確定
+            - [x] audioの公開Widget IDをvolumeへ変更
+            - [x] shellを廃止してcustomへ統合
+            - [x] media・media-slider・sound-visualizerをmusic内部パーツとして非公開化
+            - [x] 埋め込みbtopを組み込みWidgetとしてcenter内だけで許可
+            - [x] system-actionを縦展開コンテナとし、sleep・reboot等を子Widgetとして定義
+            - [x] center専用btop Widgetから外部インストール済みbtopを自動検出
+        - [x] 全Widgetインスタンスにidを必須化し、center_defaultからidで参照
+        - [x] musicを複合Widget、media・media-sliderを内部パーツとして定義
+        - [x] UI展開のactivateと直接実行するclick actionを分離
+        - [x] 背景モードをsingle_bar・per_section・per_widget・noneとして定義
+        - [x] global・section・widget・内部パーツ・状態の順でスタイルを継承
+        - [x] center外のmusicは基本情報から内側へ自動サイズで横展開
+        - [ ] formatで利用できるプレースホルダーを定義
+            - [x] WidgetFolder以外のアイコン表示をformatへ統合
+            - [x] center_defaultで指定したWidgetにcompact_formatを適用
+            - [x] 通常Widgetは{icon}とicon_colorでアイコン表示と色を分離
+            - [x] WidgetFolderのみiconとfolded_iconを専用プロパティとして保持
+        - [ ] CPU・GPUのformatとtooltip-formatプレースホルダーを定義
+            - [x] intervalの単位を秒として定義
+            - [x] tooltipをCPU・GPU・Memory・Networkのactivate UIに限定
+        - [ ] audioの下展開UIと内部スライダー・デバイス一覧のスタイル項目を定義
+        - [x] music内sound-visualizerはmacOS 14.2以降のCore Audio Process Tapを使用
+        - [ ] macOSの最小対応バージョンを14.2へ更新
+        - [x] custom widgetのclick actionはシェルを介さない直接実行として定義
+        - [x] 組み込みWidgetのアクションは固定し、ユーザー定義actionをcustomに限定
+        - [x] fullscreen時はbarを非表示として定義
+        - [x] hover離脱・アプリ非アクティブ化・別Widget展開時に展開UIを閉じる
+        - [x] 既存設定との互換性を持たない新しい1.0 YAMLスキーマとして定義
+    - [ ] 共通スタイルリゾルバとSwiftUI ViewModifierを実装
+    - [ ] hover・pressed・expanded状態とプリセットアニメーションを実装
+    - [ ] テーマファイルの監視、検証、フォールバックを実装
+    - [ ] カテゴリ単位で軽量モデルのエージェントに実装を分担し、各完了後にユーザーレビューを実施
 - [ ] アプリの自動アップデート機能（Sparkle等の導入）
 
 ## サーバー
