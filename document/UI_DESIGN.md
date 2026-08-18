@@ -6,6 +6,16 @@ This document defines the core UI architecture and design principles of Kamidana
 
 ---
 
+## User Customization Boundary
+
+All widgets, including regular status-bar widgets and center widgets, must have their supported UI structures and interaction states defined by the application.
+
+Users may configure which predefined widgets and UI parts are displayed and may customize their colors, format content, and Nerd Font icons. Users may not directly specify coordinates, constraints, or the internal position of UI elements. Configuration selects and styles application-defined UI; it does not create arbitrary layouts.
+
+Consequently, the application must predefine the visual and interaction behavior for every supported state. This includes the UI shown when a widget, control, action, or optional UI part is disabled. Any new configuration option that can disable or hide functionality must be accompanied by an application-defined disabled-state layout, behavior, and transition.
+
+---
+
 ## Status Bar Layout
 
 The primary user interface of Kamidana is the top status bar, implemented in [`KamidanaApp.swift`](../Sources/Kamidana/KamidanaApp.swift).
