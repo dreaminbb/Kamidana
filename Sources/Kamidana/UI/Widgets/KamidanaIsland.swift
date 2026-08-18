@@ -107,7 +107,10 @@ struct KamidanaIsland: View {
                         compactContent(for: defaultWidget)
                     }
                 }
-                .padding(.horizontal, 10)
+                .padding(
+                    .horizontal,
+                    10 + WidgetSurfaceMetrics.additionalHorizontalPadding
+                )
             }
         }
         .fixedSize(horizontal: !isHovered, vertical: !isHovered)

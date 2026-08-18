@@ -46,7 +46,7 @@ struct FormattedWidgetLabel: View {
   let values: [String: String]
   let iconColor: Color
   let textColor: Color
-  var iconSize: CGFloat = 14
+  var iconSize: CGFloat = 20
 
   var body: some View {
     let rendered = KamidanaFormatRenderer.render(format, values: values)

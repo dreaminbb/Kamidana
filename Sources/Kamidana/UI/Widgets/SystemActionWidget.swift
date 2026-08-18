@@ -10,7 +10,7 @@ struct SystemActionWidget: View {
             performAction()
         }) {
             HStack(spacing: 8) {
-                NerdFontIcon(config.icon, size: 14)
+                NerdFontIcon(config.icon)
                     .foregroundColor(Color(hex: config.iconColor))
                     .frame(width: 20, alignment: .center)
                 
