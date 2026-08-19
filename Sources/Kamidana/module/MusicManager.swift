@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import Darwin
 import Foundation
 
 class MusicPlayingManager: ObservableObject {
@@ -53,6 +54,45 @@ class MusicPlayingManager: ObservableObject {
 
     }
 
+    private func isApplicationRunning(_ app: PrimaryApp) -> Bool {
+        switch app {
+        case .spotify:
+            return Self.isProcessRunning(executableName: "Spotify")
+        case .appleMusic:
+            return Self.isProcessRunning(executableName: "Music")
+        }
+    }
+
+    static func isProcessRunning(executableName: String) -> Bool {
+        var processListSize = proc_listpids(UInt32(PROC_ALL_PIDS), 0, nil, 0)
+        guard processListSize > 0 else { return false }
+
+        let capacity = Int(processListSize) / MemoryLayout<pid_t>.size
+        var processIdentifiers = [pid_t](repeating: 0, count: capacity)
+        processListSize = proc_listpids(
+            UInt32(PROC_ALL_PIDS),
+            0,
+            &processIdentifiers,
+            processListSize
+        )
+        guard processListSize > 0 else { return false }
+
+        let processCount = Int(processListSize) / MemoryLayout<pid_t>.size
+        for processIdentifier in processIdentifiers.prefix(processCount) where processIdentifier > 0 {
+            var nameBuffer = [CChar](repeating: 0, count: 1024)
+            let nameLength = proc_name(
+                processIdentifier,
+                &nameBuffer,
+                UInt32(nameBuffer.count)
+            )
+            if nameLength > 0, String(cString: nameBuffer) == executableName {
+                return true
+            }
+        }
+
+        return false
+    }
+
     // MARK: - Main Fetch Process
 
     private func fetchNowPlaying() {
@@ -80,11 +120,9 @@ class MusicPlayingManager: ObservableObject {
 
     /// Fetch playback information from Spotify. Returns true on success.
     private func fetchFromSpotify() -> Bool {
-        // Script to check if Spotify is running and whether it is playing/paused
+        guard isApplicationRunning(.spotify) else { return false }
+
         let checkScript = """
-            tell application "System Events"
-                if not (exists process "Spotify") then return "NOT_RUNNING"
-            end tell
             tell application "Spotify"
                 if player state is playing or player state is paused then
                     set trackName to name of current track
@@ -137,10 +175,9 @@ class MusicPlayingManager: ObservableObject {
 
     /// Fetch playback information from Music.app. Returns true on success.
     private func fetchFromMusicApp() -> Bool {
+        guard isApplicationRunning(.appleMusic) else { return false }
+
         let checkScript = """
-            tell application "System Events"
-                if not (exists process "Music") then return "NOT_RUNNING"
-            end tell
             tell application "Music"
                 if player state is playing or player state is paused then
                     set trackName to name of current track
@@ -200,6 +237,11 @@ class MusicPlayingManager: ObservableObject {
 
     /// Music.app: Fetch raw image data directly using AppleScript
     private func loadMusicAppArtwork() {
+        guard isApplicationRunning(.appleMusic) else {
+            artwork = nil
+            return
+        }
+
         let script = """
             tell application "Music"
                 try
@@ -232,6 +274,9 @@ class MusicPlayingManager: ObservableObject {
         let result = appleScript?.executeAndReturnError(&errorInfo)
 
         if let error = errorInfo {
+            if error[NSAppleScript.errorNumber] as? Int == -600 {
+                return nil
+            }
             print("[AppleScript] Error: \(error)")
             return nil
         }
@@ -251,13 +296,10 @@ class MusicPlayingManager: ObservableObject {
     }
 
     public func skipSong(sec: Int64) {
-
-        var key: String = currentPrimaryAppStr()
+        guard isApplicationRunning(primaryApp) else { return }
+        let key = currentPrimaryAppStr()
 
         let script = """
-                    tell application "System Events"
-                        if not (exists process "\(key)") then return "NOT_RUNNING"
-                    end tell
                     tell application "\(key)"
                         if player state is playing then
                             set player position to (player position + \(sec))
@@ -282,6 +324,7 @@ class MusicPlayingManager: ObservableObject {
     /// A description
     /// - Parameter direction:direction Bool -> true:Next false:Previous
     public func changeTrack(direction: TrackDirection) {
+        guard isApplicationRunning(primaryApp) else { return }
 
         let key: String
 
@@ -294,9 +337,6 @@ class MusicPlayingManager: ObservableObject {
 
         let appName = currentPrimaryAppStr()
         let changeTrackScript = """
-                        tell application "System Events"
-                            if not (exists process "\(appName)") then return "NOT_RUNNING"
-                        end tell
                         tell application "\(appName)"
                             if player state is playing then
                                 \(key) track
@@ -313,13 +353,11 @@ class MusicPlayingManager: ObservableObject {
     }
 
     public func pauseMusic() {
+        guard isApplicationRunning(primaryApp) else { return }
         let appName = currentPrimaryAppStr()
         // The playpause command is supported by both Spotify and Music.
         // This toggles between play and pause.
         let pauseScript = """
-                        tell application "System Events"
-                            if not (exists process "\(appName)") then return "NOT_RUNNING"
-                        end tell
                         tell application "\(appName)"
                             playpause
                             return "SUCCESS"
@@ -335,11 +373,9 @@ class MusicPlayingManager: ObservableObject {
     
     // MARK: - Seek (Change playback position)
     public func seek(to seconds: Double) {
+        guard isApplicationRunning(primaryApp) else { return }
         let appName = currentPrimaryAppStr()
         let script = """
-            tell application "System Events"
-                if not (exists process "\(appName)") then return "NOT_RUNNING"
-            end tell
             tell application "\(appName)"
                 set player position to \(seconds)
                 return "SUCCESS"

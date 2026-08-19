@@ -37,7 +37,7 @@ This document tracks the application-defined UI states required by the customiza
 | Widget | Defined states | Missing states |
 |---|---|---|
 | Volume | input and output controls, mute, device lists | input disabled, output disabled, both disabled, empty device list, device error |
-| Bluetooth | on, off, paired devices | unavailable hardware, permission denied, refresh error |
+| Bluetooth | on, off, connected device list, no connected devices | unavailable hardware, permission denied, refresh error |
 | Widget Folder | collapsed, expanded, supported directions | unavailable child factory |
 | System Action | action buttons | execution failure feedback |
 

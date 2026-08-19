@@ -47,6 +47,7 @@ struct BluetoothWidget: View {
             }
         }
         .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+            let connectedDevices = Self.connectedDevices(bluetooth.pairedDevices)
             VStack(alignment: .leading, spacing: 10) {
 
                 if !bluetooth.isBluetoothOn {
@@ -55,15 +56,15 @@ struct BluetoothWidget: View {
                         .frame(width: 250, alignment: .center)
                         .padding()
                 } else {
-                    if bluetooth.pairedDevices.isEmpty {
-                        Text("No paired devices")
+                    if connectedDevices.isEmpty {
+                        Text("No connected devices")
                             .foregroundColor(Color(hex: colors.textTertiary))
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.vertical, 8)
                     } else {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 6) {
-                                ForEach(bluetooth.pairedDevices) { info in
+                                ForEach(connectedDevices) { info in
                                     DeviceRow(info: info, bluetooth: bluetooth)
                                 }
                             }
@@ -105,11 +106,15 @@ struct BluetoothWidget: View {
     static func connectedDeviceFormatValues(
         _ devices: [BluetoothDeviceInfo]
     ) -> (deviceCount: String, deviceName: String) {
-        let connectedDevices = devices.filter(\.isConnected)
+        let connectedDevices = Self.connectedDevices(devices)
         return (
             deviceCount: "\(connectedDevices.count)",
             deviceName: connectedDevices.first?.name ?? ""
         )
+    }
+
+    static func connectedDevices(_ devices: [BluetoothDeviceInfo]) -> [BluetoothDeviceInfo] {
+        devices.filter(\.isConnected)
     }
 }
 

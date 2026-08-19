@@ -11,9 +11,11 @@ final class BluetoothWidgetTests: XCTestCase {
         ]
 
         let values = BluetoothWidget.connectedDeviceFormatValues(devices)
+        let connectedDevices = BluetoothWidget.connectedDevices(devices)
 
         XCTAssertEqual(values.deviceCount, "2")
         XCTAssertEqual(values.deviceName, "Headphones")
+        XCTAssertEqual(connectedDevices.map(\.name), ["Headphones", "Keyboard"])
     }
 
     func testConnectedDeviceNameIsEmptyWhenNoDevicesAreConnected() {
