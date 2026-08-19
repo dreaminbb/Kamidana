@@ -6,6 +6,7 @@ APP_DIR = $(APP_NAME).app
 CONTENTS_DIR = $(APP_DIR)/Contents
 MACOS_DIR = $(CONTENTS_DIR)/MacOS
 RESOURCES_DIR = Resources
+ENTITLEMENTS_FILE = $(RESOURCES_DIR)/Kamidana.entitlements
 
 # Run Kamidana directly for development
 run:
@@ -21,7 +22,7 @@ app:
 	mkdir -p $(MACOS_DIR)
 	cp .build/release/$(APP_NAME) $(MACOS_DIR)/$(APP_NAME)
 	cp $(RESOURCES_DIR)/Info.plist $(CONTENTS_DIR)/Info.plist
-	codesign --force --deep --sign - $(APP_DIR)
+	codesign --force --deep --options runtime --entitlements $(ENTITLEMENTS_FILE) --sign - $(APP_DIR)
 	@echo "Created Release $(APP_DIR)"
 
 # Build and run in debug mode with terminal logs
@@ -30,7 +31,7 @@ debug:
 	mkdir -p $(MACOS_DIR)
 	cp .build/debug/$(APP_NAME) $(MACOS_DIR)/$(APP_NAME)
 	cp $(RESOURCES_DIR)/Info.plist $(CONTENTS_DIR)/Info.plist
-	codesign --force --deep --sign - $(APP_DIR)
+	codesign --force --deep --options runtime --entitlements $(ENTITLEMENTS_FILE) --sign - $(APP_DIR)
 	@echo "Starting Kamidana in debug mode... (Press Ctrl+C to stop)"
 	./$(MACOS_DIR)/$(APP_NAME)
 
