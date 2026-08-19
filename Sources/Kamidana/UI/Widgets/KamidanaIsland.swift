@@ -93,6 +93,7 @@ struct KamidanaIsland: View {
                             factory.makeView(config: selected.config)
                                 .environment(\.kamidanaV1Style, selected.v1Style)
                                 .environment(\.kamidanaWidgetFormat, selected.v1Format)
+                                .environment(\.kamidanaWidgetActivation, selected.v1Activate)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             EmptyView()
@@ -179,6 +180,7 @@ struct KamidanaIsland: View {
             factory.makeView(config: widget.config)
                 .environment(\.kamidanaV1Style, style)
                 .environment(\.kamidanaWidgetFormat, widget.v1Format)
+                .environment(\.kamidanaWidgetActivation, widget.v1Activate)
                 .environment(\.showsKamidanaWidgetSurface, false)
         }
     }

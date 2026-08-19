@@ -23,6 +23,10 @@ private struct KamidanaWidgetFormatKey: EnvironmentKey {
   static let defaultValue: String? = nil
 }
 
+private struct KamidanaWidgetActivationKey: EnvironmentKey {
+  static let defaultValue: KamidanaActivation? = nil
+}
+
 extension EnvironmentValues {
   var kamidanaV1Style: KamidanaStyle? {
     get { self[KamidanaV1StyleKey.self] }
@@ -37,5 +41,10 @@ extension EnvironmentValues {
   var kamidanaWidgetFormat: String? {
     get { self[KamidanaWidgetFormatKey.self] }
     set { self[KamidanaWidgetFormatKey.self] = newValue }
+  }
+
+  var kamidanaWidgetActivation: KamidanaActivation? {
+    get { self[KamidanaWidgetActivationKey.self] }
+    set { self[KamidanaWidgetActivationKey.self] = newValue }
   }
 }

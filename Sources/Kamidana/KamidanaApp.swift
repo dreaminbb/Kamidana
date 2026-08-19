@@ -140,6 +140,7 @@ struct StatusBarView: View {
               factory.makeView(config: instance.config)
                 .environment(\.kamidanaV1Style, instance.v1Style)
                 .environment(\.kamidanaWidgetFormat, instance.v1Format)
+                .environment(\.kamidanaWidgetActivation, instance.v1Activate)
                 .environment(\.showsKamidanaWidgetSurface, leftMode == .perWidget)
             }
           }
@@ -175,6 +176,7 @@ struct StatusBarView: View {
               factory.makeView(config: instance.config)
                 .environment(\.kamidanaV1Style, instance.v1Style)
                 .environment(\.kamidanaWidgetFormat, instance.v1Format)
+                .environment(\.kamidanaWidgetActivation, instance.v1Activate)
                 .environment(\.showsKamidanaWidgetSurface, rightMode == .perWidget)
             }
           }

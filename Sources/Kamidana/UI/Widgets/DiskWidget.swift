@@ -4,14 +4,16 @@ struct DiskWidget: View {
     @EnvironmentObject var matrix: SystemMatrix
     @Environment(\.kamidanaV1Style) private var v1Style
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
+    @Environment(\.kamidanaWidgetActivation) private var widgetActivation
     @State private var showPopover = false
+    @State private var hoverState = WidgetPopoverHoverState()
     @State private var isHovered = false
     let config: DiskWidgetConfig
     
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
         if let diskSpace = matrix.data.diskSpace {
-            Button(action: { showPopover.toggle() }) {
+            Button(action: { if activation == .click { showPopover.toggle() } }) {
                 FormattedWidgetLabel(
                     format: widgetFormat ?? "󰃊 {used}",
                     values: ["used": diskSpace],
@@ -19,12 +21,8 @@ struct DiskWidget: View {
                     textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
                 )
             }
-            .buttonStyle(.plain)
-            .SmoothUIModule()
-            .onHover { hover in
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
-            showPopover = hover
-        }
+            .buttonStyle(WidgetButtonStyle())
+            .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
             .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -76,6 +74,9 @@ struct DiskWidget: View {
                 }
                 .frame(maxHeight: 300)
                 .background(Color(hex: colors.background))
+                .onHover {
+                    hoverState.updatePopoverHover($0, isPresented: $showPopover, activation: activation)
+                }
             }
         }
     }
@@ -87,4 +88,6 @@ struct DiskWidget: View {
         if bytes == 0 { return "0 KB" }
         return formatter.string(fromByteCount: Int64(bytes))
     }
+
+    private var activation: KamidanaActivation { widgetActivation ?? .hover }
 }

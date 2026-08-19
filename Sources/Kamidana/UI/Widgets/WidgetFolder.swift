@@ -84,12 +84,14 @@ struct WidgetFolder: View {
           factory.makeView(config: instance.config)
             .environment(\.kamidanaV1Style, instance.v1Style)
             .environment(\.kamidanaWidgetFormat, instance.v1Format)
+            .environment(\.kamidanaWidgetActivation, instance.v1Activate)
             .environment(\.isInsideWidgetFolder, true)
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
           factory.makeView(config: instance.config)
             .environment(\.kamidanaV1Style, instance.v1Style)
             .environment(\.kamidanaWidgetFormat, instance.v1Format)
+            .environment(\.kamidanaWidgetActivation, instance.v1Activate)
             .environment(\.isInsideWidgetFolder, true)
         }
       }

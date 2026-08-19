@@ -185,9 +185,76 @@ struct WidgetButtonStyle: ButtonStyle {
   }
 }
 
+final class WidgetPopoverHoverState {
+  private var isAnchorHovered = false
+  private var isPopoverHovered = false
+  private var pendingCloseID: UUID?
+
+  static func shouldRemainPresented(anchorHovered: Bool, popoverHovered: Bool) -> Bool {
+    anchorHovered || popoverHovered
+  }
+
+  func updateAnchorHover(
+    _ isHovered: Bool,
+    isPresented: Binding<Bool>,
+    activation: KamidanaActivation
+  ) {
+    guard activation == .hover else { return }
+    isAnchorHovered = isHovered
+    updatePresentation(isPresented: isPresented)
+  }
+
+  func updatePopoverHover(
+    _ isHovered: Bool,
+    isPresented: Binding<Bool>,
+    activation: KamidanaActivation
+  ) {
+    guard activation == .hover else { return }
+    isPopoverHovered = isHovered
+    updatePresentation(isPresented: isPresented)
+  }
+
+  private func updatePresentation(isPresented: Binding<Bool>) {
+    guard !Self.shouldRemainPresented(
+      anchorHovered: isAnchorHovered,
+      popoverHovered: isPopoverHovered
+    ) else {
+      pendingCloseID = nil
+      isPresented.wrappedValue = true
+      return
+    }
+
+    let closeID = UUID()
+    pendingCloseID = closeID
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+      guard self?.pendingCloseID == closeID,
+            let self,
+            !Self.shouldRemainPresented(
+              anchorHovered: self.isAnchorHovered,
+              popoverHovered: self.isPopoverHovered
+            ) else { return }
+      isPresented.wrappedValue = false
+    }
+  }
+}
+
 extension View {
   func SmoothUIModule() -> some View {
     self.modifier(SmoothUIModuleModifier())
+  }
+
+  func widgetPopoverActivation(
+    _ isPresented: Binding<Bool>,
+    activation: KamidanaActivation,
+    hoverState: WidgetPopoverHoverState
+  ) -> some View {
+    onHover { isHovered in
+      hoverState.updateAnchorHover(
+        isHovered,
+        isPresented: isPresented,
+        activation: activation
+      )
+    }
   }
 
   func kamidanaSectionSurface(

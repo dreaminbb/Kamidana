@@ -29,6 +29,7 @@ struct SystemMatrixData {
     var thermalState: String?  // Mac thermal state
     var batteryUsage: BatteryUsageInfo? // Battery usage info
     var topCPU: [ProcessStat]? // Top processes (CPU)
+    var topGPU: [GPUProcessStat]? // Top processes (GPU)
     var topMemory: [ProcessStat]? // Top processes (Memory)
     var topDisk: [ProcessStat]? // Top processes (Disk)
     var diskIOUsage: DiskUsageInfo? // Overall disk I/O usage
@@ -87,6 +88,7 @@ enum DiskSpaceType {
 // Main class to fetch and retain only necessary info based on args (configuration)
 class SystemMatrix: ObservableObject {
     typealias MegaByte = UInt64
+    static let topProcessLimit = 8
 
     // Data observed by the UI
     @Published var data = SystemMatrixData()
@@ -114,6 +116,7 @@ class SystemMatrix: ObservableObject {
     
     // Manager for process monitoring
     private var processMonitor = ProcessMonitor()
+    private var gpuProcessMonitor = GPUProcessMonitor()
 
     init(args: SystemMatrixArgs) {
         self.args = args
@@ -148,21 +151,23 @@ class SystemMatrix: ObservableObject {
                 let procData = self.getProcessAndThreadCount()
                 newData.processCount = procData.processes
                 newData.threadCount = procData.threads
-                newData.topCPU = self.processMonitor.getTopCPU(limit: 5)
+                newData.topCPU = self.processMonitor.getTopCPU(limit: Self.topProcessLimit)
             }
             if self.args.gpu {
                 newData.gpuUsage = self.getGPUUsage()
+                self.gpuProcessMonitor.update()
+                newData.topGPU = self.gpuProcessMonitor.topProcesses(limit: Self.topProcessLimit)
             }
             if self.args.thermal {
                 newData.thermalState = self.getThermalState()
             }
             if self.args.memory {
                 newData.memoryMB = self.getMemoryUsed()
-                newData.topMemory = self.processMonitor.getTopMemory(limit: 5)
+                newData.topMemory = self.processMonitor.getTopMemory(limit: Self.topProcessLimit)
             }
             if self.args.disk {
                 newData.diskSpace = self.getDiskSpace(.used)
-                newData.topDisk = self.processMonitor.getTopDisk(limit: 5)
+                newData.topDisk = self.processMonitor.getTopDisk(limit: Self.topProcessLimit)
                 newData.diskIOUsage = self.getDiskIOUsage()
             }
             if self.args.internet {

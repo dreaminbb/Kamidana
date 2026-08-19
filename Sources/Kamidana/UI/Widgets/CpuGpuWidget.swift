@@ -28,8 +28,7 @@ struct CpuGpuWidget: View {
                 }
             }
         }
-        .buttonStyle(.plain)
-        .SmoothUIModule()
+        .buttonStyle(WidgetButtonStyle())
         .onHover { hover in
             withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
             showPopover = hover

@@ -38,9 +38,8 @@ public struct CustomWidget: View {
       )
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain)
+    .buttonStyle(WidgetButtonStyle())
     .disabled(isRunning)
-    .SmoothUIModule()
     .help(output)
   }
 

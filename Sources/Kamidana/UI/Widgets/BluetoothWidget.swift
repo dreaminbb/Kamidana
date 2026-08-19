@@ -32,9 +32,8 @@ struct BluetoothWidget: View {
                 textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(WidgetButtonStyle())
         .focusable(false)
-        .SmoothUIModule()
         .onHover { hover in
             isButtonHovered = hover
             if hover {

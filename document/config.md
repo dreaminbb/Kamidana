@@ -32,3 +32,29 @@ NerdFont icons are no longer configured via `nerdfont.toml`. Instead, they are d
 | `lock` | `󰌾` | | |
 
 You can override any of these icons in your `config.yaml` by specifying the character string directly in the respective widget's configuration.
+
+## Widget Format Placeholders
+
+The v1 configuration file is located at `~/.config/kamidana/config.yaml`. Regular widgets use the `format` property to control their compact text. Nerd Font glyphs written directly in a format are rendered with `style.icon_color`; text and placeholder values use `style.color`.
+
+### Memory Widget
+
+The Memory widget provides these placeholders:
+
+| Placeholder | Value |
+|---|---|
+| `{used_gb}` | Currently used memory in GiB, with one decimal place |
+| `{total_gb}` | Physical memory capacity in GiB, with one decimal place |
+| `{usage}` | Memory use as a percentage, with one decimal place |
+
+Examples:
+
+```yaml
+- id: memory
+  type: memory
+  format: " {used_gb} / {total_gb} GB"
+
+- id: memory-percent
+  type: memory
+  format: " {usage}%"
+```

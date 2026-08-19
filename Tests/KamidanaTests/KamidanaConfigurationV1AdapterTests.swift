@@ -151,6 +151,31 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(hover.color, "#eeeeee")
   }
 
+  func testAdapterPropagatesWidgetActivationOverSectionActivation() throws {
+    let yaml = """
+      right:
+        activate: click
+        widgets:
+          - id: cpu
+            type: cpu
+            activate: hover
+          - id: gpu
+            type: gpu
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+
+    XCTAssertEqual(runtime.externalDisplay.right[0].v1Activate, .hover)
+    XCTAssertEqual(runtime.externalDisplay.right[1].v1Activate, .click)
+  }
+
   func testFormatRendererReplacesValuesAndSeparatesNerdFontRuns() {
     let rendered = KamidanaFormatRenderer.render(
       "󰍛 {usage}%",

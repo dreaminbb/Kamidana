@@ -7,7 +7,9 @@ struct NetworkWidget: View {
     @EnvironmentObject var netManager: NetworkManager
     @Environment(\.kamidanaV1Style) private var v1Style
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
+    @Environment(\.kamidanaWidgetActivation) private var widgetActivation
     @State private var showPopover = false
+    @State private var hoverState = WidgetPopoverHoverState()
 
     let config: NetworkWidgetConfig
 
@@ -16,7 +18,7 @@ struct NetworkWidget: View {
         let upload = matrix.data.internetUsage.map { formatBytes($0.uploadBytesPerSecond) } ?? "--"
         let download = matrix.data.internetUsage.map { formatBytes($0.downloadBytesPerSecond) } ?? "--"
 
-        Button(action: { showPopover.toggle() }) {
+        Button(action: { if activation == .click { showPopover.toggle() } }) {
             FormattedWidgetLabel(
                 format: widgetFormat
                     ?? Self.defaultFormat,
@@ -33,11 +35,14 @@ struct NetworkWidget: View {
             )
             .font(.system(size: 14, weight: .semibold, design: .monospaced))
         }
-        .buttonStyle(.plain)
-        .SmoothUIModule()
+        .buttonStyle(WidgetButtonStyle())
+        .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
         .popover(isPresented: $showPopover, arrowEdge: .bottom) {
             popoverContent(colors: colors, upload: upload, download: download)
                 .onAppear { netManager.refreshNetworkDetails(forcePublicIP: false) }
+                .onHover {
+                    hoverState.updatePopoverHover($0, isPresented: $showPopover, activation: activation)
+                }
         }
     }
 
@@ -149,6 +154,8 @@ struct NetworkWidget: View {
         default: return config.offlineIcon
         }
     }
+
+    private var activation: KamidanaActivation { widgetActivation ?? .hover }
 
     private func formatBytes(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()

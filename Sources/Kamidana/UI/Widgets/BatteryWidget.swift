@@ -48,8 +48,7 @@ struct BatteryWidget: View {
           textColor: v1Style?.color.map(Color.init(hex:)) ?? statusColor
         )
       }
-      .buttonStyle(.plain)
-      .SmoothUIModule()
+      .buttonStyle(WidgetButtonStyle())
       .onHover { hover in
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
         showPopover = hover
