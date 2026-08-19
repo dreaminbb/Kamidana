@@ -123,7 +123,7 @@ right:
         icon_color: "#fab387"
     - id: bluetooth
       type: bluetooth
-      format: "󰂯"
+      format: "{icon} {device} {device_name}"
       style:
         color: "#cdd6f4"
         icon_color: "#89b4fa"

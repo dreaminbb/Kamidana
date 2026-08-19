@@ -58,3 +58,23 @@ Examples:
   type: memory
   format: " {usage}%"
 ```
+
+### Bluetooth Widget
+
+The Bluetooth widget provides these placeholders:
+
+| Placeholder | Value |
+|---|---|
+| `{icon}` | Connected or disconnected Bluetooth icon |
+| `{status}` | Bluetooth power state: `on` or `off` |
+| `{device}` | Number of currently connected devices |
+| `{device_name}` | Name of one currently connected device; empty when none are connected |
+| `{device_count}` | Number of paired devices, retained for compatibility |
+
+Example:
+
+```yaml
+- id: bluetooth
+  type: bluetooth
+  format: "{icon} {device} {device_name}"
+```

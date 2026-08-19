@@ -21,12 +21,15 @@ struct BluetoothWidget: View {
         }) {
             let statusColor = bluetooth.isBluetoothOn
                 ? Color(hex: config.connectedColor) : Color(hex: config.disconnectedColor)
+            let deviceValues = Self.connectedDeviceFormatValues(bluetooth.pairedDevices)
             FormattedWidgetLabel(
                 format: widgetFormat ?? "{icon}",
                 values: [
                     "icon": bluetooth.isBluetoothOn ? config.iconConnected : config.iconDisconnected,
                     "status": bluetooth.isBluetoothOn ? "on" : "off",
-                    "device_count": "\(bluetooth.pairedDevices.count)"
+                    "device_count": "\(bluetooth.pairedDevices.count)",
+                    "device": deviceValues.deviceCount,
+                    "device_name": deviceValues.deviceName
                 ],
                 iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? statusColor,
                 textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
@@ -98,6 +101,16 @@ struct BluetoothWidget: View {
             }
         }
     }
+
+    static func connectedDeviceFormatValues(
+        _ devices: [BluetoothDeviceInfo]
+    ) -> (deviceCount: String, deviceName: String) {
+        let connectedDevices = devices.filter(\.isConnected)
+        return (
+            deviceCount: "\(connectedDevices.count)",
+            deviceName: connectedDevices.first?.name ?? ""
+        )
+    }
 }
 
 struct DeviceRow: View {
@@ -107,24 +120,40 @@ struct DeviceRow: View {
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        HStack(spacing: 8) {
-            NerdFontIcon(info.isConnected ? "" : "")
-                .foregroundColor(info.isConnected ? Color(hex: colors.accent) : Color(hex: colors.textTertiary))
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 8) {
+                NerdFontIcon(info.isConnected ? "󰂱" : "󰂯", size: 16)
+                    .foregroundColor(info.isConnected ? Color(hex: colors.accent) : Color(hex: colors.textTertiary))
 
-            Text(info.name)
-                .lineLimit(1)
-                .foregroundColor(Color(hex: colors.textPrimary))
+                Text(info.name)
+                    .lineLimit(1)
+                    .foregroundColor(Color(hex: colors.textPrimary))
 
-            Spacer()
+                Spacer(minLength: 4)
 
-            if info.isConnected {
-                Text("Connected")
+                Text(info.isConnected ? "Connected" : "Saved")
                     .font(.caption)
-                    .foregroundColor(Color(hex: colors.accent))
-            } else {
-                Text("Saved")
-                    .font(.caption)
-                    .foregroundColor(Color(hex: colors.textTertiary))
+                    .foregroundColor(info.isConnected ? Color(hex: colors.accent) : Color(hex: colors.textTertiary))
+            }
+
+            if isHovered {
+                Divider()
+                    .overlay(Color(hex: colors.surfaceBorder))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    detailRow(label: "Address", value: info.id, colors: colors)
+                    detailRow(
+                        label: "Connection",
+                        value: info.isConnected ? "Connected" : "Not connected",
+                        colors: colors
+                    )
+                    detailRow(
+                        label: "Pairing",
+                        value: info.isPaired ? "Paired" : "Not paired",
+                        colors: colors
+                    )
+                }
+                .font(.system(size: 11, design: .monospaced))
             }
         }
         .padding(.vertical, 6)
@@ -141,6 +170,19 @@ struct DeviceRow: View {
         }
         .onTapGesture {
             bluetooth.openBluetoothSettings()
+        }
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
+    }
+
+    private func detailRow(label: String, value: String, colors: GlobalColorsConfig) -> some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .foregroundColor(Color(hex: colors.textSecondary))
+                .frame(width: 76, alignment: .leading)
+            Text(value)
+                .foregroundColor(Color(hex: colors.textPrimary))
+                .lineLimit(1)
+            Spacer(minLength: 0)
         }
     }
 }
