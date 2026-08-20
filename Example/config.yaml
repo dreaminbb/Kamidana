@@ -1,29 +1,29 @@
-external:
-  global:
-    hide_in_fullscreen: true
-    bar_padding:
-      top: 0
-      leading: 0
-      trailing: 0
-    style:
-      background: "#1e1e2e"
-      color: "#cdd6f4"
-      opacity: 0.6
-      # padding: 6
-      material: ultra_thin
-      border:
-        width: 1
-        color: "#585b70"
-    popup_style:
-      background: "#1e1e2e"
-      color: "#cdd6f4"
-      opacity: 0.96
-      corner_radius: 0
-      material: ultra_thin
-      border:
-        width: 1
-        color: "#585b70"
+global:
+  hide_in_fullscreen: true
+  bar_padding:
+    top: 0
+    leading: 0
+    trailing: 0
+  style:
+    background: "#1e1e2e"
+    color: "#cdd6f4"
+    opacity: 0.6
+    # padding: 6
+    material: ultra_thin
+    border:
+      width: 1
+      color: "#585b70"
+  popup_style:
+    background: "#1e1e2e"
+    color: "#cdd6f4"
+    opacity: 0.96
+    corner_radius: 0
+    material: ultra_thin
+    border:
+      width: 1
+      color: "#585b70"
 
+external:
   left:
     style:
       spacing: 30
@@ -183,32 +183,6 @@ external:
           color: "#cdd6f4"
 
 built_in:
-  global:
-    hide_in_fullscreen: true
-    bar_padding:
-      top: 0
-      leading: 0
-      trailing: 0
-    style:
-      background: "#1e1e2e"
-      color: "#cdd6f4"
-      opacity: 0.6
-      padding: 0
-      corner_radius: 0
-      material: ultra_thin
-      border:
-        width: 1
-        color: "#585b70"
-    popup_style:
-      background: "#1e1e2e"
-      color: "#cdd6f4"
-      opacity: 0.96
-      corner_radius: 12
-      material: ultra_thin
-      border:
-        width: 1
-        color: "#585b70"
-
   left:
     style:
       spacing: 6

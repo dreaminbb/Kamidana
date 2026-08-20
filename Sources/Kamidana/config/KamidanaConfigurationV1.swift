@@ -1151,30 +1151,76 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
   }
 }
 
-/// Contains the complete UI configuration for both display classes in one file.
-public struct KamidanaMonitorConfigurationV1: Decodable, Equatable {
-  public var external: KamidanaConfigurationV1
-  public var builtIn: KamidanaConfigurationV1
+/// The monitor-specific layout, without the shared global settings.
+public struct KamidanaDisplayConfigurationV1: Decodable, Equatable {
+  public var left: KamidanaConfigurationV1Section
+  public var center: KamidanaConfigurationV1Center
+  public var right: KamidanaConfigurationV1Section
 
   public init(
-    external: KamidanaConfigurationV1,
-    builtIn: KamidanaConfigurationV1
+    left: KamidanaConfigurationV1Section = KamidanaConfigurationV1Section(),
+    center: KamidanaConfigurationV1Center,
+    right: KamidanaConfigurationV1Section = KamidanaConfigurationV1Section()
   ) {
-    self.external = external
-    self.builtIn = builtIn
+    self.left = left
+    self.center = center
+    self.right = right
   }
 
   private enum CodingKeys: String, CodingKey, CaseIterable {
-    case external
-    case builtIn = "built_in"
+    case left, center, right
   }
 
   public init(from decoder: Decoder) throws {
     try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.init(
-      external: try container.decode(KamidanaConfigurationV1.self, forKey: .external),
-      builtIn: try container.decode(KamidanaConfigurationV1.self, forKey: .builtIn)
+      left: try container.decodeIfPresent(KamidanaConfigurationV1Section.self, forKey: .left)
+        ?? KamidanaConfigurationV1Section(),
+      center: try container.decode(KamidanaConfigurationV1Center.self, forKey: .center),
+      right: try container.decodeIfPresent(KamidanaConfigurationV1Section.self, forKey: .right)
+        ?? KamidanaConfigurationV1Section()
+    )
+  }
+
+  fileprivate func configuration(global: KamidanaConfigurationV1Global) -> KamidanaConfigurationV1 {
+    KamidanaConfigurationV1(global: global, left: left, center: center, right: right)
+  }
+}
+
+/// Contains the complete UI configuration for both display classes in one file.
+/// `global` is deliberately shared: monitor-specific sections contain layout only.
+public struct KamidanaMonitorConfigurationV1: Decodable, Equatable {
+  public var global: KamidanaConfigurationV1Global
+  public var external: KamidanaConfigurationV1
+  public var builtIn: KamidanaConfigurationV1
+
+  public init(
+    global: KamidanaConfigurationV1Global,
+    external: KamidanaConfigurationV1,
+    builtIn: KamidanaConfigurationV1
+  ) {
+    self.global = global
+    self.external = external
+    self.builtIn = builtIn
+  }
+
+  private enum CodingKeys: String, CodingKey, CaseIterable {
+    case global, external
+    case builtIn = "built_in"
+  }
+
+  public init(from decoder: Decoder) throws {
+    try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let global = try container.decodeIfPresent(KamidanaConfigurationV1Global.self, forKey: .global)
+      ?? KamidanaConfigurationV1Global()
+    let external = try container.decode(KamidanaDisplayConfigurationV1.self, forKey: .external)
+    let builtIn = try container.decode(KamidanaDisplayConfigurationV1.self, forKey: .builtIn)
+    self.init(
+      global: global,
+      external: external.configuration(global: global),
+      builtIn: builtIn.configuration(global: global)
     )
   }
 

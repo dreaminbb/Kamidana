@@ -251,12 +251,12 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
 
   func testConfigManagerBuildsLayoutsFromCombinedMonitorProfiles() throws {
     let yaml = """
+      global:
+        bar_padding:
+          top: 1
+        style:
+          color: "#111111"
       external:
-        global:
-          bar_padding:
-            top: 1
-          style:
-            color: "#111111"
         left:
           widgets:
             - id: external-music
@@ -275,11 +275,6 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
               type: cpu
               format: "󰍛 {usage}%"
       built_in:
-        global:
-          bar_padding:
-            top: 2
-          style:
-            color: "#222222"
         left:
           widgets:
             - id: built-in-volume
@@ -308,13 +303,13 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(manager.currentConfig.builtInDisplay.center.first?.typeID, "clock")
     XCTAssertEqual(manager.currentConfig.builtInDisplay.right.first?.typeID, "memory")
     XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: false)?.global.style.color, "#111111")
-    XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: true)?.global.style.color, "#222222")
+    XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: true)?.global.style.color, "#111111")
     XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: false)?.global.barPadding.top, 1)
-    XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: true)?.global.barPadding.top, 2)
+    XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: true)?.global.barPadding.top, 1)
 
     manager.activateConfiguration(isBuiltIn: true)
     XCTAssertEqual(manager.currentV1Config?.center.centerDefault, "built-in-center")
-    XCTAssertEqual(manager.currentConfig.colors.textPrimary, "#222222")
+    XCTAssertEqual(manager.currentConfig.colors.textPrimary, "#111111")
   }
 
   func testConfigManagerReadsExternalProfileFromLegacyCombinedRegularFile() throws {
@@ -449,11 +444,14 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     let profiles = try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml)
     XCTAssertEqual(profiles.external.center.centerDefault, "music")
     XCTAssertEqual(profiles.builtIn.center.centerDefault, "music")
-    XCTAssertTrue(profiles.external.global.hideInFullscreen)
-    XCTAssertTrue(profiles.builtIn.global.hideInFullscreen)
+    XCTAssertTrue(profiles.global.hideInFullscreen)
+    XCTAssertEqual(profiles.external.global, profiles.builtIn.global)
     let cpu = try XCTUnwrap(profiles.external.right.widgets.first { $0.kind == .cpu })
     XCTAssertEqual(cpu.style?.color, "#a6e3a1")
     XCTAssertEqual(cpu.style?.iconColor, "#a6e3a1")
-    XCTAssertEqual(profiles.builtIn.right.widgets.map(\.kind), [.cpu, .memory, .widgetFolder])
+    XCTAssertEqual(
+      profiles.builtIn.right.widgets.map(\.kind),
+      [.cpu, .memory, .widgetFolder, .battery, .clock]
+    )
   }
 }

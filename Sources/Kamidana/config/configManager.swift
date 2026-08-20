@@ -570,6 +570,8 @@ public class ConfigManager {
 
   public static let shared = ConfigManager()
   public var currentConfig = Config()
+  /// Settings shared by the external and built-in monitor layouts.
+  public private(set) var globalV1Config = KamidanaConfigurationV1Global()
   public private(set) var regularV1Config: KamidanaConfigurationV1?
   public private(set) var builtInV1Config: KamidanaConfigurationV1?
 
@@ -675,6 +677,7 @@ public class ConfigManager {
 
     regularV1Config = regularConfiguration
     builtInV1Config = builtInConfiguration
+    globalV1Config = regularConfiguration.global
     regularColors = regularRuntime.colors
     builtInColors = builtInRuntime.colors
     currentConfig = combinedRuntime

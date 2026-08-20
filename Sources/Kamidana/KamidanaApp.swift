@@ -2,6 +2,7 @@ import AppKit
 import CoreWLAN
 import SwiftUI
 
+// TODO: change profile at display ID
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
   var statusBarWindow: NSWindow!
@@ -14,7 +15,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     app.delegate = sharedDelegate
     app.run()
   }
-
   func applicationDidFinishLaunching(_ notification: Notification) {
     WidgetRegistry.shared.registerAllWidgets()
     let isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
@@ -30,18 +30,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     )
 
     statusBarWindow.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
-    var collectionBehavior: NSWindow.CollectionBehavior = [
-      .canJoinAllSpaces, .stationary, .ignoresCycle,
-    ]
-    if ConfigManager.shared.configurationForDisplay(isBuiltIn: isBuiltInDisplay)?.global
-      .hideInFullscreen != true
-    {
-      collectionBehavior.insert(.fullScreenAuxiliary)
-    }
-    statusBarWindow.collectionBehavior = collectionBehavior
+    var collectionBehavior: NSWindow.CollectionBehavior = [.stationary, .ignoresCycle]
     statusBarWindow.backgroundColor = .clear
     statusBarWindow.hasShadow = false
     statusBarWindow.isOpaque = false
+
+    if !ConfigManager.shared.globalV1Config.hideInFullscreen {
+      print("[LOG CONFIG] Hide in full screen : false")
+      collectionBehavior.insert(.canJoinAllSpaces)
+      collectionBehavior.insert(.fullScreenAuxiliary)
+    } else {
+      print("[LOG CONFIG] Hide in full screen : true")
+      NotificationCenter.default.addObserver(
+        self, selector: #selector(handleFullScreenEnter),
+        name: NSWindow.didEnterFullScreenNotification, object: nil
+      )
+
+      NotificationCenter.default.addObserver(
+        self, selector: #selector(handleFullScreenExit),
+        name: NSWindow.didExitFullScreenNotification,
+        object: nil
+      )
+    }
+    statusBarWindow.collectionBehavior = collectionBehavior
 
     let hostingController = NSHostingController(rootView: contentView)
     statusBarWindow.contentView = hostingController.view
@@ -50,7 +61,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     updateWindowPosition()
 
     statusBarWindow.makeKeyAndOrderFront(nil)
-    statusBarWindow.orderFrontRegardless()
+    // statusBarWindow.orderFrontRegardless()
     NSApp.activate(ignoringOtherApps: true)
 
     // Monitor display configuration changes (connect/disconnect, resolution changes)
@@ -68,18 +79,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       name: NSWorkspace.didWakeNotification,
       object: nil
     )
+
   }
 
+  @objc func handleFullScreenEnter(notification: Notification) {
+    // 隠したい補助ウィンドウを非表示にする
+    statusBarWindow.orderOut(nil)
+  }
+
+  // フルスクリーンから戻ったとき
+  @objc func handleFullScreenExit(notification: Notification) {
+    // render window FIX
+    statusBarWindow.orderFrontRegardless()
+  }
   // Reposition window forcibly to the top of the screen
   @objc func updateWindowPosition() {
     // Run asynchronously to wait for system screen info updates to complete
     DispatchQueue.main.async {
       guard let screen = NSScreen.screens.first else { return }
       let screenRect = screen.frame
-      let activeConfiguration = ConfigManager.shared.configurationForDisplay(
-        isBuiltIn: DisplayDetector.isBuiltInMainDisplay()
-      )
-      let barPadding = activeConfiguration?.global.barPadding ?? KamidanaInsets()
+      let barPadding = ConfigManager.shared.globalV1Config.barPadding
 
       let windowRect = Self.windowRect(
         for: screenRect,
@@ -214,12 +233,12 @@ struct StatusBarView: View {
         centerWidgets: currentLayout.center,
         isBuiltInDisplay: isBuiltInDisplay
       )
-        .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
-        .environment(\.kamidanaPopupHorizontalAlignment, .center)
-        .fixedSize()
-        .kamidanaSectionSurface(style: centerStyle, isEnabled: centerMode == .perSection)
-        .padding(.top, isBuiltInDisplay ? 0 : 7)
-        .zIndex(100)
+      .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
+      .environment(\.kamidanaPopupHorizontalAlignment, .center)
+      .fixedSize()
+      .kamidanaSectionSurface(style: centerStyle, isEnabled: centerMode == .perSection)
+      .padding(.top, isBuiltInDisplay ? 0 : 7)
+      .zIndex(100)
     }
     .kamidanaSectionSurface(
       style: globalStyle,

@@ -116,11 +116,11 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
   func testDecodesCombinedMonitorProfiles() throws {
     let yaml = """
+      global:
+        bar_padding:
+          top: 3
+          leading: 5
       external:
-        global:
-          bar_padding:
-            top: 3
-            leading: 5
         center:
           center_default: external-clock
           widgets:
@@ -128,8 +128,6 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
               type: clock
               compact_format: "{time}"
       built_in:
-        global:
-          bar_padding: 2
         center:
           center_default: built-in-clock
           widgets:
@@ -144,7 +142,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(profiles.builtIn.center.centerDefault, "built-in-clock")
     XCTAssertEqual(profiles.external.global.barPadding.top, 3)
     XCTAssertEqual(profiles.external.global.barPadding.leading, 5)
-    XCTAssertEqual(profiles.builtIn.global.barPadding.top, 2)
+    XCTAssertEqual(profiles.builtIn.global.barPadding.top, 3)
   }
 
   func testCombinedMonitorProfilesRequireBuiltInAndExternalSections() {
