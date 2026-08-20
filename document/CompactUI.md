@@ -27,6 +27,8 @@ Persisted in the following keys in `UserDefaults`:
 
 ## UI Behavior
 
+- Use `built_in_monitor.yaml` when the active main display is built in
+- Use `config.yaml` for an external or other regular main display
 - Reduce font size and spacing when compact mode is active
 - On the right side, **only CPU / Memory are always displayed**
 - Others (Network / GPU / Disk / Battery / Clock) are collapsed under the `list.bullet` icon

@@ -28,7 +28,7 @@ This document tracks the application-defined UI states required by the customiza
 | Widget | Defined states | Missing states |
 |---|---|---|
 | Island | compact, expanded, selected tab | click activation, expansion disabled, empty center |
-| Music | playing, paused, no track, no artwork, no track duration | deterministic previews and automated state selection tests |
+| Music | regular normal, regular activated, center normal, center activated, playing, paused, no track, no artwork, no track duration | deterministic visual previews |
 | btop | executable available | executable unavailable |
 | Regular center widget | compact format, expanded factory view | unavailable data and empty compact content |
 

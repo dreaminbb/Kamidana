@@ -57,7 +57,8 @@ public enum KamidanaConfigurationV1Error: Error, CustomStringConvertible, Equata
     case .invalidCenterDefault(let id):
       return "center_default must reference a widget ID in center; received '\(id)'."
     case .centerDefaultRequiresCompactFormat(let id):
-      return "The center_default widget '\(id)' must define a non-empty compact_format."
+      return
+        "The center_default widget '\(id)' must define compact_format, format, or music normal.format."
     case .btopMustBeInCenter(let id):
       return "The btop widget '\(id)' is valid only in center."
     case .tooltipNotAllowed(let path):
@@ -101,6 +102,11 @@ public enum KamidanaAnimationPreset: String, Codable, Equatable {
 public enum KamidanaActivation: String, Codable, Equatable {
   case hover
   case click
+}
+
+public enum KamidanaMusicExtendDirection: String, Codable, Equatable {
+  case left
+  case right
 }
 
 public enum KamidanaWidgetFolderDirection: String, Codable, Equatable {
@@ -380,6 +386,82 @@ public struct KamidanaSystemActionChild: Decodable, Equatable {
   }
 }
 
+public struct KamidanaMusicNormalState: Decodable, Equatable {
+  public var format: String?
+  public var formatOnAction: String?
+  public var sliderChange: String?
+  public var sliderPause: String?
+  public var sliderBar: String?
+  public var extend: KamidanaMusicExtendDirection?
+  public var artworkSpin: Double?
+
+  public init(
+    format: String? = nil,
+    formatOnAction: String? = nil,
+    sliderChange: String? = nil,
+    sliderPause: String? = nil,
+    sliderBar: String? = nil,
+    extend: KamidanaMusicExtendDirection? = nil,
+    artworkSpin: Double? = nil
+  ) {
+    self.format = format
+    self.formatOnAction = formatOnAction
+    self.sliderChange = sliderChange
+    self.sliderPause = sliderPause
+    self.sliderBar = sliderBar
+    self.extend = extend
+    self.artworkSpin = artworkSpin
+  }
+
+  private enum CodingKeys: String, CodingKey, CaseIterable {
+    case format
+    case formatOnAction = "format_on_action"
+    case sliderChange = "slider_change"
+    case sliderPause = "slider_pause"
+    case sliderBar = "slider_bar"
+    case extend
+    case artworkSpin = "artwork_spin"
+  }
+
+  public init(from decoder: Decoder) throws {
+    try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.init(
+      format: try container.decodeIfPresent(String.self, forKey: .format),
+      formatOnAction: try container.decodeIfPresent(String.self, forKey: .formatOnAction),
+      sliderChange: try container.decodeIfPresent(String.self, forKey: .sliderChange),
+      sliderPause: try container.decodeIfPresent(String.self, forKey: .sliderPause),
+      sliderBar: try container.decodeIfPresent(String.self, forKey: .sliderBar),
+      extend: try container.decodeIfPresent(KamidanaMusicExtendDirection.self, forKey: .extend),
+      artworkSpin: try container.decodeIfPresent(Double.self, forKey: .artworkSpin)
+    )
+  }
+}
+
+public struct KamidanaMusicActionState: Decodable, Equatable {
+  public var format: String?
+  public var artworkSpin: Double?
+
+  public init(format: String? = nil, artworkSpin: Double? = nil) {
+    self.format = format
+    self.artworkSpin = artworkSpin
+  }
+
+  private enum CodingKeys: String, CodingKey, CaseIterable {
+    case format
+    case artworkSpin = "artwork_spin"
+  }
+
+  public init(from decoder: Decoder) throws {
+    try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.init(
+      format: try container.decodeIfPresent(String.self, forKey: .format),
+      artworkSpin: try container.decodeIfPresent(Double.self, forKey: .artworkSpin)
+    )
+  }
+}
+
 public struct KamidanaWidget: Decodable, Equatable {
   public let id: String
   public let kind: KamidanaWidgetKind
@@ -400,6 +482,14 @@ public struct KamidanaWidget: Decodable, Equatable {
   public var arguments: [String]
   public var inputManagement: Bool?
   public var outputManagement: Bool?
+  public var formatOnAction: String?
+  public var sliderChange: String?
+  public var sliderPause: String?
+  public var sliderBar: String?
+  public var extend: KamidanaMusicExtendDirection?
+  public var artworkSpin: Double?
+  public var normal: KamidanaMusicNormalState?
+  public var onAction: KamidanaMusicActionState?
 
   public init(
     id: String,
@@ -420,7 +510,15 @@ public struct KamidanaWidget: Decodable, Equatable {
     command: String? = nil,
     arguments: [String] = [],
     inputManagement: Bool? = nil,
-    outputManagement: Bool? = nil
+    outputManagement: Bool? = nil,
+    formatOnAction: String? = nil,
+    sliderChange: String? = nil,
+    sliderPause: String? = nil,
+    sliderBar: String? = nil,
+    extend: KamidanaMusicExtendDirection? = nil,
+    artworkSpin: Double? = nil,
+    normal: KamidanaMusicNormalState? = nil,
+    onAction: KamidanaMusicActionState? = nil
   ) {
     self.id = id
     self.kind = kind
@@ -441,6 +539,14 @@ public struct KamidanaWidget: Decodable, Equatable {
     self.arguments = arguments
     self.inputManagement = inputManagement
     self.outputManagement = outputManagement
+    self.formatOnAction = formatOnAction
+    self.sliderChange = sliderChange
+    self.sliderPause = sliderPause
+    self.sliderBar = sliderBar
+    self.extend = extend
+    self.artworkSpin = artworkSpin
+    self.normal = normal
+    self.onAction = onAction
   }
 
   public init(from decoder: Decoder) throws {
@@ -479,7 +585,15 @@ public struct KamidanaWidget: Decodable, Equatable {
       command: try container.decodeIfPresent(String.self, forKey: .command),
       arguments: try container.decodeIfPresent([String].self, forKey: .arguments) ?? [],
       inputManagement: kind == .volume ? inputManagement ?? true : inputManagement,
-      outputManagement: kind == .volume ? outputManagement ?? true : outputManagement
+      outputManagement: kind == .volume ? outputManagement ?? true : outputManagement,
+      formatOnAction: try container.decodeIfPresent(String.self, forKey: .formatOnAction),
+      sliderChange: try container.decodeIfPresent(String.self, forKey: .sliderChange),
+      sliderPause: try container.decodeIfPresent(String.self, forKey: .sliderPause),
+      sliderBar: try container.decodeIfPresent(String.self, forKey: .sliderBar),
+      extend: try container.decodeIfPresent(KamidanaMusicExtendDirection.self, forKey: .extend),
+      artworkSpin: try container.decodeIfPresent(Double.self, forKey: .artworkSpin),
+      normal: try container.decodeIfPresent(KamidanaMusicNormalState.self, forKey: .normal),
+      onAction: try container.decodeIfPresent(KamidanaMusicActionState.self, forKey: .onAction)
     )
   }
 
@@ -496,6 +610,14 @@ public struct KamidanaWidget: Decodable, Equatable {
     case command, arguments
     case inputManagement = "input_management"
     case outputManagement = "output_management"
+    case formatOnAction = "format_on_action"
+    case sliderChange = "slider_change"
+    case sliderPause = "slider_pause"
+    case sliderBar = "slider_bar"
+    case extend
+    case artworkSpin = "artwork_spin"
+    case normal
+    case onAction = "on_action"
   }
 }
 
@@ -677,8 +799,12 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
     else {
       throw KamidanaConfigurationV1Error.invalidCenterDefault(section.centerDefault)
     }
-    guard let compactFormat = defaultWidget.compactFormat,
-      !compactFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    let defaultFormat =
+      defaultWidget.compactFormat
+      ?? defaultWidget.normal?.format
+      ?? defaultWidget.format
+    guard let defaultFormat,
+      !defaultFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     else {
       throw KamidanaConfigurationV1Error.centerDefaultRequiresCompactFormat(section.centerDefault)
     }
@@ -775,7 +901,8 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
       if widget.icon != nil {
         throw KamidanaConfigurationV1Error.invalidWidget(
           path: path,
-          reason: "icon is valid only for widget-folder and system-action; include Nerd Font icons in format for regular widgets"
+          reason:
+            "icon is valid only for widget-folder and system-action; include Nerd Font icons in format for regular widgets"
         )
       }
       if widget.foldedIcon != nil {
@@ -817,6 +944,63 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
       throw KamidanaConfigurationV1Error.invalidWidget(
         path: path,
         reason: "input_management and output_management are valid only for volume"
+      )
+    }
+
+    let hasMusicConfiguration =
+      widget.formatOnAction != nil
+      || widget.sliderChange != nil
+      || widget.sliderPause != nil
+      || widget.sliderBar != nil
+      || widget.extend != nil
+      || widget.artworkSpin != nil
+      || widget.normal != nil
+      || widget.onAction != nil
+    if widget.kind != .music && hasMusicConfiguration {
+      throw KamidanaConfigurationV1Error.invalidWidget(
+        path: path,
+        reason:
+          "format_on_action, slider colors, extend, artwork_spin, normal, and on_action are valid only for music"
+      )
+    }
+
+    if widget.kind == .music {
+      try validateOptionalFormat(widget.formatOnAction, name: "format_on_action", path: path)
+      try validateOptionalFormat(widget.normal?.format, name: "normal.format", path: path)
+      try validateOptionalFormat(
+        widget.normal?.formatOnAction,
+        name: "normal.format_on_action",
+        path: path
+      )
+      try validateOptionalFormat(widget.onAction?.format, name: "on_action.format", path: path)
+      try validateArtworkSpin(widget.artworkSpin, name: "artwork_spin", path: path)
+      try validateArtworkSpin(
+        widget.normal?.artworkSpin,
+        name: "normal.artwork_spin",
+        path: path
+      )
+      try validateArtworkSpin(
+        widget.onAction?.artworkSpin,
+        name: "on_action.artwork_spin",
+        path: path
+      )
+    }
+  }
+
+  private func validateOptionalFormat(_ format: String?, name: String, path: String) throws {
+    if let format, format.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      throw KamidanaConfigurationV1Error.invalidWidget(
+        path: path,
+        reason: "\(name) must be non-empty"
+      )
+    }
+  }
+
+  private func validateArtworkSpin(_ duration: Double?, name: String, path: String) throws {
+    if let duration, duration < 0 || !duration.isFinite {
+      throw KamidanaConfigurationV1Error.invalidWidget(
+        path: path,
+        reason: "\(name) must be zero or a positive number of seconds"
       )
     }
   }

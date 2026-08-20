@@ -64,6 +64,20 @@ final class ConfigManagerTests: XCTestCase {
       "Config file URL must be fixed to ~/.config/kamidana/config.yaml")
   }
 
+  func testResolveBuiltInConfigFileURL() {
+    let expectedFileURL =
+      defaultHomeURL
+      .appendingPathComponent(".config")
+      .appendingPathComponent("kamidana")
+      .appendingPathComponent("built_in_monitor.yaml")
+
+    XCTAssertEqual(
+      manager.resolveBuiltInConfigFileURL().path,
+      expectedFileURL.path,
+      "Built-in config file URL must be fixed to ~/.config/kamidana/built_in_monitor.yaml"
+    )
+  }
+
   /// Tests fetchUserConfigPath() returns the fixed directory path string
   func testFetchUserConfigPath() {
     let pathString = manager.fetchUserConfigPath()
@@ -77,5 +91,86 @@ final class ConfigManagerTests: XCTestCase {
   func testLoadConfigLog() {
     manager.loadConfig()
     print(manager.currentConfig)
+  }
+
+  func testLoadConfigReadsSeparateMonitorFiles() throws {
+    let temporaryHome = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: temporaryHome) }
+
+    let configDirectory = manager.resolveConfigDirectory(homeDirectory: temporaryHome)
+    try FileManager.default.createDirectory(
+      at: configDirectory,
+      withIntermediateDirectories: true
+    )
+    let regularYAML = """
+      center:
+        center_default: regular-clock
+        widgets:
+          - id: regular-clock
+            type: clock
+            compact_format: "regular {time}"
+      """
+    let builtInYAML = """
+      center:
+        center_default: built-in-clock
+        widgets:
+          - id: built-in-clock
+            type: clock
+            compact_format: "built-in {time}"
+      """
+    try regularYAML.write(
+      to: manager.resolveConfigFileURL(homeDirectory: temporaryHome),
+      atomically: true,
+      encoding: .utf8
+    )
+    try builtInYAML.write(
+      to: manager.resolveBuiltInConfigFileURL(homeDirectory: temporaryHome),
+      atomically: true,
+      encoding: .utf8
+    )
+
+    manager.loadConfig(homeDirectory: temporaryHome)
+
+    XCTAssertEqual(
+      manager.configurationForDisplay(isBuiltIn: false)?.center.centerDefault,
+      "regular-clock"
+    )
+    XCTAssertEqual(
+      manager.configurationForDisplay(isBuiltIn: true)?.center.centerDefault,
+      "built-in-clock"
+    )
+  }
+
+  func testLoadConfigFallsBackToRegularFileForBuiltInDisplay() throws {
+    let temporaryHome = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: temporaryHome) }
+
+    let configDirectory = manager.resolveConfigDirectory(homeDirectory: temporaryHome)
+    try FileManager.default.createDirectory(
+      at: configDirectory,
+      withIntermediateDirectories: true
+    )
+    let yaml = """
+      center:
+        center_default: shared-clock
+        widgets:
+          - id: shared-clock
+            type: clock
+            compact_format: "{time}"
+      """
+    try yaml.write(
+      to: manager.resolveConfigFileURL(homeDirectory: temporaryHome),
+      atomically: true,
+      encoding: .utf8
+    )
+
+    manager.loadConfig(homeDirectory: temporaryHome)
+
+    XCTAssertEqual(
+      manager.configurationForDisplay(isBuiltIn: true),
+      manager.configurationForDisplay(isBuiltIn: false)
+    )
   }
 }

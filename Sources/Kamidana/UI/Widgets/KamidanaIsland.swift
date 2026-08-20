@@ -6,7 +6,6 @@ struct windowSizeRequirements {
 }
 
 struct KamidanaIsland: View {
-    @EnvironmentObject var musicManager: MusicPlayingManager
     @Environment(\.showsKamidanaWidgetSurface) private var showsWidgetSurface
     let centerWidgets: [WidgetInstance]
 
@@ -62,7 +61,6 @@ struct KamidanaIsland: View {
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedTab = tab
-                                print("islandsize \(islandSize)")
                             }
 
                         }) {
@@ -150,25 +148,13 @@ struct KamidanaIsland: View {
         let style = widget.v1Style
 
         if widget.typeID == "music" {
-            if !musicManager.title.isEmpty, let artwork = musicManager.artwork {
-                Image(nsImage: artwork)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 24, height: 24)
-                    .clipShape(Circle())
-            }
-
             let musicConfig = widget.config as? MusicWidgetConfig ?? MusicWidgetConfig()
-            FormattedWidgetLabel(
-                format: widget.v1Format ?? "{icon} {title}",
-                values: [
-                    "icon": musicConfig.defaultIcon,
-                    "title": musicManager.title,
-                    "artist": musicManager.artist
-                ],
-                iconColor: Color(hex: style?.iconColor ?? musicConfig.defaultIconColor),
-                textColor: Color(hex: style?.color ?? colors.textPrimary)
+            MusicNormalContent(
+                config: musicConfig,
+                format: widget.v1Format ?? musicConfig.normalFormat,
+                artworkSize: 24
             )
+            .environment(\.kamidanaV1Style, style)
         } else if widget.typeID == "terminal" {
             FormattedWidgetLabel(
                 format: widget.v1Format ?? "",

@@ -10,7 +10,7 @@ struct BatteryWidget: View {
   let config: BatteryWidgetConfig
 
   private func resolveBatteryIcon(capacity: Int64, isCharging: Bool) -> String {
-    if isCharging {
+    if isCharging && capacity > 95 {
       return config.charging_right_now
     }
     switch capacity {
@@ -32,7 +32,8 @@ struct BatteryWidget: View {
     let colors = ConfigManager.shared.currentConfig.colors
     if let battery = matrix.data.batteryUsage {
       Button(action: { showPopover.toggle() }) {
-        let statusColor = battery.isCharging
+        let statusColor =
+          battery.isCharging
           ? Color(hex: config.chargingColor) : Color(hex: config.dischargingColor)
         FormattedWidgetLabel(
           format: widgetFormat ?? "{icon} {capacity}%",
@@ -42,7 +43,7 @@ struct BatteryWidget: View {
               isCharging: battery.isCharging
             ),
             "capacity": "\(battery.currentCapacity)",
-            "status": battery.isCharging ? "charging" : "discharging"
+            "status": battery.isCharging ? "charging" : "discharging",
           ],
           iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? statusColor,
           textColor: v1Style?.color.map(Color.init(hex:)) ?? statusColor

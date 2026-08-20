@@ -176,6 +176,181 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(runtime.externalDisplay.right[1].v1Activate, .click)
   }
 
+  func testAdapterBuildsPlacementSpecificMusicConfiguration() throws {
+    let yaml = """
+      left:
+        widgets:
+          - id: music-left
+            type: music
+            format: "{artwork} {title}"
+            format_on_action: "{artwork} {slider}"
+            slider_change: "#111111"
+            slider_pause: "#222222"
+            slider_bar: "#333333"
+            artwork_spin: 0
+      center:
+        center_default: music-center
+        widgets:
+          - id: music-center
+            type: music
+            normal:
+              format: "{artwork} {title}"
+              format_on_action: "{artwork} {slider}"
+              extend: right
+              artwork_spin: 4
+            on_action:
+              format: "{title} - {album}"
+              artwork_spin: 0
+      right:
+        widgets:
+          - id: music-right
+            type: music
+            format: "{artwork} {title}"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let left = try XCTUnwrap(runtime.externalDisplay.left.first?.config as? MusicWidgetConfig)
+    let center = try XCTUnwrap(runtime.externalDisplay.center.first?.config as? MusicWidgetConfig)
+    let right = try XCTUnwrap(runtime.externalDisplay.right.first?.config as? MusicWidgetConfig)
+
+    XCTAssertEqual(left.placement, .standalone)
+    XCTAssertEqual(left.extend, .right)
+    XCTAssertEqual(left.sliderChangeColor, "#111111")
+    XCTAssertEqual(left.artworkSpinDuration, 0)
+    XCTAssertEqual(center.placement, .center)
+    XCTAssertEqual(center.actionMetadataFormat, "{title} - {album}")
+    XCTAssertEqual(center.artworkSpinDuration, 4)
+    XCTAssertEqual(center.actionArtworkSpinDuration, 0)
+    XCTAssertEqual(right.extend, .left)
+  }
+
+  func testConfigManagerBuildsLayoutsFromSeparateMonitorFiles() throws {
+    let regularYAML = """
+      global:
+        style:
+          color: "#111111"
+      left:
+        widgets:
+          - id: regular-music
+            type: music
+            format: "{artwork} {title}"
+      center:
+        center_default: regular-center
+        widgets:
+          - id: regular-center
+            type: music
+            normal:
+              format: "{artwork} {title}"
+      right:
+        widgets:
+          - id: regular-cpu
+            type: cpu
+            format: "󰍛 {usage}%"
+      """
+    let builtInYAML = """
+      global:
+        style:
+          color: "#222222"
+      left:
+        widgets:
+          - id: built-in-volume
+            type: volume
+            format: "󰕾 {volume}%"
+      center:
+        center_default: built-in-center
+        widgets:
+          - id: built-in-center
+            type: clock
+            compact_format: "{time}"
+      right:
+        widgets:
+          - id: built-in-memory
+            type: memory
+            format: " {usage}%"
+      """
+
+    let manager = ConfigManager(shouldLoadUserConfiguration: false)
+    try manager.applyV1Configurations(
+      regularYAML: regularYAML,
+      builtInYAML: builtInYAML
+    )
+
+    XCTAssertEqual(manager.currentConfig.externalDisplay.left.first?.typeID, "music")
+    XCTAssertEqual(manager.currentConfig.externalDisplay.center.first?.typeID, "music")
+    XCTAssertEqual(manager.currentConfig.externalDisplay.right.first?.typeID, "cpu")
+    XCTAssertEqual(manager.currentConfig.builtInDisplay.left.first?.typeID, "audio")
+    XCTAssertEqual(manager.currentConfig.builtInDisplay.center.first?.typeID, "clock")
+    XCTAssertEqual(manager.currentConfig.builtInDisplay.right.first?.typeID, "memory")
+    XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: false)?.global.style.color, "#111111")
+    XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: true)?.global.style.color, "#222222")
+
+    manager.activateConfiguration(isBuiltIn: true)
+    XCTAssertEqual(manager.currentV1Config?.center.centerDefault, "built-in-center")
+    XCTAssertEqual(manager.currentConfig.colors.textPrimary, "#222222")
+  }
+
+  func testConfigManagerReadsExternalProfileFromLegacyCombinedRegularFile() throws {
+    let legacyRegularYAML = """
+      global:
+        style:
+          color: "#111111"
+      external_monitor:
+        center:
+          center_default: regular-clock
+          widgets:
+            - id: regular-clock
+              type: clock
+              compact_format: "regular {time}"
+      built_in_monitor:
+        style:
+          corner_radius: 0
+        center:
+          center_default: stale-built-in-clock
+          widgets:
+            - id: stale-built-in-clock
+              type: clock
+              compact_format: "stale {time}"
+      """
+    let builtInYAML = """
+      global:
+        style:
+          color: "#222222"
+      center:
+        center_default: built-in-clock
+        widgets:
+          - id: built-in-clock
+            type: clock
+            compact_format: "built-in {time}"
+      """
+
+    let manager = ConfigManager(shouldLoadUserConfiguration: false)
+    try manager.applyV1Configurations(
+      regularYAML: legacyRegularYAML,
+      builtInYAML: builtInYAML
+    )
+
+    XCTAssertEqual(
+      manager.configurationForDisplay(isBuiltIn: false)?.center.centerDefault,
+      "regular-clock"
+    )
+    XCTAssertEqual(
+      manager.configurationForDisplay(isBuiltIn: true)?.center.centerDefault,
+      "built-in-clock"
+    )
+  }
+
+  func testMusicFormatParserPreservesTextAndFindsComponents() {
+    XCTAssertEqual(
+      MusicFormatParser.parts(in: "{artwork} {title} {slider}"),
+      [
+        .artwork,
+        .text(" {title} "),
+        .slider,
+      ]
+    )
+  }
+
   func testFormatRendererReplacesValuesAndSeparatesNerdFontRuns() {
     let rendered = KamidanaFormatRenderer.render(
       "󰍛 {usage}%",
@@ -206,7 +381,8 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
       ]
     )
 
-    XCTAssertEqual(rendered, "\(config.wiredIcon)  1 KB \(config.uploadIcon) 2 KB \(config.downloadIcon)")
+    XCTAssertEqual(
+      rendered, "\(config.wiredIcon)  1 KB \(config.uploadIcon) 2 KB \(config.downloadIcon)")
     XCTAssertEqual(KamidanaFormatRenderer.segments(in: rendered).first?.value, config.wiredIcon)
     XCTAssertTrue(KamidanaFormatRenderer.segments(in: rendered).first?.isIcon ?? false)
   }
@@ -239,12 +415,20 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
       .deletingLastPathComponent()
       .deletingLastPathComponent()
     let exampleURL = repositoryRoot.appendingPathComponent("Example/config.yaml")
-    let yaml = try String(contentsOf: exampleURL, encoding: .utf8)
-    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
-    XCTAssertEqual(configuration.center.centerDefault, "music")
-    XCTAssertTrue(configuration.global.hideInFullscreen)
-    let cpu = try XCTUnwrap(configuration.right.widgets.first { $0.kind == .cpu })
+    let builtInExampleURL = repositoryRoot.appendingPathComponent(
+      "Example/built_in_monitor.yaml"
+    )
+    let regularYAML = try String(contentsOf: exampleURL, encoding: .utf8)
+    let builtInYAML = try String(contentsOf: builtInExampleURL, encoding: .utf8)
+    let regular = try KamidanaConfigurationV1Decoder.decode(yaml: regularYAML)
+    let builtIn = try KamidanaConfigurationV1Decoder.decode(yaml: builtInYAML)
+    XCTAssertEqual(regular.center.centerDefault, "music")
+    XCTAssertEqual(builtIn.center.centerDefault, "music")
+    XCTAssertTrue(regular.global.hideInFullscreen)
+    XCTAssertTrue(builtIn.global.hideInFullscreen)
+    let cpu = try XCTUnwrap(regular.right.widgets.first { $0.kind == .cpu })
     XCTAssertEqual(cpu.style?.color, "#a6e3a1")
     XCTAssertEqual(cpu.style?.iconColor, "#a6e3a1")
+    XCTAssertEqual(builtIn.right.widgets.map(\.kind), [.cpu, .memory, .widgetFolder])
   }
 }

@@ -17,6 +17,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     WidgetRegistry.shared.registerAllWidgets()
+    let isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
+    ConfigManager.shared.activateConfiguration(isBuiltIn: isBuiltInDisplay)
     let contentView = StatusBarView()
 
     // Create initial window
@@ -31,7 +33,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var collectionBehavior: NSWindow.CollectionBehavior = [
       .canJoinAllSpaces, .stationary, .ignoresCycle,
     ]
-    if ConfigManager.shared.currentV1Config?.global.hideInFullscreen != true {
+    if ConfigManager.shared.configurationForDisplay(isBuiltIn: isBuiltInDisplay)?.global
+      .hideInFullscreen != true
+    {
       collectionBehavior.insert(.fullScreenAuxiliary)
     }
     statusBarWindow.collectionBehavior = collectionBehavior
@@ -117,7 +121,9 @@ struct StatusBarView: View {
   @State private var isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
 
   var body: some View {
-    let v1Configuration = ConfigManager.shared.currentV1Config
+    let v1Configuration = ConfigManager.shared.configurationForDisplay(
+      isBuiltIn: isBuiltInDisplay
+    )
     let currentLayout: DisplayLayoutConfig =
       isBuiltInDisplay
       ? ConfigManager.shared.currentConfig.builtInDisplay
@@ -216,6 +222,7 @@ struct StatusBarView: View {
       matrix.startMonitoring()
       localSend.scanNetwork()
       isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
+      ConfigManager.shared.activateConfiguration(isBuiltIn: isBuiltInDisplay)
     }
     .onReceive(
       NotificationCenter.default.publisher(
@@ -225,6 +232,7 @@ struct StatusBarView: View {
       // so evaluate asynchronously with a slight delay
       DispatchQueue.main.async {
         isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
+        ConfigManager.shared.activateConfiguration(isBuiltIn: isBuiltInDisplay)
         // print("Updated isBuiltInDisplay: \(isBuiltInDisplay)")
       }
     }

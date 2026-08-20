@@ -112,6 +112,11 @@ public struct SystemActionWidgetConfig: Codable, Hashable {
   public var iconColor: String
 }
 
+public enum MusicWidgetPlacement: String, Codable, Hashable {
+  case standalone
+  case center
+}
+
 public struct MusicWidgetConfig: Codable {
   public var defaultIcon: String = "󰝚"
   public var defaultIconColor: String = "#f5c2e7"
@@ -119,6 +124,16 @@ public struct MusicWidgetConfig: Codable {
   public var pauseIcon: String = "󰏤"
   public var forwardIcon: String = "󰒭"
   public var backwardIcon: String = "󰒮"
+  public var normalFormat: String = "{artwork} {title}"
+  public var formatOnAction: String = "{artwork} {slider}"
+  public var actionMetadataFormat: String? = "{title} - {album}"
+  public var sliderChangeColor: String? = nil
+  public var sliderPauseColor: String? = nil
+  public var sliderBarColor: String? = nil
+  public var extend: KamidanaMusicExtendDirection = .right
+  public var artworkSpinDuration: Double = 3
+  public var actionArtworkSpinDuration: Double = 3
+  public var placement: MusicWidgetPlacement = .standalone
 }
 
 public struct TerminalWidgetConfig: Codable, Hashable {
@@ -318,7 +333,10 @@ public struct Config: Decodable {
       WidgetInstance(typeID: "audio", config: AudioWidgetConfig()),
     ],
     center: [
-      WidgetInstance(typeID: "music", config: MusicWidgetConfig()),
+      WidgetInstance(
+        typeID: "music",
+        config: MusicWidgetConfig(placement: .center)
+      ),
       WidgetInstance(
         typeID: "terminal",
         config: TerminalWidgetConfig(name: "btop", terminalPath: "/opt/homebrew/bin/btop")),
@@ -370,7 +388,10 @@ public struct Config: Decodable {
       WidgetInstance(typeID: "audio", config: AudioWidgetConfig()),
     ],
     center: [
-      WidgetInstance(typeID: "music", config: MusicWidgetConfig()),
+      WidgetInstance(
+        typeID: "music",
+        config: MusicWidgetConfig(placement: .center)
+      ),
       WidgetInstance(
         typeID: "terminal",
         config: TerminalWidgetConfig(name: "btop", terminalPath: "/opt/homebrew/bin/btop")),
@@ -467,15 +488,57 @@ extension Color {
   }
 }
 
+private struct LegacyMonitorDisplayConfiguration: Decodable {
+  let style: KamidanaStyle?
+  let left: KamidanaConfigurationV1Section?
+  let center: KamidanaConfigurationV1Center
+  let right: KamidanaConfigurationV1Section?
+}
+
+private struct LegacyRegularMonitorConfiguration: Decodable {
+  let global: KamidanaConfigurationV1Global?
+  let externalMonitor: LegacyMonitorDisplayConfiguration?
+
+  private enum CodingKeys: String, CodingKey {
+    case global
+    case externalMonitor = "external_monitor"
+  }
+}
+
+private struct LegacyBuiltInMonitorConfiguration: Decodable {
+  let global: KamidanaConfigurationV1Global?
+  let builtInMonitor: LegacyMonitorDisplayConfiguration?
+
+  private enum CodingKeys: String, CodingKey {
+    case global
+    case builtInMonitor = "built_in_monitor"
+  }
+}
+
+private enum MonitorConfigurationRole {
+  case regular
+  case builtIn
+}
+
 public class ConfigManager {
 
   public static let shared = ConfigManager()
   public var currentConfig = Config()
-  public private(set) var currentV1Config: KamidanaConfigurationV1?
+  public private(set) var regularV1Config: KamidanaConfigurationV1?
+  public private(set) var builtInV1Config: KamidanaConfigurationV1?
 
   public static let MAIN_CONFIG_FILE_NAME = "config.yaml"
+  public static let BUILT_IN_CONFIG_FILE_NAME = "built_in_monitor.yaml"
   public static let CONFIG_PARENT_DIR_NAME = ".config"
   public static let CONFIG_DIR_NAME = "kamidana"
+
+  private var regularColors = GlobalColorsConfig()
+  private var builtInColors = GlobalColorsConfig()
+  private var isUsingBuiltInConfiguration = false
+
+  public var currentV1Config: KamidanaConfigurationV1? {
+    configurationForDisplay(isBuiltIn: isUsingBuiltInConfiguration)
+  }
 
   public init(shouldLoadUserConfiguration: Bool = true) {
     if shouldLoadUserConfiguration {
@@ -483,28 +546,126 @@ public class ConfigManager {
     }
   }
 
-  public func loadConfig() {
-    let url = resolveConfigFileURL()
-    print("[LOG] CONFIG PATH URL: \(url)")
+  public func loadConfig(
+    homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
+  ) {
+    let regularURL = resolveConfigFileURL(homeDirectory: homeDirectory)
+    let builtInURL = resolveBuiltInConfigFileURL(homeDirectory: homeDirectory)
+    let fileManager = FileManager.default
+    let hasRegularConfiguration = fileManager.fileExists(atPath: regularURL.path)
+    let hasBuiltInConfiguration = fileManager.fileExists(atPath: builtInURL.path)
 
-    guard FileManager.default.fileExists(atPath: url.path) else {
-      print("Config file not found at \(url.path), using defaults")
+    guard hasRegularConfiguration || hasBuiltInConfiguration else {
+      print(
+        "Config files not found in \(resolveConfigDirectory(homeDirectory: homeDirectory).path), using defaults"
+      )
       return
     }
+
     do {
-      let yamlData = try String(contentsOf: url, encoding: .utf8)
-      try applyV1Configuration(yaml: yamlData)
-      print("[LOG] Successfully loaded v1 config from YAML. path \(url.path)")
+      let regularSourceURL = hasRegularConfiguration ? regularURL : builtInURL
+      let builtInSourceURL = hasBuiltInConfiguration ? builtInURL : regularSourceURL
+      let regularYAML = try String(contentsOf: regularSourceURL, encoding: .utf8)
+      let builtInYAML = try String(contentsOf: builtInSourceURL, encoding: .utf8)
+      try applyV1Configurations(regularYAML: regularYAML, builtInYAML: builtInYAML)
+      print("[LOG] Successfully loaded regular config from \(regularSourceURL.path)")
+      print("[LOG] Successfully loaded built-in config from \(builtInSourceURL.path)")
     } catch {
-      print("Failed to decode v1 config \(error)")
+      print("Failed to decode v1 configs: \(error)")
     }
   }
 
   public func applyV1Configuration(yaml: String) throws {
-    let decoded = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
-    let runtimeConfig = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: decoded)
-    currentV1Config = decoded
-    currentConfig = runtimeConfig
+    try applyV1Configurations(regularYAML: yaml, builtInYAML: yaml)
+  }
+
+  public func applyV1Configurations(regularYAML: String, builtInYAML: String) throws {
+    let regularConfiguration = try decodeConfiguration(
+      yaml: regularYAML,
+      role: .regular
+    )
+    let builtInConfiguration = try decodeConfiguration(
+      yaml: builtInYAML,
+      role: .builtIn
+    )
+    let regularRuntime = KamidanaConfigurationV1Adapter.makeLegacyConfig(
+      from: regularConfiguration
+    )
+    let builtInRuntime = KamidanaConfigurationV1Adapter.makeLegacyConfig(
+      from: builtInConfiguration
+    )
+
+    var combinedRuntime = regularRuntime
+    combinedRuntime.builtInDisplay = builtInRuntime.builtInDisplay
+
+    regularV1Config = regularConfiguration
+    builtInV1Config = builtInConfiguration
+    regularColors = regularRuntime.colors
+    builtInColors = builtInRuntime.colors
+    currentConfig = combinedRuntime
+    activateConfiguration(isBuiltIn: isUsingBuiltInConfiguration)
+  }
+
+  private func decodeConfiguration(
+    yaml: String,
+    role: MonitorConfigurationRole
+  ) throws -> KamidanaConfigurationV1 {
+    do {
+      return try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    } catch {
+      let currentSchemaError = error
+      do {
+        let global: KamidanaConfigurationV1Global?
+        let display: LegacyMonitorDisplayConfiguration?
+        switch role {
+        case .regular:
+          let legacy = try YAMLDecoder().decode(
+            LegacyRegularMonitorConfiguration.self,
+            from: yaml
+          )
+          global = legacy.global
+          display = legacy.externalMonitor
+        case .builtIn:
+          let legacy = try YAMLDecoder().decode(
+            LegacyBuiltInMonitorConfiguration.self,
+            from: yaml
+          )
+          global = legacy.global
+          display = legacy.builtInMonitor
+        }
+
+        guard let display else { throw currentSchemaError }
+        let baseGlobal = global ?? KamidanaConfigurationV1Global()
+        let configuration = KamidanaConfigurationV1(
+          global: KamidanaConfigurationV1Global(
+            backgroundMode: baseGlobal.backgroundMode,
+            hideInFullscreen: baseGlobal.hideInFullscreen,
+            style: display.style.map {
+              KamidanaConfigurationV1Adapter.mergedStyle(baseGlobal.style, $0)
+            } ?? baseGlobal.style
+          ),
+          left: display.left ?? KamidanaConfigurationV1Section(),
+          center: display.center,
+          right: display.right ?? KamidanaConfigurationV1Section()
+        )
+        try configuration.validate()
+        return configuration
+      } catch {
+        throw currentSchemaError
+      }
+    }
+  }
+
+  public func configurationForDisplay(isBuiltIn: Bool) -> KamidanaConfigurationV1? {
+    if isBuiltIn {
+      return builtInV1Config ?? regularV1Config
+    }
+    return regularV1Config ?? builtInV1Config
+  }
+
+  public func activateConfiguration(isBuiltIn: Bool) {
+    isUsingBuiltInConfiguration = isBuiltIn
+    currentConfig.colors = isBuiltIn ? builtInColors : regularColors
   }
 
   /// Resolves the fixed configuration directory: ~/.config/kamidana/
@@ -523,6 +684,14 @@ public class ConfigManager {
   ) -> URL {
     return resolveConfigDirectory(homeDirectory: homeDirectory)
       .appendingPathComponent(Self.MAIN_CONFIG_FILE_NAME)
+  }
+
+  /// Resolves the built-in display configuration file URL.
+  public func resolveBuiltInConfigFileURL(
+    homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
+  ) -> URL {
+    return resolveConfigDirectory(homeDirectory: homeDirectory)
+      .appendingPathComponent(Self.BUILT_IN_CONFIG_FILE_NAME)
   }
 
   /// Returns the path string of the user's config directory (~/.config/kamidana)

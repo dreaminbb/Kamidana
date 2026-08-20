@@ -91,7 +91,8 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
   func testRejectsIconPropertyOnRegularWidget() {
     let yaml = validYAML.replacingOccurrences(
       of: "      format: \"{connection_icon} {upload} {upload_icon} {download} {download_icon}\"\n",
-      with: "      format: \"{connection_icon} {upload} {upload_icon} {download} {download_icon}\"\n      icon: \"network\"\n"
+      with:
+        "      format: \"{connection_icon} {upload} {upload_icon} {download} {download_icon}\"\n      icon: \"network\"\n"
     )
     assertError(
       yaml,
@@ -115,15 +116,109 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
       })
   }
 
-  func testRejectsCenterDefaultWithoutCompactFormat() {
-    let yaml = validYAML.replacingOccurrences(
-      of: "      compact_format: \"music {title}\"\n", with: "")
+  func testRejectsCenterDefaultWithoutAnyNormalFormat() {
+    let yaml =
+      validYAML
+      .replacingOccurrences(of: "      compact_format: \"music {title}\"\n", with: "")
+      .replacingOccurrences(of: "      format: \"music {title}\"\n", with: "")
     assertError(
       yaml,
       matches: {
         if case .centerDefaultRequiresCompactFormat("music-main") = $0 { return true }
         return false
       })
+  }
+
+  func testDecodesStandaloneAndCenterMusicStates() throws {
+    let yaml = """
+      left:
+        widgets:
+          - id: music-left
+            type: music
+            format: "{artwork} {title}"
+            format_on_action: "{artwork} {slider}"
+            slider_change: "#111111"
+            slider_pause: "#222222"
+            slider_bar: "#333333"
+            extend: right
+            artwork_spin: 4
+      center:
+        center_default: music-center
+        widgets:
+          - id: music-center
+            type: music
+            normal:
+              format: "{artwork} {title}"
+              format_on_action: "{artwork} {slider}"
+              slider_change: "#444444"
+              slider_pause: "#555555"
+              slider_bar: "#666666"
+              extend: left
+              artwork_spin: 3
+            on_action:
+              format: "{title} - {album}"
+              artwork_spin: 0
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let standalone = try XCTUnwrap(configuration.left.widgets.first)
+    XCTAssertEqual(standalone.formatOnAction, "{artwork} {slider}")
+    XCTAssertEqual(standalone.extend, .right)
+    XCTAssertEqual(standalone.sliderBar, "#333333")
+
+    let center = try XCTUnwrap(configuration.center.widgets.first)
+    XCTAssertEqual(center.normal?.format, "{artwork} {title}")
+    XCTAssertEqual(center.normal?.extend, .left)
+    XCTAssertEqual(center.onAction?.format, "{title} - {album}")
+    XCTAssertEqual(center.onAction?.artworkSpin, 0)
+  }
+
+  func testRejectsNegativeArtworkSpinDuration() {
+    let yaml = """
+      left:
+        widgets:
+          - id: music-left
+            type: music
+            format: "{artwork} {title}"
+            artwork_spin: -1
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    assertError(
+      yaml,
+      matches: {
+        if case .invalidWidget(_, let reason) = $0 {
+          return reason.contains("artwork_spin must be zero or a positive number of seconds")
+        }
+        return false
+      }
+    )
+  }
+
+  func testRejectsBooleanArtworkSpinValue() {
+    let yaml = """
+      center:
+        center_default: music
+        widgets:
+          - id: music
+            type: music
+            normal:
+              format: "{artwork} {title}"
+              artwork_spin: true
+      """
+
+    assertError(
+      yaml,
+      matches: {
+        if case .yamlDecoding = $0 { return true }
+        return false
+      }
+    )
   }
 
   func testRejectsBtopOutsideCenter() {
