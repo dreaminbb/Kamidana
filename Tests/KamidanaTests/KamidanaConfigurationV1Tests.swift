@@ -7,6 +7,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     global:
       background_mode: per_section
       hide_in_fullscreen: true
+      bar_padding: 4
       style:
         background: "#111111"
         color: "#eeeeee"
@@ -82,6 +83,8 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(configuration.left.widgets[1].motion, .static)
     XCTAssertEqual(configuration.global.backgroundMode, .perSection)
     XCTAssertTrue(configuration.global.hideInFullscreen)
+    XCTAssertEqual(configuration.global.barPadding.top, 4)
+    XCTAssertEqual(configuration.global.barPadding.leading, 4)
     XCTAssertEqual(configuration.global.popupStyle?.cornerRadius, 14)
     XCTAssertEqual(configuration.global.popupStyle?.border?.width, 2)
     XCTAssertEqual(configuration.left.backgroundMode, .perWidget)
@@ -114,6 +117,10 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
   func testDecodesCombinedMonitorProfiles() throws {
     let yaml = """
       external:
+        global:
+          bar_padding:
+            top: 3
+            leading: 5
         center:
           center_default: external-clock
           widgets:
@@ -121,6 +128,8 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
               type: clock
               compact_format: "{time}"
       built_in:
+        global:
+          bar_padding: 2
         center:
           center_default: built-in-clock
           widgets:
@@ -133,6 +142,9 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
     XCTAssertEqual(profiles.external.center.centerDefault, "external-clock")
     XCTAssertEqual(profiles.builtIn.center.centerDefault, "built-in-clock")
+    XCTAssertEqual(profiles.external.global.barPadding.top, 3)
+    XCTAssertEqual(profiles.external.global.barPadding.leading, 5)
+    XCTAssertEqual(profiles.builtIn.global.barPadding.top, 2)
   }
 
   func testCombinedMonitorProfilesRequireBuiltInAndExternalSections() {

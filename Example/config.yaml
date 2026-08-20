@@ -1,15 +1,15 @@
-# Kamidana v1 configuration for external and built-in displays.
-# Place this file at ~/.config/kamidana/config.yaml.
 external:
   global:
-    background_mode: per_widget
     hide_in_fullscreen: true
+    bar_padding:
+      top: 0
+      leading: 0
+      trailing: 0
     style:
       background: "#1e1e2e"
       color: "#cdd6f4"
       opacity: 0.6
-      padding: 6
-      corner_radius: 12
+      # padding: 6
       material: ultra_thin
       border:
         width: 1
@@ -18,7 +18,7 @@ external:
       background: "#1e1e2e"
       color: "#cdd6f4"
       opacity: 0.96
-      corner_radius: 12
+      corner_radius: 0
       material: ultra_thin
       border:
         width: 1
@@ -26,13 +26,14 @@ external:
 
   left:
     style:
-      spacing: 8
+      spacing: 30
     widgets:
       - id: system-actions
         type: system-action
+        activate: hover
         motion: dynamic
-        icon: "󰀵"
-        folded_icon: "󰉋"
+        icon: ""
+        folded_icon: "󰀵"
         popup_style:
           corner_radius: 14
           border:
@@ -128,7 +129,7 @@ external:
 
   right:
     style:
-      spacing: 8
+      spacing: 25
     widgets:
       - id: cpu
         type: cpu
@@ -183,13 +184,16 @@ external:
 
 built_in:
   global:
-    background_mode: per_widget
     hide_in_fullscreen: true
+    bar_padding:
+      top: 0
+      leading: 0
+      trailing: 0
     style:
       background: "#1e1e2e"
       color: "#cdd6f4"
       opacity: 0.6
-      padding: 6
+      padding: 0
       corner_radius: 0
       material: ultra_thin
       border:
@@ -212,8 +216,8 @@ built_in:
       - id: system-actions
         type: system-action
         motion: dynamic
-        icon: "󰀵"
-        folded_icon: "󰉋"
+        icon: ""
+        folded_icon: "󰀵"
         popup_style:
           corner_radius: 14
           border:
@@ -250,6 +254,17 @@ built_in:
             icon: "󰌾"
             style:
               icon_color: "#f5c2e7"
+
+      - id: network
+        type: network
+        motion: dynamic
+        format: "{connection_icon} {network_name}"
+        style:
+          color: "#cdd6f4"
+          icon_color: "#94e2d5"
+        tooltip: true
+        tooltip_format: "Network"
+
       - id: volume
         type: volume
         motion: dynamic
@@ -293,7 +308,7 @@ built_in:
 
   right:
     style:
-      spacing: 6
+      spacing: 10
     widgets:
       - id: cpu
         type: cpu
@@ -316,20 +331,11 @@ built_in:
         type: widget-folder
         motion: dynamic
         direction: left
-        icon: "󰕰"
-        folded_icon: "󰝖"
+        icon: ":"
+        folded_icon: "<:"
         style:
           icon_color: "#cba6f7"
         widgets:
-          - id: network
-            type: network
-            motion: dynamic
-            format: "{connection_icon} {network_name} 󰕝 {upload}/s 󰓅 {download}/s"
-            style:
-              color: "#cdd6f4"
-              icon_color: "#94e2d5"
-            tooltip: true
-            tooltip_format: "Network"
           - id: gpu
             type: gpu
             motion: dynamic
@@ -351,15 +357,15 @@ built_in:
             style:
               color: "#cdd6f4"
               icon_color: "#89b4fa"
-          - id: battery
-            type: battery
-            motion: dynamic
-            format: "󰁹 {capacity}%"
-            style:
-              color: "#cdd6f4"
-              icon_color: "#a6e3a1"
-          - id: clock
-            type: clock
-            format: "{date} {time}"
-            style:
-              color: "#cdd6f4"
+      - id: battery
+        type: battery
+        motion: dynamic
+        format: "󰁹 {capacity}%"
+        style:
+          color: "#cdd6f4"
+          icon_color: "#a6e3a1"
+      - id: clock
+        type: clock
+        format: "{date} {time}"
+        style:
+          color: "#cdd6f4"

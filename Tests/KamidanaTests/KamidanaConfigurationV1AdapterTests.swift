@@ -9,6 +9,10 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
         style:
           background: "#101010"
           color: "#eeeeee"
+        bar_padding:
+          top: 4
+          leading: 6
+          trailing: 6
         popup_style:
           background: "#202020"
           corner_radius: 12
@@ -61,6 +65,9 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.cornerRadius, 18)
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.border?.width, 2)
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.border?.color, "#00ff00")
+    XCTAssertEqual(legacy.externalDisplay.barPadding.top, 4)
+    XCTAssertEqual(legacy.externalDisplay.barPadding.leading, 6)
+    XCTAssertEqual(legacy.externalDisplay.barPadding.trailing, 6)
   }
 
   func testExecutableResolverUsesOnlyPathEntries() {
@@ -246,6 +253,8 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     let yaml = """
       external:
         global:
+          bar_padding:
+            top: 1
           style:
             color: "#111111"
         left:
@@ -267,6 +276,8 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
               format: "󰍛 {usage}%"
       built_in:
         global:
+          bar_padding:
+            top: 2
           style:
             color: "#222222"
         left:
@@ -298,6 +309,8 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(manager.currentConfig.builtInDisplay.right.first?.typeID, "memory")
     XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: false)?.global.style.color, "#111111")
     XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: true)?.global.style.color, "#222222")
+    XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: false)?.global.barPadding.top, 1)
+    XCTAssertEqual(manager.configurationForDisplay(isBuiltIn: true)?.global.barPadding.top, 2)
 
     manager.activateConfiguration(isBuiltIn: true)
     XCTAssertEqual(manager.currentV1Config?.center.centerDefault, "built-in-center")

@@ -8,6 +8,7 @@ Kamidana reads both display profiles from `~/.config/kamidana/config.yaml`. The 
 external:
   global:
     background_mode: per_widget
+    bar_padding: 0
   left:
     widgets: []
   center:
@@ -22,6 +23,7 @@ external:
 built_in:
   global:
     background_mode: per_widget
+    bar_padding: 0
   left:
     widgets: []
   center:
@@ -44,8 +46,14 @@ The previous two-file layout remains readable for migration, but new configurati
 
 `popup_style` may be declared under `global`, a section (`left`, `center`, or `right`), or an individual widget. Values inherit in that order, so a widget only needs to override the fields that differ. Popup positioning remains application-defined: panels have no speech-bubble arrow and are aligned inward automatically for the left and right sections.
 
+`bar_padding` belongs to `global` and controls the gap between the bar window and the monitor edges. It accepts either a single number or an object with `top`, `bottom`, `leading`, and `trailing`. `top` moves the whole window down from the top edge, `leading` and `trailing` inset the window horizontally, and `bottom` reduces the available vertical extent. When `top` is `0`, the top border is hidden; when `trailing` is `0`, the side borders are hidden.
+
 ```yaml
 global:
+  bar_padding:
+    top: 0
+    leading: 0
+    trailing: 0
   style:
     corner_radius: 8
     border:

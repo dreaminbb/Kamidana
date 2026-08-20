@@ -76,17 +76,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     DispatchQueue.main.async {
       guard let screen = NSScreen.screens.first else { return }
       let screenRect = screen.frame
+      let activeConfiguration = ConfigManager.shared.configurationForDisplay(
+        isBuiltIn: DisplayDetector.isBuiltInMainDisplay()
+      )
+      let barPadding = activeConfiguration?.global.barPadding ?? KamidanaInsets()
 
-      let windowRect = NSRect(
-        x: screenRect.minX,
-        y: screenRect.maxY - self.barHeight,
-        width: screenRect.width,
-        height: self.barHeight
+      let windowRect = Self.windowRect(
+        for: screenRect,
+        barHeight: self.barHeight,
+        barPadding: barPadding
       )
 
       // Snap immediately to the correct position and size without animation
       self.statusBarWindow.setFrame(windowRect, display: true)
     }
+  }
+
+  static func windowRect(
+    for screenRect: NSRect,
+    barHeight: CGFloat,
+    barPadding: KamidanaInsets
+  ) -> NSRect {
+    let top = CGFloat(barPadding.top)
+    let bottom = CGFloat(barPadding.bottom)
+    let leading = CGFloat(barPadding.leading)
+    let trailing = CGFloat(barPadding.trailing)
+    let width = max(0, screenRect.width - leading - trailing)
+    let height = max(0, barHeight - top - bottom)
+    return NSRect(
+      x: screenRect.minX + leading,
+      y: screenRect.maxY - top - height,
+      width: width,
+      height: height
+    )
   }
 }
 
@@ -202,7 +224,10 @@ struct StatusBarView: View {
     .kamidanaSectionSurface(
       style: globalStyle,
       isEnabled: globalMode == .singleBar,
-      includesPadding: false
+      includesPadding: false,
+      outerPadding: currentLayout.barPadding,
+      appliesOuterPaddingToContent: false,
+      hideBorderWhenOuterPaddingIsZero: true
     )
     .environment(\.widgetStyle, currentLayout.style)
     .environmentObject(netManager)

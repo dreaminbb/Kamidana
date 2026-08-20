@@ -294,17 +294,53 @@ public struct BluetoothWidgetConfig: Codable {
 // MARK: - Layout Configuration
 
 public struct DisplayLayoutConfig: Decodable {
-  public var style: WidgetStyleConfig = WidgetStyleConfig.defaultNormal
-  public var left: [WidgetInstance] = []
-  public var center: [WidgetInstance] = []
-  public var right: [WidgetInstance] = []
+  public var style: WidgetStyleConfig
+  public var barPadding: KamidanaInsets
+  public var left: [WidgetInstance]
+  public var center: [WidgetInstance]
+  public var right: [WidgetInstance]
+
+  public init(
+    style: WidgetStyleConfig = WidgetStyleConfig.defaultNormal,
+    barPadding: KamidanaInsets = KamidanaInsets(),
+    left: [WidgetInstance] = [],
+    center: [WidgetInstance] = [],
+    right: [WidgetInstance] = []
+  ) {
+    self.style = style
+    self.barPadding = barPadding
+    self.left = left
+    self.center = center
+    self.right = right
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case style
+    case barPadding = "bar_padding"
+    case left
+    case center
+    case right
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.init(
+      style: try container.decodeIfPresent(WidgetStyleConfig.self, forKey: .style)
+        ?? WidgetStyleConfig.defaultNormal,
+      barPadding: try container.decodeIfPresent(KamidanaInsets.self, forKey: .barPadding)
+        ?? KamidanaInsets(),
+      left: try container.decodeIfPresent([WidgetInstance].self, forKey: .left) ?? [],
+      center: try container.decodeIfPresent([WidgetInstance].self, forKey: .center) ?? [],
+      right: try container.decodeIfPresent([WidgetInstance].self, forKey: .right) ?? []
+    )
+  }
 }
 
 // MARK: - Main Config Struct
 
 public struct Config: Decodable {
   public let UserConfigPath: String = ""
-  public let barTopPadding: Int64 = 5
+  public let barTopPadding: Int64 = 0
   public var colors: GlobalColorsConfig = GlobalColorsConfig()
 
   public var externalDisplay: DisplayLayoutConfig = DisplayLayoutConfig(

@@ -9,7 +9,7 @@ public enum KamidanaConfigurationV1Adapter {
     let globalPopupStyle = configuration.global.popupStyle ?? globalStyle
     applyGlobalStyle(globalStyle, to: &config.colors)
 
-    let external = makeLayout(
+    var external = makeLayout(
       globalStyle: globalStyle,
       left: configuration.left.widgets,
       leftStyle: configuration.left.style,
@@ -26,8 +26,9 @@ public enum KamidanaConfigurationV1Adapter {
       centerDefault: configuration.center.centerDefault,
       globalPopupStyle: globalPopupStyle
     )
+    external.barPadding = configuration.global.barPadding
     config.externalDisplay = external
-    config.builtInDisplay = makeLayout(
+    var builtIn = makeLayout(
       globalStyle: globalStyle,
       left: configuration.left.widgets,
       leftStyle: configuration.left.style,
@@ -45,6 +46,8 @@ public enum KamidanaConfigurationV1Adapter {
       globalPopupStyle: globalPopupStyle,
       compact: true
     )
+    builtIn.barPadding = configuration.global.barPadding
+    config.builtInDisplay = builtIn
     return config
   }
 

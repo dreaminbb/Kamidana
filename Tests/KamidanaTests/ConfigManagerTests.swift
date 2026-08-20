@@ -78,6 +78,20 @@ final class ConfigManagerTests: XCTestCase {
     )
   }
 
+  func testWindowRectAppliesMonitorPaddingToTheBarWindow() {
+    let screenRect = NSRect(x: 100, y: 200, width: 1400, height: 900)
+    let rect = AppDelegate.windowRect(
+      for: screenRect,
+      barHeight: 600,
+      barPadding: KamidanaInsets(top: 12, bottom: 5, leading: 10, trailing: 20)
+    )
+
+    XCTAssertEqual(rect.origin.x, 110)
+    XCTAssertEqual(rect.origin.y, 505)
+    XCTAssertEqual(rect.size.width, 1370)
+    XCTAssertEqual(rect.size.height, 583)
+  }
+
   /// Tests fetchUserConfigPath() returns the fixed directory path string
   func testFetchUserConfigPath() {
     let pathString = manager.fetchUserConfigPath()

@@ -641,17 +641,20 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
   public var hideInFullscreen: Bool
   public var style: KamidanaStyle
   public var popupStyle: KamidanaStyle?
+  public var barPadding: KamidanaInsets
 
   public init(
     backgroundMode: KamidanaBackgroundMode = .singleBar,
     hideInFullscreen: Bool = false,
     style: KamidanaStyle = KamidanaStyle(),
-    popupStyle: KamidanaStyle? = nil
+    popupStyle: KamidanaStyle? = nil,
+    barPadding: KamidanaInsets = KamidanaInsets()
   ) {
     self.backgroundMode = backgroundMode
     self.hideInFullscreen = hideInFullscreen
     self.style = style
     self.popupStyle = popupStyle
+    self.barPadding = barPadding
   }
 
   private enum CodingKeys: String, CodingKey, CaseIterable {
@@ -659,6 +662,7 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
     case hideInFullscreen = "hide_in_fullscreen"
     case style
     case popupStyle = "popup_style"
+    case barPadding = "bar_padding"
   }
 
   public init(from decoder: Decoder) throws {
@@ -670,7 +674,9 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
       hideInFullscreen: try container.decodeIfPresent(Bool.self, forKey: .hideInFullscreen)
         ?? false,
       style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style) ?? KamidanaStyle(),
-      popupStyle: try container.decodeIfPresent(KamidanaStyle.self, forKey: .popupStyle)
+      popupStyle: try container.decodeIfPresent(KamidanaStyle.self, forKey: .popupStyle),
+      barPadding: try container.decodeIfPresent(KamidanaInsets.self, forKey: .barPadding)
+        ?? KamidanaInsets()
     )
   }
 }
@@ -801,8 +807,7 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
 
   /// Validates cross-widget rules and typed style ranges after decoding.
   public func validate() throws {
-    try validateStyle(global.style, path: "global.style")
-    try global.popupStyle.map { try validateStyle($0, path: "global.popup_style") }
+    try validateGlobal(global)
     try validateSection(left, name: "left")
     try validateCenter(center)
     try validateSection(right, name: "right")
@@ -811,6 +816,12 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
     try collectIDs(left.widgets, ids: &ids)
     try collectIDs(center.widgets, ids: &ids)
     try collectIDs(right.widgets, ids: &ids)
+  }
+
+  private func validateGlobal(_ global: KamidanaConfigurationV1Global) throws {
+    try validateStyle(global.style, path: "global.style")
+    try global.popupStyle.map { try validateStyle($0, path: "global.popup_style") }
+    try validateInsets(global.barPadding, path: "global.bar_padding")
   }
 
   private func validateSection(_ section: KamidanaConfigurationV1Section, name: String) throws {
@@ -1108,6 +1119,21 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
     for (state, override) in style.states {
       try validateStyle(override, path: "\(path).states.\(state)")
     }
+  }
+
+  private func validateInsets(_ insets: KamidanaInsets, path: String) throws {
+    func nonNegative(_ value: Double, _ name: String) throws {
+      if value < 0 || !value.isFinite {
+        throw KamidanaConfigurationV1Error.invalidStyle(
+          path: path, reason: "\(name) must be non-negative"
+        )
+      }
+    }
+
+    try nonNegative(insets.top, "padding.top")
+    try nonNegative(insets.bottom, "padding.bottom")
+    try nonNegative(insets.leading, "padding.leading")
+    try nonNegative(insets.trailing, "padding.trailing")
   }
 
   private func collectIDs(_ widgets: [KamidanaWidget], ids: inout Set<String>) throws {

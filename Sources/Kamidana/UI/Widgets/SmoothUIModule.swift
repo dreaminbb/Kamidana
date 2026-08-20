@@ -122,6 +122,9 @@ struct KamidanaSectionSurfaceModifier: ViewModifier {
   let style: KamidanaStyle?
   let isEnabled: Bool
   let includesPadding: Bool
+  let outerPadding: KamidanaInsets?
+  let appliesOuterPaddingToContent: Bool
+  let hideBorderWhenOuterPaddingIsZero: Bool
 
   func body(content: Content) -> some View {
     let colors = ConfigManager.shared.currentConfig.colors
@@ -130,6 +133,10 @@ struct KamidanaSectionSurfaceModifier: ViewModifier {
     let background = style?.background ?? colors.background
     let opacity = style?.opacity ?? 0.6
     let borderColor = style?.border?.color ?? colors.surface
+    let outerTop = outerPadding?.top ?? 0
+    let outerBottom = outerPadding?.bottom ?? 0
+    let outerLeading = outerPadding?.leading ?? 0
+    let outerTrailing = outerPadding?.trailing ?? 0
     let borderWidth = style?.border?.width ?? 1
     let material: AnyShapeStyle = {
       switch style?.material {
@@ -148,6 +155,10 @@ struct KamidanaSectionSurfaceModifier: ViewModifier {
 
     return AnyView(
       content
+        .padding(.top, appliesOuterPaddingToContent ? outerTop : 0)
+        .padding(.bottom, appliesOuterPaddingToContent ? outerBottom : 0)
+        .padding(.leading, appliesOuterPaddingToContent ? outerLeading : 0)
+        .padding(.trailing, appliesOuterPaddingToContent ? outerTrailing : 0)
         .padding(.top, includesPadding ? padding?.top ?? 0 : 0)
         .padding(.bottom, includesPadding ? padding?.bottom ?? 0 : 0)
         .padding(.leading, includesPadding ? padding?.leading ?? 0 : 0)
@@ -162,10 +173,46 @@ struct KamidanaSectionSurfaceModifier: ViewModifier {
           RoundedRectangle(cornerRadius: cornerRadius)
             .fill(material)
         )
-        .overlay(
-          RoundedRectangle(cornerRadius: cornerRadius)
-            .stroke(Color(hex: borderColor), lineWidth: borderWidth)
-        )
+        .overlay {
+          if borderWidth > 0 {
+            GeometryReader { proxy in
+              let size = proxy.size
+              let topVisible = !hideBorderWhenOuterPaddingIsZero || outerTop > 0
+              let sideVisible = !hideBorderWhenOuterPaddingIsZero || outerTrailing > 0
+              let bottomVisible = true
+              let leadingVisible = sideVisible
+              let trailingVisible = sideVisible
+              let inset = borderWidth / 2
+              let horizontalInset = max(cornerRadius, inset)
+              let verticalInset = max(cornerRadius, inset)
+
+              Path { path in
+                if topVisible {
+                  path.move(to: CGPoint(x: horizontalInset, y: inset))
+                  path.addLine(
+                    to: CGPoint(x: size.width - horizontalInset, y: inset))
+                }
+                if bottomVisible {
+                  path.move(to: CGPoint(x: horizontalInset, y: size.height - inset))
+                  path.addLine(
+                    to: CGPoint(x: size.width - horizontalInset, y: size.height - inset))
+                }
+                if leadingVisible {
+                  path.move(to: CGPoint(x: inset, y: verticalInset))
+                  path.addLine(
+                    to: CGPoint(x: inset, y: size.height - verticalInset))
+                }
+                if trailingVisible {
+                  path.move(to: CGPoint(x: size.width - inset, y: verticalInset))
+                  path.addLine(
+                    to: CGPoint(x: size.width - inset, y: size.height - verticalInset))
+                }
+              }
+              .stroke(Color(hex: borderColor), lineWidth: borderWidth)
+              .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            }
+          }
+        }
         .shadow(
           color: Color(hex: style?.shadow?.color ?? colors.background)
             .opacity(style?.shadow?.opacity ?? 0),
@@ -385,13 +432,19 @@ extension View {
   func kamidanaSectionSurface(
     style: KamidanaStyle?,
     isEnabled: Bool,
-    includesPadding: Bool = true
+    includesPadding: Bool = true,
+    outerPadding: KamidanaInsets? = nil,
+    appliesOuterPaddingToContent: Bool = true,
+    hideBorderWhenOuterPaddingIsZero: Bool = false
   ) -> some View {
     modifier(
       KamidanaSectionSurfaceModifier(
         style: style,
         isEnabled: isEnabled,
-        includesPadding: includesPadding
+        includesPadding: includesPadding,
+        outerPadding: outerPadding,
+        appliesOuterPaddingToContent: appliesOuterPaddingToContent,
+        hideBorderWhenOuterPaddingIsZero: hideBorderWhenOuterPaddingIsZero
       ))
   }
 }
