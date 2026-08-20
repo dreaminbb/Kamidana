@@ -38,6 +38,47 @@ The application selects the profile automatically by checking whether the active
 
 The previous two-file layout remains readable for migration, but new configuration and documentation use only the combined file.
 
+## Widget and Popup Surfaces
+
+`style` controls the normal widget surface. `popup_style` controls its expanded panel. Both accept `background`, `color`, `opacity`, `corner_radius`, `material`, `border`, and `shadow`. `style` additionally controls the compact widget's padding and hover state.
+
+`popup_style` may be declared under `global`, a section (`left`, `center`, or `right`), or an individual widget. Values inherit in that order, so a widget only needs to override the fields that differ. Popup positioning remains application-defined: panels have no speech-bubble arrow and are aligned inward automatically for the left and right sections.
+
+```yaml
+global:
+  style:
+    corner_radius: 8
+    border:
+      width: 1
+      color: "#585b70"
+  popup_style:
+    background: "#1e1e2e"
+    opacity: 0.96
+    corner_radius: 12
+    material: ultra_thin
+    border:
+      width: 1
+      color: "#585b70"
+
+left:
+  widgets:
+    - id: system-actions
+      type: system-action
+      icon: "󰀵"
+      popup_style:
+        corner_radius: 16
+        border:
+          width: 2
+          color: "#89b4fa"
+      children:
+        - id: sleep
+          type: sleep
+          format: "Sleep"
+          icon: "󰒲"
+```
+
+Set `border.width` to `0` to disable an outline. The same distinction applies to center: `style` is the collapsed Island surface and `popup_style` is its expanded surface.
+
 ## Widget Motion
 
 Every widget accepts `motion`. It controls application-owned expansion and popup transitions without allowing arbitrary UI positioning.
@@ -59,9 +100,9 @@ Every widget accepts `motion`. It controls application-owned expansion and popup
       icon: "󰒲"
 ```
 
-The same setting controls a center-default widget's Island expansion. Each monitor configuration may choose a different value.
+The same setting controls a center-default widget's Island expansion. Each monitor configuration may choose a different value. All popup types use the same motion path; `static` never runs a presentation transition.
 
-`style.animation` remains responsible for surface styling transitions such as hover colors; `motion` controls whether popup and expansion movement occurs.
+`style.animation` remains responsible for surface styling transitions such as hover colors; `motion` controls whether popup and expansion movement occurs. For `activate: hover`, the popup remains open while either the normal widget or the popup itself is hovered, including while the pointer crosses the gap between them.
 
 ## NerdFont Icons Configuration
 

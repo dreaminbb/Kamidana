@@ -11,6 +11,18 @@ external:
       padding: 6
       corner_radius: 12
       material: ultra_thin
+      border:
+        width: 1
+        color: "#585b70"
+    popup_style:
+      background: "#1e1e2e"
+      color: "#cdd6f4"
+      opacity: 0.96
+      corner_radius: 12
+      material: ultra_thin
+      border:
+        width: 1
+        color: "#585b70"
 
   left:
     style:
@@ -21,6 +33,11 @@ external:
         motion: dynamic
         icon: "󰀵"
         folded_icon: "󰉋"
+        popup_style:
+          corner_radius: 14
+          border:
+            width: 1
+            color: "#585b70"
         children:
           - id: about-this-mac
             type: about-this-mac
@@ -93,6 +110,11 @@ external:
         style:
           color: "#cdd6f4"
           icon_color: "#f5c2e7"
+        popup_style:
+          corner_radius: 20
+          border:
+            width: 1
+            color: "#89b4fa"
         part_styles:
           media:
             color: "#cdd6f4"
@@ -170,6 +192,18 @@ built_in:
       padding: 6
       corner_radius: 0
       material: ultra_thin
+      border:
+        width: 1
+        color: "#585b70"
+    popup_style:
+      background: "#1e1e2e"
+      color: "#cdd6f4"
+      opacity: 0.96
+      corner_radius: 12
+      material: ultra_thin
+      border:
+        width: 1
+        color: "#585b70"
 
   left:
     style:
@@ -180,6 +214,11 @@ built_in:
         motion: dynamic
         icon: "󰀵"
         folded_icon: "󰉋"
+        popup_style:
+          corner_radius: 14
+          border:
+            width: 1
+            color: "#585b70"
         children:
           - id: about-this-mac
             type: about-this-mac
@@ -243,6 +282,11 @@ built_in:
         style:
           color: "#cdd6f4"
           icon_color: "#f5c2e7"
+        popup_style:
+          corner_radius: 20
+          border:
+            width: 1
+            color: "#89b4fa"
       - id: btop
         type: btop
         compact_format: ""

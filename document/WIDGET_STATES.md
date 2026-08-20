@@ -27,7 +27,7 @@ This document tracks the application-defined UI states required by the customiza
 
 | Widget | Defined states | Missing states |
 |---|---|---|
-| Island | compact, expanded, selected tab | click activation, expansion disabled, empty center |
+| Island | camera-hidden built-in compact state, camera-cleared expanded state, selected tab, retained hover bridge, static and dynamic motion, normal and popup outlines | click activation, expansion disabled, empty center |
 | Music | regular normal, regular activated, center normal, center activated, playing, paused, no track, no artwork, no track duration | deterministic visual previews |
 | btop | executable available | executable unavailable |
 | Regular center widget | compact format, expanded factory view | unavailable data and empty compact content |
@@ -36,10 +36,10 @@ This document tracks the application-defined UI states required by the customiza
 
 | Widget | Defined states | Missing states |
 |---|---|---|
-| Volume | unified input/output popup, codec details, mute, sliders, device lists, input disabled, output disabled, both disabled, empty device list | device error |
+| Volume | unified arrowless input/output popup, codec details, mute, sliders, device lists, input disabled, output disabled, both disabled, empty device list, retained hover | device error |
 | Bluetooth | on, off, connected device list, no connected devices | unavailable hardware, permission denied, refresh error |
-| Widget Folder | collapsed, expanded, supported directions, static and dynamic motion | unavailable child factory |
-| System Action | action buttons | execution failure feedback |
+| Widget Folder | collapsed, arrowless expanded panel, supported directions, static and dynamic motion, configurable normal and popup surfaces, retained hover | unavailable child factory |
+| System Action | rounded arrowless action panel, configurable normal and popup outlines | execution failure feedback |
 
 ## Ordered Acceptance Queue
 

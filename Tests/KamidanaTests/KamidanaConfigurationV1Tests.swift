@@ -18,10 +18,18 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
           preset: spring
           duration_seconds: 0.25
           damping: 0.7
+      popup_style:
+        background: "#121212"
+        corner_radius: 14
+        border:
+          width: 2
+          color: "#333333"
     left:
       background_mode: per_widget
       style:
         spacing: 4
+      popup_style:
+        corner_radius: 16
       widgets:
         - id: actions
           type: system-action
@@ -38,6 +46,8 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
           type: network
           motion: static
           format: "{connection_icon} {upload} {upload_icon} {download} {download_icon}"
+          popup_style:
+            corner_radius: 18
     center:
       activate: hover
       center_default: music-main
@@ -72,12 +82,33 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(configuration.left.widgets[1].motion, .static)
     XCTAssertEqual(configuration.global.backgroundMode, .perSection)
     XCTAssertTrue(configuration.global.hideInFullscreen)
+    XCTAssertEqual(configuration.global.popupStyle?.cornerRadius, 14)
+    XCTAssertEqual(configuration.global.popupStyle?.border?.width, 2)
     XCTAssertEqual(configuration.left.backgroundMode, .perWidget)
+    XCTAssertEqual(configuration.left.popupStyle?.cornerRadius, 16)
+    XCTAssertEqual(configuration.left.widgets[1].popupStyle?.cornerRadius, 18)
     XCTAssertEqual(configuration.center.centerDefault, "music-main")
     XCTAssertEqual(configuration.center.activate, .hover)
     XCTAssertEqual(configuration.center.widgets.count, 2)
     XCTAssertEqual(configuration.left.widgets[0].actionChildren[0].id, "sleep-action")
     XCTAssertEqual(configuration.center.widgets[0].partStyles["media"]?.color, "#ffffff")
+  }
+
+  func testRejectsInvalidPopupStyleNumericValue() {
+    let yaml = validYAML.replacingOccurrences(
+      of: "      popup_style:\n        corner_radius: 18\n",
+      with: "      popup_style:\n        corner_radius: -1\n"
+    )
+
+    assertError(
+      yaml,
+      matches: {
+        if case .invalidStyle(let path, let reason) = $0 {
+          return path.contains("popup_style") && reason.contains("corner_radius")
+        }
+        return false
+      }
+    )
   }
 
   func testDecodesCombinedMonitorProfiles() throws {

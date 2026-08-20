@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 enum WidgetSurfaceMetrics {
@@ -176,6 +177,108 @@ struct KamidanaSectionSurfaceModifier: ViewModifier {
   }
 }
 
+struct KamidanaPopupSurfaceModifier: ViewModifier {
+  @Environment(\.kamidanaPopupStyle) private var style
+
+  func body(content: Content) -> some View {
+    let colors = ConfigManager.shared.currentConfig.colors
+    let cornerRadius = style?.cornerRadius ?? 12
+    let background = style?.background ?? colors.background
+    let opacity = style?.opacity ?? 0.96
+    let borderColor = style?.border?.color ?? colors.surfaceBorder
+    let borderWidth = style?.border?.width ?? 1
+    let material: AnyShapeStyle = {
+      switch style?.material {
+      case .some(.none): return AnyShapeStyle(Color.clear)
+      case .thin: return AnyShapeStyle(.thinMaterial)
+      case .regular: return AnyShapeStyle(.regularMaterial)
+      case .thick: return AnyShapeStyle(.thickMaterial)
+      case .chrome: return AnyShapeStyle(.bar)
+      case .some(.ultraThin), nil: return AnyShapeStyle(.ultraThinMaterial)
+      }
+    }()
+
+    content
+      .foregroundColor(style?.color.map(Color.init(hex:)) ?? Color(hex: colors.textPrimary))
+      .background(
+        RoundedRectangle(cornerRadius: cornerRadius)
+          .fill(Color(hex: background).opacity(opacity))
+      )
+      .background(
+        RoundedRectangle(cornerRadius: cornerRadius)
+          .fill(material)
+      )
+      .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+      .overlay(
+        RoundedRectangle(cornerRadius: cornerRadius)
+          .stroke(Color(hex: borderColor), lineWidth: borderWidth)
+      )
+      .shadow(
+        color: Color(hex: style?.shadow?.color ?? colors.background)
+          .opacity(style?.shadow?.opacity ?? 0.28),
+        radius: style?.shadow?.radius ?? 12,
+        x: style?.shadow?.x ?? 0,
+        y: style?.shadow?.y ?? 6
+      )
+      .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
+  }
+}
+
+private struct WidgetPopupModifier<PopupContent: View>: ViewModifier {
+  @Binding var isPresented: Bool
+  let activation: KamidanaActivation
+  let hoverState: WidgetPopoverHoverState
+  let popupContent: () -> PopupContent
+
+  @Environment(\.kamidanaWidgetMotion) private var motion
+  @Environment(\.kamidanaPopupHorizontalAlignment) private var horizontalAlignment
+
+  func body(content: Content) -> some View {
+    content
+      .zIndex(isPresented ? 1_000 : 0)
+      .overlay(alignment: horizontalAlignment.swiftUIAlignment) {
+        if isPresented {
+          popupContent()
+            .modifier(KamidanaPopupSurfaceModifier())
+            .offset(y: 40)
+            .transition(popupTransition)
+            .onHover {
+              hoverState.updatePopoverHover(
+                $0,
+                isPresented: $isPresented,
+                activation: activation
+              )
+            }
+            .zIndex(1_000)
+        }
+      }
+      .animation(popupAnimation, value: isPresented)
+      .onReceive(
+        NSWorkspace.shared.notificationCenter.publisher(
+          for: NSWorkspace.didActivateApplicationNotification
+        )
+      ) { notification in
+        guard
+          let application = notification.userInfo?[NSWorkspace.applicationUserInfoKey]
+            as? NSRunningApplication,
+          application.bundleIdentifier != Bundle.main.bundleIdentifier
+        else { return }
+        hoverState.reset()
+        isPresented = false
+      }
+  }
+
+  private var popupAnimation: Animation? {
+    guard motion == .dynamic else { return nil }
+    return .spring(response: 0.3, dampingFraction: 0.84)
+  }
+
+  private var popupTransition: AnyTransition {
+    guard motion == .dynamic else { return .identity }
+    return .move(edge: .top).combined(with: .opacity)
+  }
+}
+
 struct WidgetButtonStyle: ButtonStyle {
   func makeBody(configuration: Configuration) -> some View {
     configuration.label
@@ -214,6 +317,12 @@ final class WidgetPopoverHoverState {
     updatePresentation(isPresented: isPresented)
   }
 
+  func reset() {
+    isAnchorHovered = false
+    isPopoverHovered = false
+    pendingCloseID = nil
+  }
+
   private func updatePresentation(isPresented: Binding<Bool>) {
     guard !Self.shouldRemainPresented(
       anchorHovered: isAnchorHovered,
@@ -226,7 +335,7 @@ final class WidgetPopoverHoverState {
 
     let closeID = UUID()
     pendingCloseID = closeID
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
       guard self?.pendingCloseID == closeID,
             let self,
             !Self.shouldRemainPresented(
@@ -255,6 +364,22 @@ extension View {
         activation: activation
       )
     }
+  }
+
+  func widgetPopup<PopupContent: View>(
+    isPresented: Binding<Bool>,
+    activation: KamidanaActivation,
+    hoverState: WidgetPopoverHoverState,
+    @ViewBuilder content: @escaping () -> PopupContent
+  ) -> some View {
+    modifier(
+      WidgetPopupModifier(
+        isPresented: isPresented,
+        activation: activation,
+        hoverState: hoverState,
+        popupContent: content
+      )
+    )
   }
 
   func kamidanaSectionSurface(

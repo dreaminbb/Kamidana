@@ -9,15 +9,25 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
         style:
           background: "#101010"
           color: "#eeeeee"
+        popup_style:
+          background: "#202020"
+          corner_radius: 12
       left:
         style:
           padding: 9
+        popup_style:
+          corner_radius: 16
         widgets:
           - id: left-cpu
             type: cpu
             format: "󰍛 {usage}%"
             style:
               icon_color: "#ff0000"
+            popup_style:
+              corner_radius: 18
+              border:
+                width: 2
+                color: "#00ff00"
       center:
         center_default: music
         widgets:
@@ -47,6 +57,10 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1Format, "󰍛 {usage}%")
     XCTAssertEqual(legacy.externalDisplay.right.first?.v1Style?.cornerRadius, 20)
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1Style?.padding?.top, 9)
+    XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.background, "#202020")
+    XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.cornerRadius, 18)
+    XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.border?.width, 2)
+    XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.border?.color, "#00ff00")
   }
 
   func testExecutableResolverUsesOnlyPathEntries() {

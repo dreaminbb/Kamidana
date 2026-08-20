@@ -3,13 +3,14 @@ import SwiftUI
 
 struct CpuGpuWidget: View {
     @ObservedObject var matrix: SystemMatrix
+    @Environment(\.kamidanaWidgetActivation) private var widgetActivation
     let config: CpuWidgetConfig
     @State private var showPopover = false
-    @State private var isHovered = false
+    @State private var hoverState = WidgetPopoverHoverState()
     
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        Button(action: { showPopover.toggle() }) {
+        Button(action: { if activation == .click { showPopover.toggle() } }) {
             VStack(alignment: .leading, spacing: 2) {
                 if let cpu = matrix.data.cpuUsage {
                     HStack(spacing: 4) {
@@ -29,11 +30,12 @@ struct CpuGpuWidget: View {
             }
         }
         .buttonStyle(WidgetButtonStyle())
-        .onHover { hover in
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
-            showPopover = hover
-        }
-        .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+        .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
+        .widgetPopup(
+            isPresented: $showPopover,
+            activation: activation,
+            hoverState: hoverState
+        ) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Processor Details")
@@ -116,9 +118,10 @@ struct CpuGpuWidget: View {
                 .frame(width: 250)
             }
             .frame(maxHeight: 400)
-            .background(Color(hex: colors.background))
         }
     }
+
+    private var activation: KamidanaActivation { widgetActivation ?? .hover }
     
     private func getCPUColor(_ usage: Float) -> Color {
         let colors = ConfigManager.shared.currentConfig.colors

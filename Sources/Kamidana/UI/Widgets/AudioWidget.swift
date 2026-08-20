@@ -24,12 +24,12 @@ struct AudioWidget: View {
         }
         .buttonStyle(WidgetButtonStyle())
         .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-        .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+        .widgetPopup(
+            isPresented: $showPopover,
+            activation: activation,
+            hoverState: hoverState
+        ) {
             popoverContent(colors: colors)
-                .onHover {
-                    hoverState.updatePopoverHover(
-                        $0, isPresented: $showPopover, activation: activation)
-                }
         }
     }
 
@@ -91,8 +91,7 @@ struct AudioWidget: View {
             }
         }
         .padding()
-        .frame(width: 320, alignment: .leading)
-        .background(Color(hex: colors.background))
+        .frame(width: 340, alignment: .leading)
     }
 
     @ViewBuilder
@@ -110,6 +109,11 @@ struct AudioWidget: View {
         selectDevice: @escaping (AudioDevice) -> Void,
         colors: GlobalColorsConfig
     ) -> some View {
+        let rowHeight: CGFloat = 30
+        let listHeight = devices.count >= 4
+            ? 120
+            : max(rowHeight, CGFloat(devices.count) * rowHeight + CGFloat(max(0, devices.count - 1)) * 6)
+
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
@@ -145,7 +149,7 @@ struct AudioWidget: View {
                     .font(.system(size: 12))
                     .foregroundColor(Color(hex: colors.textTertiary))
             } else {
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: true) {
                     LazyVStack(spacing: 6) {
                         ForEach(devices) { device in
                             Button(action: { selectDevice(device) }) {
@@ -164,7 +168,7 @@ struct AudioWidget: View {
                                 }
                                 .padding(.vertical, 5)
                                 .padding(.horizontal, 8)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(maxWidth: .infinity, minHeight: rowHeight, alignment: .leading)
                                 .background(Color(hex: colors.surface))
                                 .cornerRadius(6)
                                 .contentShape(Rectangle())
@@ -173,7 +177,10 @@ struct AudioWidget: View {
                         }
                     }
                 }
-                .frame(maxHeight: 120)
+                // Show up to three devices at their natural size. Four or more devices
+                // use this fixed viewport and scroll inside it instead of shrinking
+                // every row to fit the popup.
+                .frame(height: listHeight)
             }
         }
     }

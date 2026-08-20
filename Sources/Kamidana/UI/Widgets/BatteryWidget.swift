@@ -4,8 +4,9 @@ struct BatteryWidget: View {
   @EnvironmentObject var matrix: SystemMatrix
   @Environment(\.kamidanaV1Style) private var v1Style
   @Environment(\.kamidanaWidgetFormat) private var widgetFormat
+  @Environment(\.kamidanaWidgetActivation) private var widgetActivation
   @State private var showPopover = false
-  @State private var isHovered = false
+  @State private var hoverState = WidgetPopoverHoverState()
 
   let config: BatteryWidgetConfig
 
@@ -31,7 +32,7 @@ struct BatteryWidget: View {
   var body: some View {
     let colors = ConfigManager.shared.currentConfig.colors
     if let battery = matrix.data.batteryUsage {
-      Button(action: { showPopover.toggle() }) {
+      Button(action: { if activation == .click { showPopover.toggle() } }) {
         let statusColor =
           battery.isCharging
           ? Color(hex: config.chargingColor) : Color(hex: config.dischargingColor)
@@ -50,11 +51,12 @@ struct BatteryWidget: View {
         )
       }
       .buttonStyle(WidgetButtonStyle())
-      .onHover { hover in
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
-        showPopover = hover
-      }
-      .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+      .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
+      .widgetPopup(
+        isPresented: $showPopover,
+        activation: activation,
+        hoverState: hoverState
+      ) {
         VStack(alignment: .leading, spacing: 12) {
           Text("System Power & Thermal")
             .font(.headline)
@@ -122,7 +124,6 @@ struct BatteryWidget: View {
         }
         .padding()
         .frame(width: 240)
-        .background(Color(hex: colors.background))
       }
     }
   }
@@ -136,5 +137,7 @@ struct BatteryWidget: View {
     default: return Color(hex: colors.textPrimary)
     }
   }
+
+  private var activation: KamidanaActivation { widgetActivation ?? .hover }
 
 }

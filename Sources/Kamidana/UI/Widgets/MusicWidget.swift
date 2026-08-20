@@ -44,6 +44,8 @@ struct MusicWidget: View {
   @EnvironmentObject private var musicManager: MusicPlayingManager
   @Environment(\.kamidanaWidgetActivation) private var widgetActivation
   @Environment(\.kamidanaWidgetFormat) private var widgetFormat
+  @Environment(\.kamidanaPopupStyle) private var popupStyle
+  @Environment(\.kamidanaWidgetMotion) private var motion
 
   @State private var isActionPresented = false
   @State private var pendingCloseID: UUID?
@@ -83,6 +85,7 @@ struct MusicWidget: View {
           artworkSpinDuration: config.actionArtworkSpinDuration
         )
         .fixedSize(horizontal: true, vertical: false)
+        .environment(\.kamidanaV1Style, popupStyle)
         .SmoothUIModule()
         .transition(actionTransition)
         .onHover(perform: handleHover)
@@ -147,6 +150,7 @@ struct MusicWidget: View {
   }
 
   private var actionTransition: AnyTransition {
+    guard motion == .dynamic else { return .identity }
     let edge: Edge = config.extend == .right ? .leading : .trailing
     return .move(edge: edge).combined(with: .opacity)
   }
@@ -157,18 +161,36 @@ struct MusicWidget: View {
 
   private func presentAction() {
     guard activation == .click else { return }
-    withAnimation(.easeInOut(duration: 0.2)) {
-      isActionPresented = true
+    updateActionPresentation(true)
+  }
+
+  private func updateActionPresentation(_ isPresented: Bool) {
+    if motion == .dynamic {
+      withAnimation(.easeInOut(duration: 0.2)) {
+        isActionPresented = isPresented
+      }
+    } else {
+      var transaction = Transaction()
+      transaction.disablesAnimations = true
+      withTransaction(transaction) {
+        isActionPresented = isPresented
+      }
     }
+  }
+
+  private func closeAction() {
+    updateActionPresentation(false)
+  }
+
+  private func presentHoveredAction() {
+    guard activation == .hover else { return }
+    updateActionPresentation(true)
   }
 
   private func handleHover(_ isHovered: Bool) {
     if isHovered {
       pendingCloseID = nil
-      guard activation == .hover else { return }
-      withAnimation(.easeInOut(duration: 0.2)) {
-        isActionPresented = true
-      }
+      presentHoveredAction()
       return
     }
 
@@ -176,9 +198,7 @@ struct MusicWidget: View {
     pendingCloseID = closeID
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
       guard pendingCloseID == closeID else { return }
-      withAnimation(.easeInOut(duration: 0.2)) {
-        isActionPresented = false
-      }
+      closeAction()
     }
   }
 }

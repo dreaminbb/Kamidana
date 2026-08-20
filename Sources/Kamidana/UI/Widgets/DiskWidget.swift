@@ -7,7 +7,6 @@ struct DiskWidget: View {
     @Environment(\.kamidanaWidgetActivation) private var widgetActivation
     @State private var showPopover = false
     @State private var hoverState = WidgetPopoverHoverState()
-    @State private var isHovered = false
     let config: DiskWidgetConfig
     
     var body: some View {
@@ -23,8 +22,15 @@ struct DiskWidget: View {
             }
             .buttonStyle(WidgetButtonStyle())
             .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-            .popover(isPresented: $showPopover, arrowEdge: .bottom) {
-                ScrollView {
+            .widgetPopup(
+                isPresented: $showPopover,
+                activation: activation,
+                hoverState: hoverState
+            ) {
+                // Give the popup a stable footprint.  Without an explicit height the
+                // nested ScrollView has no intrinsic height when process data is still
+                // loading (or empty), so the common popup surface collapses vertically.
+                ScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Disk Details")
                             .font(.headline)
@@ -52,7 +58,7 @@ struct DiskWidget: View {
                             Divider().background(Color(hex: colors.surfaceBorder))
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Top I/O Processes").font(.subheadline).foregroundColor(Color(hex: colors.textSecondary))
-                                ForEach(topDisk.prefix(5)) { proc in
+                                ForEach(topDisk.prefix(SystemMatrix.topProcessLimit)) { proc in
                                     HStack {
                                         if let icon = proc.icon {
                                             Image(nsImage: icon).resizable().frame(width: 12, height: 12)
@@ -70,13 +76,9 @@ struct DiskWidget: View {
                         }
                     }
                     .padding()
-                    .frame(width: 250)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxHeight: 300)
-                .background(Color(hex: colors.background))
-                .onHover {
-                    hoverState.updatePopoverHover($0, isPresented: $showPopover, activation: activation)
-                }
+                .frame(width: 320, height: 300, alignment: .topLeading)
             }
         }
     }

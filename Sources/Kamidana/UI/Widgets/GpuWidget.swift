@@ -26,11 +26,12 @@ struct GpuWidget: View {
     }
     .buttonStyle(WidgetButtonStyle())
     .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-    .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+    .widgetPopup(
+      isPresented: $showPopover,
+      activation: activation,
+      hoverState: hoverState
+    ) {
       popoverContent(colors: colors, gpu: gpu)
-        .onHover {
-          hoverState.updatePopoverHover($0, isPresented: $showPopover, activation: activation)
-        }
     }
   }
 
@@ -53,7 +54,6 @@ struct GpuWidget: View {
     }
     .padding()
     .frame(width: 290, alignment: .leading)
-    .background(Color(hex: colors.background))
   }
 
   private func detailRow(label: String, value: String, colors: GlobalColorsConfig) -> some View {

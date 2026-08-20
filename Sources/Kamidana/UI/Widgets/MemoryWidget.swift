@@ -7,7 +7,6 @@ struct MemoryWidget: View {
     @Environment(\.kamidanaWidgetActivation) private var widgetActivation
     @State private var showPopover = false
     @State private var hoverState = WidgetPopoverHoverState()
-    @State private var isHovered = false
     let config: MemoryWidgetConfig
     
     var body: some View {
@@ -27,7 +26,11 @@ struct MemoryWidget: View {
             }
             .buttonStyle(WidgetButtonStyle())
             .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-            .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+            .widgetPopup(
+                isPresented: $showPopover,
+                activation: activation,
+                hoverState: hoverState
+            ) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Memory Details")
                         .font(.headline)
@@ -45,10 +48,6 @@ struct MemoryWidget: View {
                 }
                 .padding()
                 .frame(width: 300, alignment: .leading)
-                .background(Color(hex: colors.background))
-                .onHover {
-                    hoverState.updatePopoverHover($0, isPresented: $showPopover, activation: activation)
-                }
             }
         }
     }

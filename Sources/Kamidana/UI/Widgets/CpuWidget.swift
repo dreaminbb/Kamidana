@@ -28,11 +28,12 @@ struct CpuWidget: View {
     }
     .buttonStyle(WidgetButtonStyle())
     .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-    .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+    .widgetPopup(
+      isPresented: $showPopover,
+      activation: activation,
+      hoverState: hoverState
+    ) {
       popoverContent(colors: colors, cpu: cpu)
-        .onHover {
-          hoverState.updatePopoverHover($0, isPresented: $showPopover, activation: activation)
-        }
     }
   }
 
@@ -59,7 +60,6 @@ struct CpuWidget: View {
     }
     .padding()
     .frame(width: 290, alignment: .leading)
-    .background(Color(hex: colors.background))
   }
 
   @ViewBuilder

@@ -144,6 +144,7 @@ struct StatusBarView: View {
           if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
             factory.makeView(config: instance.config)
               .environment(\.kamidanaV1Style, instance.v1Style)
+              .environment(\.kamidanaPopupStyle, instance.v1PopupStyle)
               .environment(\.kamidanaWidgetFormat, instance.v1Format)
               .environment(\.kamidanaWidgetActivation, instance.v1Activate)
               .kamidanaWidgetMotion(instance.v1Motion)
@@ -156,6 +157,8 @@ struct StatusBarView: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.leading, 10)
       .padding(.top, 5)
+      .environment(\.kamidanaPopupHorizontalAlignment, .leading)
+      .zIndex(200)
 
       // Right widget group
       HStack(
@@ -166,6 +169,7 @@ struct StatusBarView: View {
             if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
               factory.makeView(config: instance.config)
                 .environment(\.kamidanaV1Style, instance.v1Style)
+                .environment(\.kamidanaPopupStyle, instance.v1PopupStyle)
                 .environment(\.kamidanaWidgetFormat, instance.v1Format)
                 .environment(\.kamidanaWidgetActivation, instance.v1Activate)
                 .kamidanaWidgetMotion(instance.v1Motion)
@@ -179,11 +183,17 @@ struct StatusBarView: View {
       .frame(maxWidth: .infinity, alignment: .trailing)
       .padding(.trailing, 10)
       .padding(.top, 5)
+      .environment(\.kamidanaPopupHorizontalAlignment, .trailing)
+      .zIndex(200)
 
       // Keep the Island geometrically centered. On built-in displays this aligns the
       // compact state with the camera/notch instead of moving with the left section.
-      KamidanaIsland(centerWidgets: currentLayout.center)
+      KamidanaIsland(
+        centerWidgets: currentLayout.center,
+        isBuiltInDisplay: isBuiltInDisplay
+      )
         .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
+        .environment(\.kamidanaPopupHorizontalAlignment, .center)
         .fixedSize()
         .kamidanaSectionSurface(style: centerStyle, isEnabled: centerMode == .perSection)
         .padding(.top, isBuiltInDisplay ? 0 : 7)

@@ -476,6 +476,7 @@ public struct KamidanaWidget: Decodable, Equatable {
   public var foldedIcon: String?
   public var direction: KamidanaWidgetFolderDirection?
   public var style: KamidanaStyle?
+  public var popupStyle: KamidanaStyle?
   public var activate: KamidanaActivation?
   public var motion: KamidanaMotion?
   public var interval: Double?
@@ -506,6 +507,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     foldedIcon: String? = nil,
     direction: KamidanaWidgetFolderDirection? = nil,
     style: KamidanaStyle? = nil,
+    popupStyle: KamidanaStyle? = nil,
     activate: KamidanaActivation? = nil,
     motion: KamidanaMotion? = nil,
     interval: Double? = nil,
@@ -535,6 +537,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     self.foldedIcon = foldedIcon
     self.direction = direction
     self.style = style
+    self.popupStyle = popupStyle
     self.activate = activate
     self.motion = motion
     self.interval = interval
@@ -581,6 +584,7 @@ public struct KamidanaWidget: Decodable, Equatable {
       foldedIcon: try container.decodeIfPresent(String.self, forKey: .foldedIcon),
       direction: kind == .widgetFolder ? direction ?? .below : direction,
       style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style),
+      popupStyle: try container.decodeIfPresent(KamidanaStyle.self, forKey: .popupStyle),
       activate: try container.decodeIfPresent(KamidanaActivation.self, forKey: .activate),
       motion: try container.decodeIfPresent(KamidanaMotion.self, forKey: .motion),
       interval: try container.decodeIfPresent(Double.self, forKey: .interval),
@@ -612,7 +616,9 @@ public struct KamidanaWidget: Decodable, Equatable {
     case icon
     case foldedIcon = "folded_icon"
     case direction
-    case style, activate, motion, interval, tooltip
+    case style
+    case popupStyle = "popup_style"
+    case activate, motion, interval, tooltip
     case tooltipFormat = "tooltip_format"
     case widgets, children
     case partStyles = "part_styles"
@@ -634,21 +640,25 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
   public var backgroundMode: KamidanaBackgroundMode
   public var hideInFullscreen: Bool
   public var style: KamidanaStyle
+  public var popupStyle: KamidanaStyle?
 
   public init(
     backgroundMode: KamidanaBackgroundMode = .singleBar,
     hideInFullscreen: Bool = false,
-    style: KamidanaStyle = KamidanaStyle()
+    style: KamidanaStyle = KamidanaStyle(),
+    popupStyle: KamidanaStyle? = nil
   ) {
     self.backgroundMode = backgroundMode
     self.hideInFullscreen = hideInFullscreen
     self.style = style
+    self.popupStyle = popupStyle
   }
 
   private enum CodingKeys: String, CodingKey, CaseIterable {
     case backgroundMode = "background_mode"
     case hideInFullscreen = "hide_in_fullscreen"
     case style
+    case popupStyle = "popup_style"
   }
 
   public init(from decoder: Decoder) throws {
@@ -659,7 +669,8 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
         KamidanaBackgroundMode.self, forKey: .backgroundMode) ?? .singleBar,
       hideInFullscreen: try container.decodeIfPresent(Bool.self, forKey: .hideInFullscreen)
         ?? false,
-      style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style) ?? KamidanaStyle()
+      style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style) ?? KamidanaStyle(),
+      popupStyle: try container.decodeIfPresent(KamidanaStyle.self, forKey: .popupStyle)
     )
   }
 }
@@ -668,23 +679,27 @@ public struct KamidanaConfigurationV1Section: Decodable, Equatable {
   public var backgroundMode: KamidanaBackgroundMode?
   public var activate: KamidanaActivation?
   public var style: KamidanaStyle
+  public var popupStyle: KamidanaStyle?
   public var widgets: [KamidanaWidget]
 
   public init(
     backgroundMode: KamidanaBackgroundMode? = nil,
     activate: KamidanaActivation? = nil,
     style: KamidanaStyle = KamidanaStyle(),
+    popupStyle: KamidanaStyle? = nil,
     widgets: [KamidanaWidget] = []
   ) {
     self.backgroundMode = backgroundMode
     self.activate = activate
     self.style = style
+    self.popupStyle = popupStyle
     self.widgets = widgets
   }
 
   private enum CodingKeys: String, CodingKey, CaseIterable {
     case backgroundMode = "background_mode"
     case activate, style, widgets
+    case popupStyle = "popup_style"
   }
 
   public init(from decoder: Decoder) throws {
@@ -695,6 +710,7 @@ public struct KamidanaConfigurationV1Section: Decodable, Equatable {
         KamidanaBackgroundMode.self, forKey: .backgroundMode),
       activate: try container.decodeIfPresent(KamidanaActivation.self, forKey: .activate),
       style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style) ?? KamidanaStyle(),
+      popupStyle: try container.decodeIfPresent(KamidanaStyle.self, forKey: .popupStyle),
       widgets: try container.decodeIfPresent([KamidanaWidget].self, forKey: .widgets) ?? []
     )
   }
@@ -704,6 +720,7 @@ public struct KamidanaConfigurationV1Center: Decodable, Equatable {
   public var backgroundMode: KamidanaBackgroundMode?
   public var activate: KamidanaActivation?
   public var style: KamidanaStyle
+  public var popupStyle: KamidanaStyle?
   public var centerDefault: String
   public var widgets: [KamidanaWidget]
 
@@ -711,12 +728,14 @@ public struct KamidanaConfigurationV1Center: Decodable, Equatable {
     backgroundMode: KamidanaBackgroundMode? = nil,
     activate: KamidanaActivation? = nil,
     style: KamidanaStyle = KamidanaStyle(),
+    popupStyle: KamidanaStyle? = nil,
     centerDefault: String,
     widgets: [KamidanaWidget]
   ) {
     self.backgroundMode = backgroundMode
     self.activate = activate
     self.style = style
+    self.popupStyle = popupStyle
     self.centerDefault = centerDefault
     self.widgets = widgets
   }
@@ -724,6 +743,7 @@ public struct KamidanaConfigurationV1Center: Decodable, Equatable {
   private enum CodingKeys: String, CodingKey, CaseIterable {
     case backgroundMode = "background_mode"
     case activate, style
+    case popupStyle = "popup_style"
     case centerDefault = "center_default"
     case widgets
   }
@@ -736,6 +756,7 @@ public struct KamidanaConfigurationV1Center: Decodable, Equatable {
         KamidanaBackgroundMode.self, forKey: .backgroundMode),
       activate: try container.decodeIfPresent(KamidanaActivation.self, forKey: .activate),
       style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style) ?? KamidanaStyle(),
+      popupStyle: try container.decodeIfPresent(KamidanaStyle.self, forKey: .popupStyle),
       centerDefault: try container.decode(String.self, forKey: .centerDefault),
       widgets: try container.decode([KamidanaWidget].self, forKey: .widgets)
     )
@@ -781,6 +802,7 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
   /// Validates cross-widget rules and typed style ranges after decoding.
   public func validate() throws {
     try validateStyle(global.style, path: "global.style")
+    try global.popupStyle.map { try validateStyle($0, path: "global.popup_style") }
     try validateSection(left, name: "left")
     try validateCenter(center)
     try validateSection(right, name: "right")
@@ -793,11 +815,13 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
 
   private func validateSection(_ section: KamidanaConfigurationV1Section, name: String) throws {
     try validateStyle(section.style, path: "\(name).style")
+    try section.popupStyle.map { try validateStyle($0, path: "\(name).popup_style") }
     try validateWidgets(section.widgets, section: name, path: "\(name).widgets", isTopLevel: true)
   }
 
   private func validateCenter(_ section: KamidanaConfigurationV1Center) throws {
     try validateStyle(section.style, path: "center.style")
+    try section.popupStyle.map { try validateStyle($0, path: "center.popup_style") }
     guard !section.centerDefault.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
       throw KamidanaConfigurationV1Error.invalidCenterDefault(section.centerDefault)
     }
@@ -856,6 +880,7 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
         throw KamidanaConfigurationV1Error.tooltipFormatRequired(widgetPath)
       }
       try widget.style.map { try validateStyle($0, path: "\(widgetPath).style") }
+      try widget.popupStyle.map { try validateStyle($0, path: "\(widgetPath).popup_style") }
       for (part, style) in widget.partStyles {
         try validateStyle(style, path: "\(widgetPath).part_styles.\(part)")
       }

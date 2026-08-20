@@ -33,5 +33,6 @@ Persisted in the following keys in `UserDefaults`:
 - On the right side, **only CPU / Memory are always displayed**
 - Others (Network / GPU / Disk / Battery / Clock) are collapsed under the `list.bullet` icon
 - Audio codec is not always displayed; it is shown only inside the popover
-- The compact center Music Island is pinned to the screen center so it aligns with the built-in camera/notch
-- Hovering the center Music Island expands it downward from that centered position
+- The compact center Music Island is pinned to the screen center and fully hidden in the built-in camera/notch region while collapsed
+- Hovering the center Music Island moves the complete expanded panel below the camera area so its tabs remain visible
+- A transparent application-defined hover bridge covers the camera-to-panel gap and keeps the expanded UI open while the pointer moves into it

@@ -5,17 +5,19 @@ struct BluetoothWidget: View {
     @EnvironmentObject var bluetooth: BluetoothManager
     @Environment(\.kamidanaV1Style) private var v1Style
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
+    @Environment(\.kamidanaWidgetActivation) private var widgetActivation
     @State private var showPopover = false
-    @State private var isButtonHovered = false
-    @State private var isPopoverHovered = false
+    @State private var hoverState = WidgetPopoverHoverState()
 
     let config: BluetoothWidgetConfig
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
         Button(action: {
-            showPopover.toggle()
-            if showPopover {
+            if activation == .click {
+                showPopover.toggle()
+            }
+            if activation == .click && showPopover {
                 bluetooth.refreshPairedDevices()
             }
         }) {
@@ -38,15 +40,16 @@ struct BluetoothWidget: View {
         .buttonStyle(WidgetButtonStyle())
         .focusable(false)
         .onHover { hover in
-            isButtonHovered = hover
             if hover {
                 bluetooth.refreshPairedDevices()
-                showPopover = true
-            } else {
-                checkDismiss()
             }
         }
-        .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+        .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
+        .widgetPopup(
+            isPresented: $showPopover,
+            activation: activation,
+            hoverState: hoverState
+        ) {
             let connectedDevices = Self.connectedDevices(bluetooth.pairedDevices)
             VStack(alignment: .leading, spacing: 10) {
 
@@ -83,25 +86,10 @@ struct BluetoothWidget: View {
             }
             .padding(12)
             .frame(width: 260)
-            .background(Color(hex: colors.background))
-            .onHover { hover in
-                isPopoverHovered = hover
-                if !hover {
-                    checkDismiss()
-                }
-            }
         }
     }
 
-    private func checkDismiss() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            if !isButtonHovered && !isPopoverHovered {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    showPopover = false
-                }
-            }
-        }
-    }
+    private var activation: KamidanaActivation { widgetActivation ?? .hover }
 
     static func connectedDeviceFormatValues(
         _ devices: [BluetoothDeviceInfo]

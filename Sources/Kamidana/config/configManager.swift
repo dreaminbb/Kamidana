@@ -150,6 +150,7 @@ public struct WidgetInstance: Hashable, Decodable {
   public let typeID: String
   public let config: AnyHashable
   public let v1Style: KamidanaStyle?
+  public let v1PopupStyle: KamidanaStyle?
   public let v1Format: String?
   public let v1Activate: KamidanaActivation?
   public let v1Motion: KamidanaMotion?
@@ -158,6 +159,7 @@ public struct WidgetInstance: Hashable, Decodable {
     typeID: String,
     config: AnyHashable,
     v1Style: KamidanaStyle? = nil,
+    v1PopupStyle: KamidanaStyle? = nil,
     v1Format: String? = nil,
     v1Activate: KamidanaActivation? = nil,
     v1Motion: KamidanaMotion? = nil
@@ -165,6 +167,7 @@ public struct WidgetInstance: Hashable, Decodable {
     self.typeID = typeID
     self.config = config
     self.v1Style = v1Style
+    self.v1PopupStyle = v1PopupStyle
     self.v1Format = v1Format
     self.v1Activate = v1Activate
     self.v1Motion = v1Motion
@@ -172,6 +175,7 @@ public struct WidgetInstance: Hashable, Decodable {
 
   public static func == (lhs: WidgetInstance, rhs: WidgetInstance) -> Bool {
     lhs.typeID == rhs.typeID && lhs.config == rhs.config && lhs.v1Style == rhs.v1Style
+      && lhs.v1PopupStyle == rhs.v1PopupStyle
       && lhs.v1Format == rhs.v1Format
       && lhs.v1Activate == rhs.v1Activate
       && lhs.v1Motion == rhs.v1Motion
@@ -180,6 +184,7 @@ public struct WidgetInstance: Hashable, Decodable {
     hasher.combine(typeID)
     hasher.combine(config)
     hasher.combine(v1Style)
+    hasher.combine(v1PopupStyle)
     hasher.combine(v1Format)
     hasher.combine(v1Activate)
     hasher.combine(v1Motion)

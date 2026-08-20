@@ -6,34 +6,43 @@ public enum KamidanaConfigurationV1Adapter {
   public static func makeLegacyConfig(from configuration: KamidanaConfigurationV1) -> Config {
     var config = Config()
     let globalStyle = configuration.global.style
+    let globalPopupStyle = configuration.global.popupStyle ?? globalStyle
     applyGlobalStyle(globalStyle, to: &config.colors)
 
     let external = makeLayout(
       globalStyle: globalStyle,
       left: configuration.left.widgets,
       leftStyle: configuration.left.style,
+      leftPopupStyle: configuration.left.popupStyle,
       leftActivation: configuration.left.activate,
       center: configuration.center.widgets,
       centerStyle: configuration.center.style,
+      centerPopupStyle: configuration.center.popupStyle,
       centerActivation: configuration.center.activate,
       right: configuration.right.widgets,
       rightStyle: configuration.right.style,
+      rightPopupStyle: configuration.right.popupStyle,
       rightActivation: configuration.right.activate,
-      centerDefault: configuration.center.centerDefault
+      centerDefault: configuration.center.centerDefault,
+      globalPopupStyle: globalPopupStyle
     )
     config.externalDisplay = external
     config.builtInDisplay = makeLayout(
       globalStyle: globalStyle,
       left: configuration.left.widgets,
       leftStyle: configuration.left.style,
+      leftPopupStyle: configuration.left.popupStyle,
       leftActivation: configuration.left.activate,
       center: configuration.center.widgets,
       centerStyle: configuration.center.style,
+      centerPopupStyle: configuration.center.popupStyle,
       centerActivation: configuration.center.activate,
       right: configuration.right.widgets,
       rightStyle: configuration.right.style,
+      rightPopupStyle: configuration.right.popupStyle,
       rightActivation: configuration.right.activate,
       centerDefault: configuration.center.centerDefault,
+      globalPopupStyle: globalPopupStyle,
       compact: true
     )
     return config
@@ -43,14 +52,18 @@ public enum KamidanaConfigurationV1Adapter {
     globalStyle: KamidanaStyle,
     left: [KamidanaWidget],
     leftStyle: KamidanaStyle,
+    leftPopupStyle: KamidanaStyle?,
     leftActivation: KamidanaActivation?,
     center: [KamidanaWidget],
     centerStyle: KamidanaStyle,
+    centerPopupStyle: KamidanaStyle?,
     centerActivation: KamidanaActivation?,
     right: [KamidanaWidget],
     rightStyle: KamidanaStyle,
+    rightPopupStyle: KamidanaStyle?,
     rightActivation: KamidanaActivation?,
     centerDefault: String,
+    globalPopupStyle: KamidanaStyle,
     compact: Bool = false
   ) -> DisplayLayoutConfig {
     let layoutStyle = legacyStyle(globalStyle, compact: compact)
@@ -65,6 +78,7 @@ public enum KamidanaConfigurationV1Adapter {
         makeWidget(
           $0,
           sectionStyle: mergedStyle(globalStyle, leftStyle),
+          sectionPopupStyle: mergedStyle(globalPopupStyle, leftPopupStyle ?? KamidanaStyle()),
           displayFormat: $0.format,
           activation: $0.activate ?? leftActivation,
           musicPlacement: .standalone,
@@ -75,6 +89,7 @@ public enum KamidanaConfigurationV1Adapter {
         makeWidget(
           $0,
           sectionStyle: mergedStyle(globalStyle, centerStyle),
+          sectionPopupStyle: mergedStyle(globalPopupStyle, centerPopupStyle ?? KamidanaStyle()),
           displayFormat: $0.compactFormat ?? $0.normal?.format ?? $0.format,
           activation: $0.activate ?? centerActivation,
           musicPlacement: .center,
@@ -85,6 +100,7 @@ public enum KamidanaConfigurationV1Adapter {
         makeWidget(
           $0,
           sectionStyle: mergedStyle(globalStyle, rightStyle),
+          sectionPopupStyle: mergedStyle(globalPopupStyle, rightPopupStyle ?? KamidanaStyle()),
           displayFormat: $0.format,
           activation: $0.activate ?? rightActivation,
           musicPlacement: .standalone,
@@ -97,12 +113,14 @@ public enum KamidanaConfigurationV1Adapter {
   private static func makeWidget(
     _ widget: KamidanaWidget,
     sectionStyle: KamidanaStyle,
+    sectionPopupStyle: KamidanaStyle,
     displayFormat: String? = nil,
     activation: KamidanaActivation? = nil,
     musicPlacement: MusicWidgetPlacement = .standalone,
     defaultMusicExtend: KamidanaMusicExtendDirection = .right
   ) -> WidgetInstance? {
     let style = mergedStyle(sectionStyle, widget.style ?? KamidanaStyle())
+    let popupStyle = mergedStyle(sectionPopupStyle, widget.popupStyle ?? KamidanaStyle())
     let motion = widget.motion ?? .dynamic
     switch widget.kind {
     case .systemAction:
@@ -117,6 +135,7 @@ public enum KamidanaConfigurationV1Adapter {
             iconColor: childStyle.iconColor ?? "#cba6f7"
           ),
           v1Style: childStyle,
+          v1PopupStyle: popupStyle,
           v1Format: "\(child.icon) \(child.format)",
           v1Motion: motion
         )
@@ -130,7 +149,8 @@ public enum KamidanaConfigurationV1Adapter {
           iconColor: style.iconColor ?? "#cba6f7",
           direction: "below",
           widgets: children
-        ), v1Style: style, v1Format: displayFormat, v1Motion: motion
+        ), v1Style: style, v1PopupStyle: popupStyle, v1Format: displayFormat,
+        v1Activate: activation, v1Motion: motion
       )
 
     case .widgetFolder:
@@ -138,6 +158,7 @@ public enum KamidanaConfigurationV1Adapter {
         makeWidget(
           $0,
           sectionStyle: style,
+          sectionPopupStyle: popupStyle,
           displayFormat: $0.format,
           activation: $0.activate ?? activation,
           musicPlacement: musicPlacement,
@@ -153,7 +174,8 @@ public enum KamidanaConfigurationV1Adapter {
           iconColor: style.iconColor ?? "#cba6f7",
           direction: widget.direction?.rawValue ?? "below",
           widgets: children
-        ), v1Style: style, v1Format: displayFormat, v1Motion: motion
+        ), v1Style: style, v1PopupStyle: popupStyle, v1Format: displayFormat,
+        v1Activate: activation, v1Motion: motion
       )
 
     case .btop:
@@ -163,7 +185,8 @@ public enum KamidanaConfigurationV1Adapter {
         config: TerminalWidgetConfig(
           name: "btop",
           terminalPath: path
-        ), v1Style: style, v1Format: displayFormat, v1Motion: motion
+        ), v1Style: style, v1PopupStyle: popupStyle, v1Format: displayFormat,
+        v1Motion: motion
       )
 
     case .custom:
@@ -174,7 +197,8 @@ public enum KamidanaConfigurationV1Adapter {
           command: command,
           arguments: widget.arguments,
           format: displayFormat
-        ), v1Style: style, v1Format: displayFormat, v1Motion: motion
+        ), v1Style: style, v1PopupStyle: popupStyle, v1Format: displayFormat,
+        v1Motion: motion
       )
 
     case .music:
@@ -204,6 +228,7 @@ public enum KamidanaConfigurationV1Adapter {
         typeID: "music",
         config: value,
         v1Style: style,
+        v1PopupStyle: popupStyle,
         v1Format: value.normalFormat,
         v1Activate: activation,
         v1Motion: motion
@@ -214,19 +239,22 @@ public enum KamidanaConfigurationV1Adapter {
       value.inputManagement = widget.inputManagement
       value.outputManagement = widget.outputManagement
       return WidgetInstance(
-        typeID: "audio", config: value, v1Style: style, v1Format: displayFormat,
+        typeID: "audio", config: value, v1Style: style, v1PopupStyle: popupStyle,
+        v1Format: displayFormat,
         v1Activate: activation, v1Motion: motion)
 
     case .cpu:
       var value = CpuWidgetConfig()
       if let color = style.color { value.dangerColor = color }
       return WidgetInstance(
-        typeID: "cpu", config: value, v1Style: style, v1Format: displayFormat,
+        typeID: "cpu", config: value, v1Style: style, v1PopupStyle: popupStyle,
+        v1Format: displayFormat,
         v1Activate: activation, v1Motion: motion)
 
     case .gpu:
       return WidgetInstance(
-        typeID: "gpu", config: GpuWidgetConfig(), v1Style: style, v1Format: displayFormat,
+        typeID: "gpu", config: GpuWidgetConfig(), v1Style: style,
+        v1PopupStyle: popupStyle, v1Format: displayFormat,
         v1Activate: activation, v1Motion: motion)
 
     case .memory:
@@ -236,7 +264,8 @@ public enum KamidanaConfigurationV1Adapter {
         value.textColor = color
       }
       return WidgetInstance(
-        typeID: "memory", config: value, v1Style: style, v1Format: displayFormat,
+        typeID: "memory", config: value, v1Style: style, v1PopupStyle: popupStyle,
+        v1Format: displayFormat,
         v1Activate: activation, v1Motion: motion)
 
     case .network:
@@ -244,7 +273,8 @@ public enum KamidanaConfigurationV1Adapter {
       if let iconColor = style.iconColor { value.iconColor = iconColor }
       if let color = style.color { value.textColor = color }
       return WidgetInstance(
-        typeID: "network", config: value, v1Style: style, v1Format: displayFormat,
+        typeID: "network", config: value, v1Style: style, v1PopupStyle: popupStyle,
+        v1Format: displayFormat,
         v1Activate: activation, v1Motion: motion)
 
     case .disk:
@@ -254,28 +284,32 @@ public enum KamidanaConfigurationV1Adapter {
         value.textColor = color
       }
       return WidgetInstance(
-        typeID: "disk", config: value, v1Style: style, v1Format: displayFormat,
+        typeID: "disk", config: value, v1Style: style, v1PopupStyle: popupStyle,
+        v1Format: displayFormat,
         v1Activate: activation, v1Motion: motion)
 
     case .battery:
       var value = BatteryWidgetConfig()
       if let color = style.color { value.dischargingColor = color }
       return WidgetInstance(
-        typeID: "battery", config: value, v1Style: style, v1Format: displayFormat,
+        typeID: "battery", config: value, v1Style: style, v1PopupStyle: popupStyle,
+        v1Format: displayFormat,
         v1Activate: activation, v1Motion: motion)
 
     case .clock:
       var value = ClockWidgetConfig()
       if let color = style.color { value.textColor = color }
       return WidgetInstance(
-        typeID: "clock", config: value, v1Style: style, v1Format: displayFormat,
+        typeID: "clock", config: value, v1Style: style, v1PopupStyle: popupStyle,
+        v1Format: displayFormat,
         v1Activate: activation, v1Motion: motion)
 
     case .bluetooth:
       var value = BluetoothWidgetConfig()
       if let color = style.color { value.textColor = color }
       return WidgetInstance(
-        typeID: "bluetooth", config: value, v1Style: style, v1Format: displayFormat,
+        typeID: "bluetooth", config: value, v1Style: style, v1PopupStyle: popupStyle,
+        v1Format: displayFormat,
         v1Activate: activation, v1Motion: motion)
     }
   }

@@ -2,12 +2,15 @@ import SwiftUI
 
 struct WidgetFolder: View {
   @Environment(\.kamidanaWidgetMotion) private var motion
+  @Environment(\.kamidanaWidgetActivation) private var widgetActivation
+  @Environment(\.kamidanaV1Style) private var v1Style
+  @Environment(\.kamidanaPopupStyle) private var popupStyle
   let config: WidgetFolderConfig
   private let verticalContentWidth: CGFloat = 220
-  private let statusBarHeight: CGFloat = 40
 
   @State private var isExpandedInline: Bool = false
   @State private var showPopover = false
+  @State private var hoverState = WidgetPopoverHoverState()
 
   var body: some View {
     let isExpanded = config.direction == "below" ? showPopover : isExpandedInline
@@ -18,44 +21,43 @@ struct WidgetFolder: View {
 
     Group {
       if config.direction == "below" {
-        Button(action: { toggleExpansion($showPopover) }) {
+        Button(action: {
+          if activation == .click { toggleExpansion($showPopover) }
+        }) {
           HStack(spacing: 4) {
             NerdFontIcon(folderIcon).foregroundColor(iconColor)
             if let name = config.name { Text(name).foregroundColor(iconColor) }
           }
         }
         .buttonStyle(WidgetButtonStyle())
-        .overlay(alignment: .topLeading) {
-          if showPopover {
-            VStack(alignment: .leading, spacing: 8) {
-              if let name = config.name {
-                Text(name)
-                  .font(.headline)
-                  .foregroundColor(
-                    Color(hex: ConfigManager.shared.currentConfig.colors.textPrimary))
-              }
-              nestedWidgets(fillWidth: true)
-                .focusable(false)
+        .widgetPopoverActivation(
+          $showPopover,
+          activation: activation,
+          hoverState: hoverState
+        )
+        .widgetPopup(
+          isPresented: $showPopover,
+          activation: activation,
+          hoverState: hoverState
+        ) {
+          VStack(alignment: .leading, spacing: 8) {
+            if let name = config.name {
+              Text(name)
+                .font(.headline)
+                .foregroundColor(
+                  Color(hex: ConfigManager.shared.currentConfig.colors.textPrimary))
             }
-            .padding()
-            .frame(width: verticalContentWidth, alignment: .leading)
-            .background(Color(hex: ConfigManager.shared.currentConfig.colors.background))
-            .overlay(
-              Rectangle()
-                .stroke(
-                  Color(hex: ConfigManager.shared.currentConfig.colors.surfaceBorder),
-                  lineWidth: 1
-                )
-            )
-            .contentShape(Rectangle())
-            .offset(y: statusBarHeight)
-            .transition(expansionTransition(edge: .top))
+            nestedWidgets(fillWidth: true)
+              .focusable(false)
           }
+          .padding()
+          .frame(width: verticalContentWidth, alignment: .leading)
         }
       } else {
         HStack(spacing: 8) {
           if config.direction == "left" && isExpanded {
             nestedWidgets()
+              .transition(expansionTransition(edge: .trailing))
           }
 
           Button(action: { toggleExpansion($isExpandedInline) }) {
@@ -68,9 +70,11 @@ struct WidgetFolder: View {
 
           if config.direction == "right" && isExpanded {
             nestedWidgets()
+              .transition(expansionTransition(edge: .leading))
           }
         }
         .environment(\.isInsideWidgetFolder, true)
+        .environment(\.kamidanaV1Style, isExpandedInline ? popupStyle ?? v1Style : v1Style)
         .SmoothUIModule()
       }
     }
@@ -83,6 +87,7 @@ struct WidgetFolder: View {
         if fillWidth {
           factory.makeView(config: instance.config)
             .environment(\.kamidanaV1Style, instance.v1Style)
+            .environment(\.kamidanaPopupStyle, instance.v1PopupStyle)
             .environment(\.kamidanaWidgetFormat, instance.v1Format)
             .environment(\.kamidanaWidgetActivation, instance.v1Activate)
             .kamidanaWidgetMotion(instance.v1Motion)
@@ -91,6 +96,7 @@ struct WidgetFolder: View {
         } else {
           factory.makeView(config: instance.config)
             .environment(\.kamidanaV1Style, instance.v1Style)
+            .environment(\.kamidanaPopupStyle, instance.v1PopupStyle)
             .environment(\.kamidanaWidgetFormat, instance.v1Format)
             .environment(\.kamidanaWidgetActivation, instance.v1Activate)
             .kamidanaWidgetMotion(instance.v1Motion)
@@ -98,6 +104,10 @@ struct WidgetFolder: View {
         }
       }
     }
+  }
+
+  private var activation: KamidanaActivation {
+    widgetActivation ?? .click
   }
 
   private func toggleExpansion(_ isExpanded: Binding<Bool>) {
