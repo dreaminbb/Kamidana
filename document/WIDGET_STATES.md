@@ -17,7 +17,7 @@ This document tracks the application-defined UI states required by the customiza
 | CPU | value, details | loading, unavailable, collection error, tooltip disabled |
 | GPU | value, details | loading, unsupported hardware, collection error, tooltip disabled |
 | Memory | value, details, process-list loading | value loading, unavailable, empty process list, collection error |
-| Network | wired and wireless compact indicators, transfer values, initial fallback, network name and address details, detail loading and unavailable, Wi-Fi side panel, wired scan disabled | collection error, tooltip disabled |
+| Network | wired and wireless compact indicators, transfer values, cached SSID and network name, address details, detail loading and unavailable, Wi-Fi scanning/loading/empty/failure states, cached scan fallback, Wi-Fi side panel, wired scan disabled | tooltip disabled |
 | Disk | used space, I/O details, process-list loading | value loading, unavailable volume, missing I/O data, empty process list |
 | Battery | charging, discharging, details | battery unavailable, missing power data, missing thermal data |
 | Clock | date and time | invalid format fallback, wake refresh failure |
@@ -36,9 +36,9 @@ This document tracks the application-defined UI states required by the customiza
 
 | Widget | Defined states | Missing states |
 |---|---|---|
-| Volume | input and output controls, mute, device lists | input disabled, output disabled, both disabled, empty device list, device error |
+| Volume | unified input/output popup, codec details, mute, sliders, device lists, input disabled, output disabled, both disabled, empty device list | device error |
 | Bluetooth | on, off, connected device list, no connected devices | unavailable hardware, permission denied, refresh error |
-| Widget Folder | collapsed, expanded, supported directions | unavailable child factory |
+| Widget Folder | collapsed, expanded, supported directions, static and dynamic motion | unavailable child factory |
 | System Action | action buttons | execution failure feedback |
 
 ## Ordered Acceptance Queue

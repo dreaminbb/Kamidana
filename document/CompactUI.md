@@ -27,10 +27,11 @@ Persisted in the following keys in `UserDefaults`:
 
 ## UI Behavior
 
-- Use `built_in_monitor.yaml` when the active main display is built in
-- Use `config.yaml` for an external or other regular main display
+- Use the `built_in` profile from `config.yaml` when the active main display is built in
+- Use the `external` profile from `config.yaml` for an external or other regular main display
 - Reduce font size and spacing when compact mode is active
 - On the right side, **only CPU / Memory are always displayed**
 - Others (Network / GPU / Disk / Battery / Clock) are collapsed under the `list.bullet` icon
 - Audio codec is not always displayed; it is shown only inside the popover
-- Music is placed in the left group and displayed to the left of Wi-Fi
+- The compact center Music Island is pinned to the screen center so it aligns with the built-in camera/notch
+- Hovering the center Music Island expands it downward from that centered position

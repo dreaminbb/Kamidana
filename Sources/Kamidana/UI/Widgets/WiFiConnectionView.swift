@@ -23,7 +23,7 @@ struct WiFiConnectionView: View {
                 Spacer()
                 Button("Refresh") { scanIfAllowed() }
                     .buttonStyle(.plain)
-                    .disabled(!netManager.canScanWiFi)
+                    .disabled(!netManager.canScanWiFi || netManager.wifiScanState == .scanning)
             }
             .padding(.bottom, 5)
 
@@ -34,18 +34,45 @@ struct WiFiConnectionView: View {
                     .padding(.vertical, 8)
             } else if let ssid = selectedSSID {
                 passwordView(ssid: ssid, colors: colors)
-            } else if netManager.availableNetworks.isEmpty {
-                Text("No Wi-Fi networks found or scan is in progress.")
-                    .foregroundColor(Color(hex: colors.textTertiary))
-                    .frame(width: 250, alignment: .center)
-                    .padding()
             } else {
-                networkList(colors: colors)
+                scanContent(colors: colors)
             }
         }
         .padding()
         .background(showsSurface ? Color(hex: colors.background) : Color.clear)
         .onAppear { scanIfAllowed() }
+    }
+
+    @ViewBuilder
+    private func scanContent(colors: GlobalColorsConfig) -> some View {
+        switch netManager.wifiScanState {
+        case .idle, .scanning:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Scanning for Wi-Fi networks...")
+            }
+            .foregroundColor(Color(hex: colors.textTertiary))
+            .frame(width: 250, alignment: .center)
+            .padding()
+        case .loaded:
+            networkList(colors: colors)
+        case .empty:
+            Text("No visible Wi-Fi networks were found.")
+                .foregroundColor(Color(hex: colors.textTertiary))
+                .frame(width: 250, alignment: .center)
+                .padding()
+        case .unavailable(let reason), .failed(let reason):
+            VStack(spacing: 8) {
+                Text("Wi-Fi scan failed")
+                    .foregroundColor(Color(hex: colors.textSecondary))
+                Text(reason)
+                    .font(.caption)
+                    .foregroundColor(Color(hex: colors.textTertiary))
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: 250, alignment: .center)
+            .padding()
+        }
     }
 
     private func scanIfAllowed() {
@@ -96,7 +123,8 @@ struct WiFiConnectionView: View {
                         .padding(.bottom, 5)
                 }
 
-                ForEach(netManager.availableNetworks, id: \.bssid) { network in
+                ForEach(Array(netManager.availableNetworks.enumerated()), id: \.offset) {
+                    _, network in
                     Button {
                         guard let ssid = network.ssid else { return }
                         if netManager.isKnownNetwork(ssid: ssid) {

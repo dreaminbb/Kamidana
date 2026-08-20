@@ -152,25 +152,29 @@ public struct WidgetInstance: Hashable, Decodable {
   public let v1Style: KamidanaStyle?
   public let v1Format: String?
   public let v1Activate: KamidanaActivation?
+  public let v1Motion: KamidanaMotion?
 
   public init(
     typeID: String,
     config: AnyHashable,
     v1Style: KamidanaStyle? = nil,
     v1Format: String? = nil,
-    v1Activate: KamidanaActivation? = nil
+    v1Activate: KamidanaActivation? = nil,
+    v1Motion: KamidanaMotion? = nil
   ) {
     self.typeID = typeID
     self.config = config
     self.v1Style = v1Style
     self.v1Format = v1Format
     self.v1Activate = v1Activate
+    self.v1Motion = v1Motion
   }
 
   public static func == (lhs: WidgetInstance, rhs: WidgetInstance) -> Bool {
     lhs.typeID == rhs.typeID && lhs.config == rhs.config && lhs.v1Style == rhs.v1Style
       && lhs.v1Format == rhs.v1Format
       && lhs.v1Activate == rhs.v1Activate
+      && lhs.v1Motion == rhs.v1Motion
   }
   public func hash(into hasher: inout Hasher) {
     hasher.combine(typeID)
@@ -178,6 +182,7 @@ public struct WidgetInstance: Hashable, Decodable {
     hasher.combine(v1Style)
     hasher.combine(v1Format)
     hasher.combine(v1Activate)
+    hasher.combine(v1Motion)
   }
 
   public init(from decoder: Decoder) throws {
@@ -549,34 +554,53 @@ public class ConfigManager {
   public func loadConfig(
     homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
   ) {
-    let regularURL = resolveConfigFileURL(homeDirectory: homeDirectory)
-    let builtInURL = resolveBuiltInConfigFileURL(homeDirectory: homeDirectory)
+    let configURL = resolveConfigFileURL(homeDirectory: homeDirectory)
+    let legacyBuiltInURL = resolveBuiltInConfigFileURL(homeDirectory: homeDirectory)
     let fileManager = FileManager.default
-    let hasRegularConfiguration = fileManager.fileExists(atPath: regularURL.path)
-    let hasBuiltInConfiguration = fileManager.fileExists(atPath: builtInURL.path)
+    let hasConfiguration = fileManager.fileExists(atPath: configURL.path)
+    let hasLegacyBuiltInConfiguration = fileManager.fileExists(atPath: legacyBuiltInURL.path)
 
-    guard hasRegularConfiguration || hasBuiltInConfiguration else {
+    guard hasConfiguration || hasLegacyBuiltInConfiguration else {
       print(
-        "Config files not found in \(resolveConfigDirectory(homeDirectory: homeDirectory).path), using defaults"
+        "Config file not found in \(resolveConfigDirectory(homeDirectory: homeDirectory).path), using defaults"
       )
       return
     }
 
     do {
-      let regularSourceURL = hasRegularConfiguration ? regularURL : builtInURL
-      let builtInSourceURL = hasBuiltInConfiguration ? builtInURL : regularSourceURL
-      let regularYAML = try String(contentsOf: regularSourceURL, encoding: .utf8)
-      let builtInYAML = try String(contentsOf: builtInSourceURL, encoding: .utf8)
-      try applyV1Configurations(regularYAML: regularYAML, builtInYAML: builtInYAML)
-      print("[LOG] Successfully loaded regular config from \(regularSourceURL.path)")
-      print("[LOG] Successfully loaded built-in config from \(builtInSourceURL.path)")
+      if hasConfiguration {
+        let yaml = try String(contentsOf: configURL, encoding: .utf8)
+        if Self.usesMonitorProfileSchema(yaml: yaml) {
+          try applyV1Configuration(yaml: yaml)
+          print("[LOG] Successfully loaded monitor profiles from \(configURL.path)")
+        } else if hasLegacyBuiltInConfiguration {
+          let legacyBuiltInYAML = try String(contentsOf: legacyBuiltInURL, encoding: .utf8)
+          try applyV1Configurations(regularYAML: yaml, builtInYAML: legacyBuiltInYAML)
+          print("[LOG] Successfully loaded legacy separate monitor config files")
+        } else {
+          try applyV1Configurations(regularYAML: yaml, builtInYAML: yaml)
+          print("[LOG] Successfully loaded shared legacy config from \(configURL.path)")
+        }
+      } else {
+        let legacyYAML = try String(contentsOf: legacyBuiltInURL, encoding: .utf8)
+        try applyV1Configurations(regularYAML: legacyYAML, builtInYAML: legacyYAML)
+        print("[LOG] Successfully loaded legacy config from \(legacyBuiltInURL.path)")
+      }
     } catch {
-      print("Failed to decode v1 configs: \(error)")
+      print("Failed to decode v1 config: \(error)")
     }
   }
 
   public func applyV1Configuration(yaml: String) throws {
-    try applyV1Configurations(regularYAML: yaml, builtInYAML: yaml)
+    if Self.usesMonitorProfileSchema(yaml: yaml) {
+      let profiles = try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml)
+      applyDecodedConfigurations(
+        regularConfiguration: profiles.external,
+        builtInConfiguration: profiles.builtIn
+      )
+    } else {
+      try applyV1Configurations(regularYAML: yaml, builtInYAML: yaml)
+    }
   }
 
   public func applyV1Configurations(regularYAML: String, builtInYAML: String) throws {
@@ -588,6 +612,16 @@ public class ConfigManager {
       yaml: builtInYAML,
       role: .builtIn
     )
+    applyDecodedConfigurations(
+      regularConfiguration: regularConfiguration,
+      builtInConfiguration: builtInConfiguration
+    )
+  }
+
+  private func applyDecodedConfigurations(
+    regularConfiguration: KamidanaConfigurationV1,
+    builtInConfiguration: KamidanaConfigurationV1
+  ) {
     let regularRuntime = KamidanaConfigurationV1Adapter.makeLegacyConfig(
       from: regularConfiguration
     )
@@ -604,6 +638,13 @@ public class ConfigManager {
     builtInColors = builtInRuntime.colors
     currentConfig = combinedRuntime
     activateConfiguration(isBuiltIn: isUsingBuiltInConfiguration)
+  }
+
+  private static func usesMonitorProfileSchema(yaml: String) -> Bool {
+    guard let value = try? Yams.load(yaml: yaml),
+      let mapping = value as? [String: Any]
+    else { return false }
+    return mapping.keys.contains("external") || mapping.keys.contains("built_in")
   }
 
   private func decodeConfiguration(
@@ -686,7 +727,7 @@ public class ConfigManager {
       .appendingPathComponent(Self.MAIN_CONFIG_FILE_NAME)
   }
 
-  /// Resolves the built-in display configuration file URL.
+  /// Resolves the legacy built-in display configuration file URL for migration support.
   public func resolveBuiltInConfigFileURL(
     homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
   ) -> URL {

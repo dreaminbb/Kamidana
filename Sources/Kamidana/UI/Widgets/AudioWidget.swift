@@ -1,182 +1,210 @@
 import SwiftUI
 
 struct AudioWidget: View {
-    @EnvironmentObject var audioVM: AudioViewModel
+    @EnvironmentObject private var audioVM: AudioViewModel
     @Environment(\.kamidanaV1Style) private var v1Style
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
+    @Environment(\.kamidanaWidgetActivation) private var widgetActivation
+
     let config: AudioWidgetConfig
-    
-    @State private var showAudioPopover = false
-    @State private var showMicPopover = false
-    @State private var isHovered = false
+
+    @State private var showPopover = false
+    @State private var hoverState = WidgetPopoverHoverState()
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        HStack(spacing: 12) {
-            // Output (Speaker)
-            if config.showsOutputManagement {
-                HStack(spacing: 6) {
-                    Button(action: { showAudioPopover.toggle() }) {
-                        FormattedWidgetLabel(
-                            format: widgetFormat ?? "{icon} {volume}%",
-                            values: [
-                                "icon": audioVM.isOutputMuted
-                                    ? config.speakerMutedIcon : config.speakerIcon,
-                                "volume": String(format: "%.0f", audioVM.outputVolume * 100),
-                                "device": audioVM.outputFormat
-                            ],
-                            iconColor: Color(
-                                hex: v1Style?.iconColor
-                                    ?? (audioVM.isOutputMuted ? config.mutedColor : config.activeColor)),
-                            textColor: Color(hex: v1Style?.color ?? colors.textPrimary)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .popover(isPresented: $showAudioPopover, arrowEdge: .bottom) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Output Devices")
-                                .font(.headline)
-                                .foregroundColor(Color(hex: colors.textPrimary))
-                                .padding(.bottom, 5)
 
-                            HStack {
-                                Button(action: { audioVM.toggleOutputMute() }) {
-                                    NerdFontIcon(
-                                        audioVM.isOutputMuted
-                                            ? config.speakerMutedIcon : config.speakerIcon,
-                                        size: 10
-                                    )
-                                    .foregroundColor(Color(hex: colors.textTertiary))
-                                }
-                                .buttonStyle(.plain)
-                                Slider(
-                                    value: Binding(
-                                        get: { audioVM.outputVolume },
-                                        set: { audioVM.setOutputVolume($0) }), in: 0.0...1.0
-                                )
-                                .frame(width: 150).accentColor(Color(hex: config.activeColor))
-                                NerdFontIcon(config.speakerIcon, size: 10).foregroundColor(
-                                    Color(hex: colors.textTertiary)
-                                )
-                            }
-                            .padding(.bottom, 5)
-
-                            ScrollView {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    ForEach(audioVM.outputDevices) { device in
-                                        Button(action: { audioVM.changeOutputDevice(device) }) {
-                                            HStack {
-                                                Image(
-                                                    systemName: audioVM.currentOutputDevice?.id
-                                                        == device.id
-                                                        ? "checkmark.circle.fill" : "circle"
-                                                )
-                                                .foregroundColor(
-                                                    audioVM.currentOutputDevice?.id == device.id
-                                                        ? Color(hex: config.activeColor) : Color(hex: colors.textTertiary))
-                                                Text(device.name).foregroundColor(Color(hex: colors.textPrimary))
-                                                Spacer()
-                                            }
-                                            .frame(width: 200).padding(.vertical, 4).padding(
-                                                .horizontal, 8
-                                            )
-                                            .background(Color(hex: colors.surface)).cornerRadius(6)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                            }
-                            .frame(maxHeight: 250)
-                        }
-                        .padding()
-                        .background(Color(hex: colors.background))
-                    }
-                }
-            }
-
-            // Input (Microphone)
-            if config.showsInputManagement {
-                HStack(spacing: 6) {
-                    Button(action: { audioVM.toggleInputMute() }) {
-                        NerdFontIcon(audioVM.isInputMuted ? config.micMutedIcon : config.micIcon)
-                            .foregroundColor(
-                                Color(
-                                    hex: v1Style?.iconColor
-                                        ?? (audioVM.isInputMuted
-                                            ? config.mutedColor : config.micActiveColor))
-                            )
-                    }
-                    .buttonStyle(.plain)
-
-                    Button(action: { showMicPopover.toggle() }) {
-                        HStack(spacing: 4) {
-                            Text(String(format: "%.0f%%", audioVM.inputVolume * 100))
-                                .fontWeight(.bold)
-                                .foregroundColor(Color(hex: v1Style?.color ?? colors.textPrimary))
-                                .frame(width: 30, alignment: .trailing)
-
-                            if isHovered {
-                                Text(audioVM.inputFormat)
-                                    .foregroundColor(Color(hex: v1Style?.color ?? colors.textTertiary))
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .popover(isPresented: $showMicPopover, arrowEdge: .bottom) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Input Devices")
-                                .font(.headline)
-                                .foregroundColor(Color(hex: colors.textPrimary))
-                                .padding(.bottom, 5)
-
-                            HStack {
-                                NerdFontIcon(config.micMutedIcon, size: 10).foregroundColor(Color(hex: colors.textTertiary))
-                                Slider(
-                                    value: Binding(
-                                        get: { audioVM.inputVolume },
-                                        set: { audioVM.setInputVolume($0) }), in: 0.0...1.0
-                                )
-                                .frame(width: 150).accentColor(Color(hex: config.micActiveColor))
-                                NerdFontIcon(config.micIcon, size: 10).foregroundColor(Color(hex: colors.textTertiary))
-                            }
-                            .padding(.bottom, 5)
-
-                            ScrollView {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    ForEach(audioVM.inputDevices) { device in
-                                        Button(action: { audioVM.changeInputDevice(device) }) {
-                                            HStack {
-                                                Image(
-                                                    systemName: audioVM.currentInputDevice?.id
-                                                        == device.id
-                                                        ? "checkmark.circle.fill" : "circle"
-                                                )
-                                                .foregroundColor(
-                                                    audioVM.currentInputDevice?.id == device.id
-                                                        ? Color(hex: config.micActiveColor) : Color(hex: colors.textTertiary))
-                                                Text(device.name).foregroundColor(Color(hex: colors.textPrimary))
-                                                Spacer()
-                                            }
-                                            .frame(width: 200).padding(.vertical, 4).padding(
-                                                .horizontal, 8
-                                            )
-                                            .background(Color(hex: colors.surface)).cornerRadius(6)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                            }
-                            .frame(maxHeight: 250)
-                        }
-                        .padding()
-                        .background(Color(hex: colors.background))
-                    }
-                }
-            }
+        Button(action: { if activation == .click { showPopover.toggle() } }) {
+            FormattedWidgetLabel(
+                format: widgetFormat ?? "{icon} {volume}%",
+                values: compactValues,
+                iconColor: Color(hex: compactIconColor),
+                textColor: Color(hex: v1Style?.color ?? colors.textPrimary)
+            )
         }
-        .SmoothUIModule()
-        .onHover { hover in
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { isHovered = hover }
+        .buttonStyle(WidgetButtonStyle())
+        .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
+        .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+            popoverContent(colors: colors)
+                .onHover {
+                    hoverState.updatePopoverHover(
+                        $0, isPresented: $showPopover, activation: activation)
+                }
         }
     }
+
+    @ViewBuilder
+    private func popoverContent(colors: GlobalColorsConfig) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Audio")
+                .font(.headline)
+                .foregroundColor(Color(hex: colors.textPrimary))
+
+            if config.showsOutputManagement {
+                audioSection(
+                    title: "Output",
+                    format: audioVM.outputFormat,
+                    devices: audioVM.outputDevices,
+                    currentDeviceID: audioVM.currentOutputDevice?.id,
+                    volume: Binding(
+                        get: { audioVM.outputVolume },
+                        set: { audioVM.setOutputVolume($0) }
+                    ),
+                    isMuted: audioVM.isOutputMuted,
+                    activeIcon: config.speakerIcon,
+                    mutedIcon: config.speakerMutedIcon,
+                    activeColor: config.activeColor,
+                    toggleMute: audioVM.toggleOutputMute,
+                    selectDevice: audioVM.changeOutputDevice,
+                    colors: colors
+                )
+            }
+
+            if config.showsOutputManagement && config.showsInputManagement {
+                Divider().overlay(Color(hex: colors.surfaceBorder))
+            }
+
+            if config.showsInputManagement {
+                audioSection(
+                    title: "Input",
+                    format: audioVM.inputFormat,
+                    devices: audioVM.inputDevices,
+                    currentDeviceID: audioVM.currentInputDevice?.id,
+                    volume: Binding(
+                        get: { audioVM.inputVolume },
+                        set: { audioVM.setInputVolume($0) }
+                    ),
+                    isMuted: audioVM.isInputMuted,
+                    activeIcon: config.micIcon,
+                    mutedIcon: config.micMutedIcon,
+                    activeColor: config.micActiveColor,
+                    toggleMute: audioVM.toggleInputMute,
+                    selectDevice: audioVM.changeInputDevice,
+                    colors: colors
+                )
+            }
+
+            if !config.showsOutputManagement && !config.showsInputManagement {
+                Text("Input and output controls are disabled.")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: colors.textTertiary))
+            }
+        }
+        .padding()
+        .frame(width: 320, alignment: .leading)
+        .background(Color(hex: colors.background))
+    }
+
+    @ViewBuilder
+    private func audioSection(
+        title: String,
+        format: String,
+        devices: [AudioDevice],
+        currentDeviceID: AudioDevice.ID?,
+        volume: Binding<Float>,
+        isMuted: Bool,
+        activeIcon: String,
+        mutedIcon: String,
+        activeColor: String,
+        toggleMute: @escaping () -> Void,
+        selectDevice: @escaping (AudioDevice) -> Void,
+        colors: GlobalColorsConfig
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(Color(hex: colors.textSecondary))
+                Spacer()
+                Text(format.isEmpty ? "Unknown" : format)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(Color(hex: colors.textTertiary))
+                    .lineLimit(1)
+            }
+
+            HStack(spacing: 10) {
+                Button(action: toggleMute) {
+                    NerdFontIcon(isMuted ? mutedIcon : activeIcon, size: 13)
+                        .foregroundColor(Color(hex: isMuted ? config.mutedColor : activeColor))
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                Slider(value: volume, in: 0...1)
+                    .tint(Color(hex: activeColor))
+
+                Text(String(format: "%.0f%%", volume.wrappedValue * 100))
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(Color(hex: colors.textPrimary))
+                    .frame(width: 36, alignment: .trailing)
+            }
+
+            if devices.isEmpty {
+                Text("No devices available.")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: colors.textTertiary))
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 6) {
+                        ForEach(devices) { device in
+                            Button(action: { selectDevice(device) }) {
+                                HStack(spacing: 8) {
+                                    NerdFontIcon(currentDeviceID == device.id ? "" : "", size: 10)
+                                        .foregroundColor(
+                                            Color(
+                                                hex: currentDeviceID == device.id
+                                                    ? activeColor : colors.textTertiary
+                                            )
+                                        )
+                                    Text(device.name)
+                                        .foregroundColor(Color(hex: colors.textPrimary))
+                                        .lineLimit(1)
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(.vertical, 5)
+                                .padding(.horizontal, 8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color(hex: colors.surface))
+                                .cornerRadius(6)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .frame(maxHeight: 120)
+            }
+        }
+    }
+
+    private var compactValues: [String: String] {
+        let usesOutput = config.showsOutputManagement
+        let icon =
+            usesOutput
+            ? (audioVM.isOutputMuted ? config.speakerMutedIcon : config.speakerIcon)
+            : (audioVM.isInputMuted ? config.micMutedIcon : config.micIcon)
+        let volume = usesOutput ? audioVM.outputVolume : audioVM.inputVolume
+
+        return [
+            "icon": icon,
+            "volume": String(format: "%.0f", volume * 100),
+            "output_icon": audioVM.isOutputMuted ? config.speakerMutedIcon : config.speakerIcon,
+            "output_volume": String(format: "%.0f", audioVM.outputVolume * 100),
+            "output_device": audioVM.currentOutputDevice?.name ?? "Unknown",
+            "input_icon": audioVM.isInputMuted ? config.micMutedIcon : config.micIcon,
+            "input_volume": String(format: "%.0f", audioVM.inputVolume * 100),
+            "input_device": audioVM.currentInputDevice?.name ?? "Unknown",
+        ]
+    }
+
+    private var compactIconColor: String {
+        if let color = v1Style?.iconColor { return color }
+        if config.showsOutputManagement {
+            return audioVM.isOutputMuted ? config.mutedColor : config.activeColor
+        }
+        return audioVM.isInputMuted ? config.mutedColor : config.micActiveColor
+    }
+
+    private var activation: KamidanaActivation { widgetActivation ?? .hover }
 }

@@ -1,149 +1,321 @@
-# Kamidana v1 configuration for external and other regular displays.
+# Kamidana v1 configuration for external and built-in displays.
 # Place this file at ~/.config/kamidana/config.yaml.
-global:
-  background_mode: per_widget
-  hide_in_fullscreen: true
-  style:
-    background: "#1e1e2e"
-    color: "#cdd6f4"
-    opacity: 0.6
-    padding: 6
-    corner_radius: 12
-    material: ultra_thin
+external:
+  global:
+    background_mode: per_widget
+    hide_in_fullscreen: true
+    style:
+      background: "#1e1e2e"
+      color: "#cdd6f4"
+      opacity: 0.6
+      padding: 6
+      corner_radius: 12
+      material: ultra_thin
 
-left:
-  style:
-    spacing: 8
-  widgets:
-    - id: system-actions
-      type: system-action
-      icon: "󰀵"
-      folded_icon: "󰉋"
-      children:
-        - id: about-this-mac
-          type: about-this-mac
-          format: "About this Mac"
-          icon: "󰌢"
-          style:
-            icon_color: "#94e2d5"
-        - id: sleep
-          type: sleep
-          format: "Sleep"
-          icon: "󰒲"
-          style:
-            icon_color: "#94e2d5"
-        - id: reboot
-          type: reboot
-          format: "Reboot"
-          icon: "󰑐"
-          style:
-            icon_color: "#fab387"
-        - id: shutdown
-          type: shutdown
-          format: "Shutdown"
-          icon: "⏻"
-          style:
-            icon_color: "#f38ba8"
-        - id: lock-screen
-          type: lock-screen
-          format: "Lock Screen"
-          icon: "󰌾"
-          style:
-            icon_color: "#f5c2e7"
-    - id: network
-      type: network
-      format: "{connection_icon} {ssid} 󰕝 {upload}/s 󰓅 {download}/s"
-      style:
-        color: "#cdd6f4"
-        icon_color: "#94e2d5"
-      tooltip: true
-      tooltip_format: "Network"
-    - id: volume
-      type: volume
-      format: "󰕾 {volume}%"
-      input_management: true
-      output_management: true
-      style:
-        color: "#cdd6f4"
-        icon_color: "#89b4fa"
-
-center:
-  center_default: music
-  style:
-    corner_radius: 16
-  widgets:
-    - id: music
-      type: music
-      normal:
-        format: "{artwork} {title}"
-        format_on_action: "{artwork} {slider}"
-        slider_change: "#cdd6f4"
-        slider_pause: "#a6e3a1"
-        slider_bar: "#89b4fa"
-        extend: right
-        artwork_spin: 10
-      on_action:
-        format: "{title} - {album}"
-        artwork_spin: 10
-      style:
-        color: "#cdd6f4"
-        icon_color: "#f5c2e7"
-      part_styles:
-        media:
+  left:
+    style:
+      spacing: 8
+    widgets:
+      - id: system-actions
+        type: system-action
+        motion: dynamic
+        icon: "󰀵"
+        folded_icon: "󰉋"
+        children:
+          - id: about-this-mac
+            type: about-this-mac
+            format: "About this Mac"
+            icon: "󰌢"
+            style:
+              icon_color: "#94e2d5"
+          - id: sleep
+            type: sleep
+            format: "Sleep"
+            icon: "󰒲"
+            style:
+              icon_color: "#94e2d5"
+          - id: reboot
+            type: reboot
+            format: "Reboot"
+            icon: "󰑐"
+            style:
+              icon_color: "#fab387"
+          - id: shutdown
+            type: shutdown
+            format: "Shutdown"
+            icon: "⏻"
+            style:
+              icon_color: "#f38ba8"
+          - id: lock-screen
+            type: lock-screen
+            format: "Lock Screen"
+            icon: "󰌾"
+            style:
+              icon_color: "#f5c2e7"
+      - id: network
+        type: network
+        motion: dynamic
+        format: "{connection_icon} {network_name} 󰕝 {upload}/s 󰓅 {download}/s"
+        style:
           color: "#cdd6f4"
-        media_slider:
-          opacity: 0.85
-        sound_visualizer:
-          color: "#89b4fa"
-    - id: btop
-      type: btop
-      compact_format: ""
+          icon_color: "#94e2d5"
+        tooltip: true
+        tooltip_format: "Network"
+      - id: volume
+        type: volume
+        motion: dynamic
+        format: "󰕾 {volume}%"
+        input_management: true
+        output_management: true
+        style:
+          color: "#cdd6f4"
+          icon_color: "#89b4fa"
 
-right:
-  style:
-    spacing: 8
-  widgets:
-    - id: cpu
-      type: cpu
-      format: "󰍛 {usage}%"
-      style:
-        color: "#a6e3a1"
-        icon_color: "#a6e3a1"
-      tooltip: true
-      tooltip_format: "CPU {usage}%"
-      interval: 2
-    - id: gpu
-      type: gpu
-      format: "󰢮 {usage}%"
-      style:
-        color: "#89b4fa"
-        icon_color: "#89b4fa"
-    - id: memory
-      type: memory
-      format: " {used_gb} GB"
-      style:
-        color: "#cba6f7"
-        icon_color: "#cba6f7"
-    - id: disk
-      type: disk
-      format: "󰋊 {used}"
-      style:
-        color: "#fab387"
-        icon_color: "#fab387"
-    - id: bluetooth
-      type: bluetooth
-      format: "󰂯 {device}"
-      style:
-        color: "#cdd6f4"
-        icon_color: "#89b4fa"
-    - id: battery
-      type: battery
-      format: "󰁹 {capacity}%"
-      style:
-        color: "#cdd6f4"
-        icon_color: "#a6e3a1"
-    - id: clock
-      type: clock
-      format: "{date} {time}"
-      style:
-        color: "#cdd6f4"
+  center:
+    center_default: music
+    style:
+      corner_radius: 16
+    widgets:
+      - id: music
+        type: music
+        motion: dynamic
+        normal:
+          format: "{artwork} {title}"
+          format_on_action: "{artwork} {slider}"
+          slider_change: "#cdd6f4"
+          slider_pause: "#a6e3a1"
+          slider_bar: "#89b4fa"
+          extend: right
+          artwork_spin: 10
+        on_action:
+          format: "{title} - {album}"
+          artwork_spin: 10
+        style:
+          color: "#cdd6f4"
+          icon_color: "#f5c2e7"
+        part_styles:
+          media:
+            color: "#cdd6f4"
+          media_slider:
+            opacity: 0.85
+          sound_visualizer:
+            color: "#89b4fa"
+      - id: btop
+        type: btop
+        compact_format: ""
+
+  right:
+    style:
+      spacing: 8
+    widgets:
+      - id: cpu
+        type: cpu
+        motion: dynamic
+        format: "󰍛 {usage}%"
+        style:
+          color: "#a6e3a1"
+          icon_color: "#a6e3a1"
+        tooltip: true
+        tooltip_format: "CPU {usage}%"
+        interval: 2
+      - id: gpu
+        type: gpu
+        motion: dynamic
+        format: "󰢮 {usage}%"
+        style:
+          color: "#89b4fa"
+          icon_color: "#89b4fa"
+      - id: memory
+        type: memory
+        motion: dynamic
+        format: " {used_gb} GB"
+        style:
+          color: "#cba6f7"
+          icon_color: "#cba6f7"
+      - id: disk
+        type: disk
+        motion: dynamic
+        format: "󰋊 {used}"
+        style:
+          color: "#fab387"
+          icon_color: "#fab387"
+      - id: bluetooth
+        type: bluetooth
+        motion: dynamic
+        format: "󰂯 {device}"
+        style:
+          color: "#cdd6f4"
+          icon_color: "#89b4fa"
+      - id: battery
+        type: battery
+        motion: dynamic
+        format: "󰁹 {capacity}%"
+        style:
+          color: "#cdd6f4"
+          icon_color: "#a6e3a1"
+      - id: clock
+        type: clock
+        format: "{date} {time}"
+        style:
+          color: "#cdd6f4"
+
+built_in:
+  global:
+    background_mode: per_widget
+    hide_in_fullscreen: true
+    style:
+      background: "#1e1e2e"
+      color: "#cdd6f4"
+      opacity: 0.6
+      padding: 6
+      corner_radius: 0
+      material: ultra_thin
+
+  left:
+    style:
+      spacing: 6
+    widgets:
+      - id: system-actions
+        type: system-action
+        motion: dynamic
+        icon: "󰀵"
+        folded_icon: "󰉋"
+        children:
+          - id: about-this-mac
+            type: about-this-mac
+            format: "About this Mac"
+            icon: "󰌢"
+            style:
+              icon_color: "#94e2d5"
+          - id: sleep
+            type: sleep
+            format: "Sleep"
+            icon: "󰒲"
+            style:
+              icon_color: "#94e2d5"
+          - id: reboot
+            type: reboot
+            format: "Reboot"
+            icon: "󰑐"
+            style:
+              icon_color: "#fab387"
+          - id: shutdown
+            type: shutdown
+            format: "Shutdown"
+            icon: "⏻"
+            style:
+              icon_color: "#f38ba8"
+          - id: lock-screen
+            type: lock-screen
+            format: "Lock Screen"
+            icon: "󰌾"
+            style:
+              icon_color: "#f5c2e7"
+      - id: volume
+        type: volume
+        motion: dynamic
+        format: "󰕾 {volume}%"
+        input_management: true
+        output_management: true
+        style:
+          color: "#cdd6f4"
+          icon_color: "#89b4fa"
+
+  center:
+    center_default: music
+    style:
+      corner_radius: 16
+    widgets:
+      - id: music
+        type: music
+        motion: dynamic
+        normal:
+          format: "{artwork} {title}"
+          format_on_action: "{artwork} {slider}"
+          slider_change: "#cdd6f4"
+          slider_pause: "#a6e3a1"
+          slider_bar: "#89b4fa"
+          extend: right
+          artwork_spin: 10
+        on_action:
+          format: "{title} - {album}"
+          artwork_spin: 10
+        style:
+          color: "#cdd6f4"
+          icon_color: "#f5c2e7"
+      - id: btop
+        type: btop
+        compact_format: ""
+
+  right:
+    style:
+      spacing: 6
+    widgets:
+      - id: cpu
+        type: cpu
+        motion: dynamic
+        format: "󰍛 {usage}%"
+        style:
+          color: "#a6e3a1"
+          icon_color: "#a6e3a1"
+        tooltip: true
+        tooltip_format: "{usage}%"
+        interval: 2
+      - id: memory
+        type: memory
+        motion: dynamic
+        format: " {used_gb} GB"
+        style:
+          color: "#cba6f7"
+          icon_color: "#cba6f7"
+      - id: compact-widgets
+        type: widget-folder
+        motion: dynamic
+        direction: left
+        icon: "󰕰"
+        folded_icon: "󰝖"
+        style:
+          icon_color: "#cba6f7"
+        widgets:
+          - id: network
+            type: network
+            motion: dynamic
+            format: "{connection_icon} {network_name} 󰕝 {upload}/s 󰓅 {download}/s"
+            style:
+              color: "#cdd6f4"
+              icon_color: "#94e2d5"
+            tooltip: true
+            tooltip_format: "Network"
+          - id: gpu
+            type: gpu
+            motion: dynamic
+            format: "󰢮 {usage}%"
+            style:
+              color: "#89b4fa"
+              icon_color: "#89b4fa"
+          - id: disk
+            type: disk
+            motion: dynamic
+            format: "󰋊 {used}"
+            style:
+              color: "#fab387"
+              icon_color: "#fab387"
+          - id: bluetooth
+            type: bluetooth
+            motion: dynamic
+            format: "󰂯 {device}"
+            style:
+              color: "#cdd6f4"
+              icon_color: "#89b4fa"
+          - id: battery
+            type: battery
+            motion: dynamic
+            format: "󰁹 {capacity}%"
+            style:
+              color: "#cdd6f4"
+              icon_color: "#a6e3a1"
+          - id: clock
+            type: clock
+            format: "{date} {time}"
+            style:
+              color: "#cdd6f4"

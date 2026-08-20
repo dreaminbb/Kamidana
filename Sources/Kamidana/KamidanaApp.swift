@@ -139,34 +139,19 @@ struct StatusBarView: View {
 
     ZStack(alignment: .top) {
       // Left widget group
-      HStack(alignment: .top, spacing: 8) {
-        HStack(spacing: CGFloat(v1Configuration?.left.style.spacing ?? 8)) {
-          ForEach(currentLayout.left, id: \.id) { instance in
-            if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
-              factory.makeView(config: instance.config)
-                .environment(\.kamidanaV1Style, instance.v1Style)
-                .environment(\.kamidanaWidgetFormat, instance.v1Format)
-                .environment(\.kamidanaWidgetActivation, instance.v1Activate)
-                .environment(\.showsKamidanaWidgetSurface, leftMode == .perWidget)
-            }
+      HStack(spacing: CGFloat(v1Configuration?.left.style.spacing ?? 8)) {
+        ForEach(currentLayout.left, id: \.id) { instance in
+          if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
+            factory.makeView(config: instance.config)
+              .environment(\.kamidanaV1Style, instance.v1Style)
+              .environment(\.kamidanaWidgetFormat, instance.v1Format)
+              .environment(\.kamidanaWidgetActivation, instance.v1Activate)
+              .kamidanaWidgetMotion(instance.v1Motion)
+              .environment(\.showsKamidanaWidgetSurface, leftMode == .perWidget)
           }
         }
-        .kamidanaSectionSurface(style: leftStyle, isEnabled: leftMode == .perSection)
-
-        // In built-in display mode, place island from right of audio widget toward center camera
-        if isBuiltInDisplay {
-          Color.clear
-            .frame(width: 32, height: 32)
-            .overlay(
-              KamidanaIsland(centerWidgets: currentLayout.center)
-                .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
-                .fixedSize()
-                .kamidanaSectionSurface(style: centerStyle, isEnabled: centerMode == .perSection),
-              alignment: .topLeading
-            )
-            .zIndex(100)
-        }
       }
+      .kamidanaSectionSurface(style: leftStyle, isEnabled: leftMode == .perSection)
       .frame(height: 40)
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.leading, 10)
@@ -183,6 +168,7 @@ struct StatusBarView: View {
                 .environment(\.kamidanaV1Style, instance.v1Style)
                 .environment(\.kamidanaWidgetFormat, instance.v1Format)
                 .environment(\.kamidanaWidgetActivation, instance.v1Activate)
+                .kamidanaWidgetMotion(instance.v1Motion)
                 .environment(\.showsKamidanaWidgetSurface, rightMode == .perWidget)
             }
           }
@@ -194,15 +180,14 @@ struct StatusBarView: View {
       .padding(.trailing, 10)
       .padding(.top, 5)
 
-      // In external display mode, place in the top center of the screen
-      if !isBuiltInDisplay {
-        KamidanaIsland(centerWidgets: currentLayout.center)
-          .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
-          .fixedSize()
-          .kamidanaSectionSurface(style: centerStyle, isEnabled: centerMode == .perSection)
-          .padding(.top, 7)
-          .zIndex(100)
-      }
+      // Keep the Island geometrically centered. On built-in displays this aligns the
+      // compact state with the camera/notch instead of moving with the left section.
+      KamidanaIsland(centerWidgets: currentLayout.center)
+        .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
+        .fixedSize()
+        .kamidanaSectionSurface(style: centerStyle, isEnabled: centerMode == .perSection)
+        .padding(.top, isBuiltInDisplay ? 0 : 7)
+        .zIndex(100)
     }
     .kamidanaSectionSurface(
       style: globalStyle,

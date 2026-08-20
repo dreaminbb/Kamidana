@@ -59,20 +59,26 @@ struct KamidanaIsland: View {
                 HStack(spacing: 12) {
                     ForEach(centerWidgets, id: \.id) { tab in
                         Button(action: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            if (tab.v1Motion ?? .dynamic) == .dynamic {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedTab = tab
+                                }
+                            } else {
                                 selectedTab = tab
                             }
-
                         }) {
                             Text(tabName(for: tab))
                                 .font(.system(size: 14, weight: .bold))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 6)
                                 .background(
-                                    selectedTab == tab ? Color(hex: colors.surfaceHighlight) : Color.clear
+                                    selectedTab == tab
+                                        ? Color(hex: colors.surfaceHighlight) : Color.clear
                                 )
                                 .foregroundColor(
-                                    selectedTab == tab ? Color(hex: colors.textPrimary) : Color(hex: colors.textSecondary)
+                                    selectedTab == tab
+                                        ? Color(hex: colors.textPrimary)
+                                        : Color(hex: colors.textSecondary)
                                 )
                                 .cornerRadius(8)
                         }
@@ -92,6 +98,7 @@ struct KamidanaIsland: View {
                                 .environment(\.kamidanaV1Style, selected.v1Style)
                                 .environment(\.kamidanaWidgetFormat, selected.v1Format)
                                 .environment(\.kamidanaWidgetActivation, selected.v1Activate)
+                                .kamidanaWidgetMotion(selected.v1Motion)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             EmptyView()
@@ -125,9 +132,13 @@ struct KamidanaIsland: View {
                 .stroke(Color(hex: borderColor), lineWidth: borderWidth)
         )
         // Spring animation providing smooth expansion
-        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isHovered)
+        .animation(isDynamic ? .spring(response: 0.5, dampingFraction: 0.7) : nil, value: isHovered)
         .onHover { hovering in
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            if isDynamic {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    isHovered = hovering
+                }
+            } else {
                 isHovered = hovering
             }
         }
@@ -138,8 +149,13 @@ struct KamidanaIsland: View {
         }
     }
 
+    private var isDynamic: Bool {
+        (centerWidgets.first?.v1Motion ?? .dynamic) == .dynamic
+    }
+
     private func tabName(for widget: WidgetInstance) -> String {
-        return WidgetRegistry.shared.factory(for: widget.typeID)?.getTabName(config: widget.config) ?? "Unknown"
+        return WidgetRegistry.shared.factory(for: widget.typeID)?.getTabName(config: widget.config)
+            ?? "Unknown"
     }
 
     @ViewBuilder
@@ -167,6 +183,7 @@ struct KamidanaIsland: View {
                 .environment(\.kamidanaV1Style, style)
                 .environment(\.kamidanaWidgetFormat, widget.v1Format)
                 .environment(\.kamidanaWidgetActivation, widget.v1Activate)
+                .kamidanaWidgetMotion(widget.v1Motion)
                 .environment(\.showsKamidanaWidgetSurface, false)
         }
     }

@@ -104,6 +104,11 @@ public enum KamidanaActivation: String, Codable, Equatable {
   case click
 }
 
+public enum KamidanaMotion: String, Codable, Equatable {
+  case `static`
+  case dynamic
+}
+
 public enum KamidanaMusicExtendDirection: String, Codable, Equatable {
   case left
   case right
@@ -472,6 +477,7 @@ public struct KamidanaWidget: Decodable, Equatable {
   public var direction: KamidanaWidgetFolderDirection?
   public var style: KamidanaStyle?
   public var activate: KamidanaActivation?
+  public var motion: KamidanaMotion?
   public var interval: Double?
   public var tooltip: Bool?
   public var tooltipFormat: String?
@@ -501,6 +507,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     direction: KamidanaWidgetFolderDirection? = nil,
     style: KamidanaStyle? = nil,
     activate: KamidanaActivation? = nil,
+    motion: KamidanaMotion? = nil,
     interval: Double? = nil,
     tooltip: Bool? = nil,
     tooltipFormat: String? = nil,
@@ -529,6 +536,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     self.direction = direction
     self.style = style
     self.activate = activate
+    self.motion = motion
     self.interval = interval
     self.tooltip = tooltip
     self.tooltipFormat = tooltipFormat
@@ -574,6 +582,7 @@ public struct KamidanaWidget: Decodable, Equatable {
       direction: kind == .widgetFolder ? direction ?? .below : direction,
       style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style),
       activate: try container.decodeIfPresent(KamidanaActivation.self, forKey: .activate),
+      motion: try container.decodeIfPresent(KamidanaMotion.self, forKey: .motion),
       interval: try container.decodeIfPresent(Double.self, forKey: .interval),
       tooltip: try container.decodeIfPresent(Bool.self, forKey: .tooltip),
       tooltipFormat: try container.decodeIfPresent(String.self, forKey: .tooltipFormat),
@@ -603,7 +612,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     case icon
     case foldedIcon = "folded_icon"
     case direction
-    case style, activate, interval, tooltip
+    case style, activate, motion, interval, tooltip
     case tooltipFormat = "tooltip_format"
     case widgets, children
     case partStyles = "part_styles"
@@ -1088,6 +1097,67 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
         }
       }
     }
+  }
+}
+
+/// Contains the complete UI configuration for both display classes in one file.
+public struct KamidanaMonitorConfigurationV1: Decodable, Equatable {
+  public var external: KamidanaConfigurationV1
+  public var builtIn: KamidanaConfigurationV1
+
+  public init(
+    external: KamidanaConfigurationV1,
+    builtIn: KamidanaConfigurationV1
+  ) {
+    self.external = external
+    self.builtIn = builtIn
+  }
+
+  private enum CodingKeys: String, CodingKey, CaseIterable {
+    case external
+    case builtIn = "built_in"
+  }
+
+  public init(from decoder: Decoder) throws {
+    try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.init(
+      external: try container.decode(KamidanaConfigurationV1.self, forKey: .external),
+      builtIn: try container.decode(KamidanaConfigurationV1.self, forKey: .builtIn)
+    )
+  }
+
+  public func validate() throws {
+    try external.validate()
+    try builtIn.validate()
+  }
+}
+
+/// Yams-backed entry point for monitor-specific configuration strings.
+public struct KamidanaMonitorConfigurationV1Decoder {
+  public init() {}
+
+  public static func decode(yaml: String) throws -> KamidanaMonitorConfigurationV1 {
+    do {
+      let configuration = try YAMLDecoder().decode(KamidanaMonitorConfigurationV1.self, from: yaml)
+      try configuration.validate()
+      return configuration
+    } catch let error as KamidanaConfigurationV1Error {
+      throw error
+    } catch {
+      let message = String(describing: error)
+      if let marker = message.range(of: "Unsupported widget type '") {
+        let remainder = message[marker.upperBound...]
+        if let end = remainder.firstIndex(of: "'") {
+          throw KamidanaConfigurationV1Error.unsupportedWidgetType(String(remainder[..<end]))
+        }
+      }
+      throw KamidanaConfigurationV1Error.yamlDecoding(message)
+    }
+  }
+
+  public func decode(yaml: String) throws -> KamidanaMonitorConfigurationV1 {
+    try Self.decode(yaml: yaml)
   }
 }
 

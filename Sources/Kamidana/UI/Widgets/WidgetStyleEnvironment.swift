@@ -27,6 +27,10 @@ private struct KamidanaWidgetActivationKey: EnvironmentKey {
   static let defaultValue: KamidanaActivation? = nil
 }
 
+private struct KamidanaWidgetMotionKey: EnvironmentKey {
+  static let defaultValue = KamidanaMotion.dynamic
+}
+
 extension EnvironmentValues {
   var kamidanaV1Style: KamidanaStyle? {
     get { self[KamidanaV1StyleKey.self] }
@@ -46,5 +50,23 @@ extension EnvironmentValues {
   var kamidanaWidgetActivation: KamidanaActivation? {
     get { self[KamidanaWidgetActivationKey.self] }
     set { self[KamidanaWidgetActivationKey.self] = newValue }
+  }
+
+  var kamidanaWidgetMotion: KamidanaMotion {
+    get { self[KamidanaWidgetMotionKey.self] }
+    set { self[KamidanaWidgetMotionKey.self] = newValue }
+  }
+}
+
+extension View {
+  func kamidanaWidgetMotion(_ motion: KamidanaMotion?) -> some View {
+    let resolvedMotion = motion ?? .dynamic
+    return environment(\.kamidanaWidgetMotion, resolvedMotion)
+      .transaction { transaction in
+        if resolvedMotion == .static {
+          transaction.animation = nil
+          transaction.disablesAnimations = true
+        }
+      }
   }
 }

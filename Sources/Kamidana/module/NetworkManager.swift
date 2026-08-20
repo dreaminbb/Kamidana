@@ -11,6 +11,15 @@ enum NetworkValueState: Equatable {
     case unavailable(String)
 }
 
+enum WiFiScanState: Equatable {
+    case idle
+    case scanning
+    case loaded
+    case empty
+    case unavailable(String)
+    case failed(String)
+}
+
 struct NetworkInterfaceSnapshot: Equatable {
     let name: String
     let ipv4: String
@@ -29,12 +38,16 @@ protocol PublicIPClient {
 enum NetworkManagerError: LocalizedError, Equatable {
     case wiredConnectionActive
     case wifiInterfaceUnavailable
+    case locationPermissionDenied
     case invalidPublicIPResponse
 
     var errorDescription: String? {
         switch self {
-        case .wiredConnectionActive: return "Wi-Fi scanning is disabled while a wired connection is active."
+        case .wiredConnectionActive:
+            return "Wi-Fi scanning is disabled while a wired connection is active."
         case .wifiInterfaceUnavailable: return "Wi-Fi interface not found."
+        case .locationPermissionDenied:
+            return "Location access is required to read Wi-Fi network names."
         case .invalidPublicIPResponse: return "The public IP service returned an invalid response."
         }
     }
@@ -52,7 +65,8 @@ final class SystemNetworkAddressSource: NetworkAddressSource {
             let item = current.pointee
             pointer = item.ifa_next
             guard let address = item.ifa_addr,
-                  address.pointee.sa_family == UInt8(AF_INET) else { continue }
+                address.pointee.sa_family == UInt8(AF_INET)
+            else { continue }
             var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
             var mutableAddress = address.pointee
             let result = withUnsafePointer(to: &mutableAddress) {
@@ -87,8 +101,10 @@ final class SystemNetworkAddressSource: NetworkAddressSource {
 
     func dnsServers() -> [String] {
         guard let store = SCDynamicStoreCreate(nil, "Kamidana" as CFString, nil, nil),
-              let value = SCDynamicStoreCopyValue(store, "State:/Network/Global/DNS" as CFString) as? [String: Any],
-              let servers = value[kSCPropNetDNSServerAddresses as String] as? [String] else { return [] }
+            let value = SCDynamicStoreCopyValue(store, "State:/Network/Global/DNS" as CFString)
+                as? [String: Any],
+            let servers = value[kSCPropNetDNSServerAddresses as String] as? [String]
+        else { return [] }
         return servers
     }
 }
@@ -113,10 +129,11 @@ final class IpifyPublicIPClient: PublicIPClient {
                 return
             }
             guard let http = response as? HTTPURLResponse,
-                  (200..<300).contains(http.statusCode),
-                  let data = data,
-                  let value = String(data: data, encoding: .utf8),
-                  let validValue = NetworkManager.validPublicIPAddress(value) else {
+                (200..<300).contains(http.statusCode),
+                let data = data,
+                let value = String(data: data, encoding: .utf8),
+                let validValue = NetworkManager.validPublicIPAddress(value)
+            else {
                 completion(.failure(NetworkManagerError.invalidPublicIPResponse))
                 return
             }
@@ -128,6 +145,9 @@ final class IpifyPublicIPClient: PublicIPClient {
 class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var currentConnection: String = "OFF"
     @Published var availableNetworks: [CWNetwork] = []
+    @Published private(set) var wifiScanState: WiFiScanState = .idle
+    @Published private(set) var currentSSID = ""
+    @Published private(set) var currentNetworkName = "Offline"
     @Published private(set) var activeInterfaceName: String?
     @Published private(set) var localIPv4State: NetworkValueState = .unavailable("Not available")
     @Published private(set) var dnsServersState: NetworkValueState = .unavailable("Not available")
@@ -143,31 +163,24 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     var canScanWiFi: Bool { currentConnection != "LAN" }
 
-    var currentSSID: String {
-        Self.displaySSID(
-            connection: currentConnection,
-            ssid: CWWiFiClient.shared().interface()?.ssid()
-        )
-    }
-
-    var networkDisplayName: String {
-        Self.networkDisplayName(
-            connection: currentConnection,
-            interfaceName: activeInterfaceName,
-            ssid: CWWiFiClient.shared().interface()?.ssid()
-        )
-    }
+    var networkDisplayName: String { currentNetworkName }
 
     override convenience init() {
-        self.init(addressSource: SystemNetworkAddressSource(), publicIPClient: IpifyPublicIPClient())
+        self.init(
+            addressSource: SystemNetworkAddressSource(), publicIPClient: IpifyPublicIPClient())
     }
 
-    init(addressSource: NetworkAddressSource, publicIPClient: PublicIPClient, startMonitoring: Bool = true) {
+    init(
+        addressSource: NetworkAddressSource, publicIPClient: PublicIPClient,
+        startMonitoring: Bool = true
+    ) {
         self.addressSource = addressSource
         self.publicIPClient = publicIPClient
         super.init()
         locationManager.delegate = self
-        if locationManager.authorizationStatus == .notDetermined { locationManager.requestWhenInUseAuthorization() }
+        if locationManager.authorizationStatus == .notDetermined {
+            locationManager.requestWhenInUseAuthorization()
+        }
         if startMonitoring { self.startMonitoring() }
         refreshNetworkDetails(forcePublicIP: true)
     }
@@ -180,12 +193,23 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 usesWiFi: path.usesInterfaceType(.wifi))
             DispatchQueue.main.async {
                 self?.currentConnection = connection
-                let preferredInterfaceName = path.availableInterfaces.first {
-                    $0.type == .wiredEthernet && connection == "LAN"
-                }?.name ?? path.availableInterfaces.first {
-                    $0.type == .wifi && connection == "WIFI"
-                }?.name
+                let preferredInterfaceName =
+                    path.availableInterfaces.first {
+                        $0.type == .wiredEthernet && connection == "LAN"
+                    }?.name
+                    ?? path.availableInterfaces.first {
+                        $0.type == .wifi && connection == "WIFI"
+                    }?.name
                 self?.activeInterfaceName = preferredInterfaceName
+                self?.refreshConnectionIdentity()
+                if connection == "LAN" {
+                    self?.availableNetworks = []
+                    self?.wifiScanState = .unavailable(
+                        NetworkManagerError.wiredConnectionActive.localizedDescription
+                    )
+                } else if case .some(.unavailable) = self?.wifiScanState {
+                    self?.wifiScanState = .idle
+                }
                 self?.refreshNetworkDetails(
                     forcePublicIP: false,
                     preferredInterfaceName: preferredInterfaceName
@@ -195,7 +219,9 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         monitor.start(queue: queue)
     }
 
-    static func connectionState(statusIsSatisfied: Bool, usesWiredEthernet: Bool, usesWiFi: Bool) -> String {
+    static func connectionState(statusIsSatisfied: Bool, usesWiredEthernet: Bool, usesWiFi: Bool)
+        -> String
+    {
         guard statusIsSatisfied else { return "OFF" }
         if usesWiredEthernet { return "LAN" }
         if usesWiFi { return "WIFI" }
@@ -224,8 +250,9 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     static func displaySSID(connection: String, ssid: String?) -> String {
         guard connection == "WIFI",
-              let ssid = ssid?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !ssid.isEmpty else { return "" }
+            let ssid = ssid?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !ssid.isEmpty
+        else { return "" }
         return ssid
     }
 
@@ -234,9 +261,10 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         preferredInterfaceName: String?
     ) -> String? {
         if let preferredInterfaceName,
-           let preferred = snapshots.first(where: {
-               $0.name == preferredInterfaceName && $0.isActive
-           }) {
+            let preferred = snapshots.first(where: {
+                $0.name == preferredInterfaceName && $0.isActive
+            })
+        {
             return preferred.ipv4
         }
         return snapshots.first(where: { $0.isActive })?.ipv4 ?? snapshots.first?.ipv4
@@ -249,7 +277,8 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     static func validPublicIPAddress(_ value: String) -> String? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
-              IPv4Address(trimmed) != nil || IPv6Address(trimmed) != nil else {
+            IPv4Address(trimmed) != nil || IPv6Address(trimmed) != nil
+        else {
             return nil
         }
         return trimmed
@@ -259,6 +288,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         forcePublicIP: Bool = true,
         preferredInterfaceName: String? = nil
     ) {
+        refreshConnectionIdentity()
         let snapshots = addressSource.interfaceSnapshots()
         let localIPv4 = Self.selectIPv4(
             from: snapshots,
@@ -266,7 +296,8 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         )
         localIPv4State = localIPv4.map { .available($0) } ?? .unavailable("Not available")
         let dns = addressSource.dnsServers()
-        dnsServersState = dns.isEmpty
+        dnsServersState =
+            dns.isEmpty
             ? .unavailable("Not available")
             : .available(dns.joined(separator: ", "))
         let now = Date()
@@ -274,7 +305,8 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         if forcePublicIP || lastPublicIPFetch == nil {
             shouldFetchPublicIP = true
         } else if let lastPublicIPFetch {
-            shouldFetchPublicIP = now.timeIntervalSince(lastPublicIPFetch) >= publicIPMinimumInterval
+            shouldFetchPublicIP =
+                now.timeIntervalSince(lastPublicIPFetch) >= publicIPMinimumInterval
         } else {
             shouldFetchPublicIP = false
         }
@@ -285,7 +317,8 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let value): self?.publicIPState = .available(value)
-                    case .failure(let error): self?.publicIPState = .unavailable(error.localizedDescription)
+                    case .failure(let error):
+                        self?.publicIPState = .unavailable(error.localizedDescription)
                     }
                 }
             }
@@ -293,14 +326,36 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func scanForNetworks() {
+        guard canScanWiFi else {
+            availableNetworks = []
+            wifiScanState = .unavailable(
+                NetworkManagerError.wiredConnectionActive.localizedDescription
+            )
+            return
+        }
+        guard locationManager.authorizationStatus != .denied,
+            locationManager.authorizationStatus != .restricted
+        else {
+            availableNetworks = []
+            wifiScanState = .unavailable(
+                NetworkManagerError.locationPermissionDenied.localizedDescription
+            )
+            return
+        }
+
+        wifiScanState = .scanning
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             let result = self.fetchAvailableNetwork()
             DispatchQueue.main.async {
-                if case .success(let networks) = result {
+                switch result {
+                case .success(let networks):
                     self.availableNetworks = networks.sorted { $0.rssiValue > $1.rssiValue }
-                } else {
+                    self.wifiScanState = networks.isEmpty ? .empty : .loaded
+                    self.refreshConnectionIdentity()
+                case .failure(let error):
                     self.availableNetworks = []
+                    self.wifiScanState = .failed(error.localizedDescription)
                 }
             }
         }
@@ -314,27 +369,79 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return .failure(NetworkManagerError.wifiInterfaceUnavailable)
         }
         do {
-            let visible = try interface.scanForNetworks(withName: nil).filter {
-                !($0.ssid ?? "").isEmpty
+            let scanned = usableNetworks(from: try interface.scanForNetworks(withName: nil))
+            let networks =
+                scanned.isEmpty
+                ? usableNetworks(from: interface.cachedScanResults() ?? [])
+                : scanned
+            return .success(Self.uniqueNetworksBySSID(networks))
+        } catch {
+            let cached = usableNetworks(from: interface.cachedScanResults() ?? [])
+            if !cached.isEmpty {
+                return .success(Self.uniqueNetworksBySSID(cached))
             }
-            var unique: [String: CWNetwork] = [:]
-            for network in visible {
-                guard let ssid = network.ssid else { continue }
-                if let existing = unique[ssid] {
-                    if network.rssiValue > existing.rssiValue {
-                        unique[ssid] = network
-                    }
-                } else {
+            return .failure(error)
+        }
+    }
+
+    private func usableNetworks(from networks: Set<CWNetwork>) -> [CWNetwork] {
+        networks.filter { !($0.ssid ?? "").isEmpty }
+    }
+
+    private static func uniqueNetworksBySSID(_ networks: [CWNetwork]) -> Set<CWNetwork> {
+        var unique: [String: CWNetwork] = [:]
+        for network in networks {
+            guard let ssid = network.ssid else { continue }
+            if let existing = unique[ssid] {
+                if network.rssiValue > existing.rssiValue {
                     unique[ssid] = network
                 }
+            } else {
+                unique[ssid] = network
             }
-            return .success(Set(unique.values))
-        } catch { return .failure(error) }
+        }
+        return Set(unique.values)
+    }
+
+    private func refreshConnectionIdentity() {
+        let liveSSID = CWWiFiClient.shared().interface()?.ssid()
+        let retainedSSID = currentSSID.isEmpty ? nil : currentSSID
+        let resolvedSSID = liveSSID ?? retainedSSID
+        currentSSID = Self.displaySSID(connection: currentConnection, ssid: resolvedSSID)
+        currentNetworkName = Self.networkDisplayName(
+            connection: currentConnection,
+            interfaceName: activeInterfaceName,
+            ssid: resolvedSSID
+        )
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedAlways:
+            refreshConnectionIdentity()
+            if currentConnection == "WIFI" { scanForNetworks() }
+        case .denied, .restricted:
+            currentSSID = ""
+            currentNetworkName = Self.networkDisplayName(
+                connection: currentConnection,
+                interfaceName: activeInterfaceName,
+                ssid: nil
+            )
+            availableNetworks = []
+            wifiScanState = .unavailable(
+                NetworkManagerError.locationPermissionDenied.localizedDescription
+            )
+        case .notDetermined:
+            wifiScanState = .idle
+        @unknown default:
+            wifiScanState = .idle
+        }
     }
 
     func isKnownNetwork(ssid: String) -> Bool {
         guard let interface = CWWiFiClient.shared().interface(),
-              let config = interface.configuration() else {
+            let config = interface.configuration()
+        else {
             return false
         }
         return config.networkProfiles

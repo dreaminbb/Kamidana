@@ -1,35 +1,67 @@
 Main Config folder path should be `$HOME/.config/kamidana`
 
-## Monitor-specific Configuration Files
+## Monitor Profiles
 
-Kamidana reads independent configuration files for regular and built-in displays:
-
-- `~/.config/kamidana/config.yaml`: external and other regular displays
-- `~/.config/kamidana/built_in_monitor.yaml`: the built-in display
-
-Both files use the same top-level schema: `global`, `left`, `center`, and `right`. This allows each display type to define its own global style without nesting it under a monitor key.
+Kamidana reads both display profiles from `~/.config/kamidana/config.yaml`. The top-level `external` and `built_in` keys each contain a complete `global`, `left`, `center`, and `right` configuration.
 
 ```yaml
-global:
-  background_mode: per_widget
-  style:
-    corner_radius: 0
+external:
+  global:
+    background_mode: per_widget
+  left:
+    widgets: []
+  center:
+    center_default: external-clock
+    widgets:
+      - id: external-clock
+        type: clock
+        compact_format: "{time}"
+  right:
+    widgets: []
 
-left:
-  widgets: []
-
-center:
-  center_default: clock
-  widgets:
-    - id: clock
-      type: clock
-      compact_format: "{time}"
-
-right:
-  widgets: []
+built_in:
+  global:
+    background_mode: per_widget
+  left:
+    widgets: []
+  center:
+    center_default: built-in-clock
+    widgets:
+      - id: built-in-clock
+        type: clock
+        compact_format: "{time}"
+  right:
+    widgets: []
 ```
 
-The application selects the file automatically by checking whether the active main display is built in. If `built_in_monitor.yaml` does not exist, `config.yaml` is used for both display types. If only `built_in_monitor.yaml` exists, it is used as the fallback for regular displays as well. Widget IDs must be unique within each file, but the same IDs may be reused across the two files.
+The application selects the profile automatically by checking whether the active main display is built in. Both profiles are required. Widget IDs must be unique inside each profile, but the same IDs may be reused between `external` and `built_in`.
+
+The previous two-file layout remains readable for migration, but new configuration and documentation use only the combined file.
+
+## Widget Motion
+
+Every widget accepts `motion`. It controls application-owned expansion and popup transitions without allowing arbitrary UI positioning.
+
+| Value | Behavior |
+|---|---|
+| `dynamic` | Animate expansion and popup state changes. This is the default. |
+| `static` | Present and dismiss immediately without animation. |
+
+```yaml
+- id: system-actions
+  type: system-action
+  motion: static
+  icon: "󰀵"
+  children:
+    - id: sleep
+      type: sleep
+      format: "Sleep"
+      icon: "󰒲"
+```
+
+The same setting controls a center-default widget's Island expansion. Each monitor configuration may choose a different value.
+
+`style.animation` remains responsible for surface styling transitions such as hover colors; `motion` controls whether popup and expansion movement occurs.
 
 ## NerdFont Icons Configuration
 
@@ -66,7 +98,7 @@ You can override any of these icons in your `config.yaml` by specifying the char
 
 ## Widget Format Placeholders
 
-The regular v1 configuration file is located at `~/.config/kamidana/config.yaml`, and the built-in display configuration is located at `~/.config/kamidana/built_in_monitor.yaml`. Regular widgets use the `format` property to control their compact text. Nerd Font glyphs written directly in a format are rendered with `style.icon_color`; text and placeholder values use `style.color`.
+The v1 configuration file is located at `~/.config/kamidana/config.yaml`. Widgets inside either monitor profile use the `format` property to control their compact text. Nerd Font glyphs written directly in a format are rendered with `style.icon_color`; text and placeholder values use `style.color`.
 
 ### Music Widget
 
@@ -136,6 +168,51 @@ Examples:
 - id: memory-percent
   type: memory
   format: " {usage}%"
+```
+
+### Volume Widget
+
+The compact bar does not display codec information automatically. Hovering the widget (or clicking it when `activate: click`) opens one predefined panel containing both enabled Output and Input sections. Each section contains its codec, volume, mute control, current device, and device list.
+
+| Placeholder | Value |
+|---|---|
+| `{icon}` | Primary output icon, or input icon when output management is disabled |
+| `{volume}` | Primary output volume, or input volume when output management is disabled |
+| `{output_icon}` | Output mute or active icon |
+| `{output_volume}` | Output volume percentage without `%` |
+| `{output_device}` | Current output device name |
+| `{input_icon}` | Input mute or active icon |
+| `{input_volume}` | Input volume percentage without `%` |
+| `{input_device}` | Current input device name |
+
+```yaml
+- id: volume
+  type: volume
+  activate: hover
+  motion: dynamic
+  format: "{output_icon} {output_volume}% {input_icon} {input_volume}%"
+  output_management: true
+  input_management: true
+```
+
+### Network Widget
+
+| Placeholder | Value |
+|---|---|
+| `{connection_icon}` | Wired, Wi-Fi, or offline icon |
+| `{ssid}` | Current SSID for Wi-Fi; empty for wired and offline connections |
+| `{network_name}` | SSID for Wi-Fi, interface-qualified Ethernet name for wired, or connection fallback |
+| `{upload}` | Current upload rate |
+| `{upload_icon}` | Upload icon |
+| `{download}` | Current download rate |
+| `{download_icon}` | Download icon |
+
+The Wi-Fi panel reports scanning, empty, permission-denied, and scan-failure states separately. Active scans run off the UI thread, and cached CoreWLAN results are used when a refresh cannot produce a new list. Wi-Fi scans remain disabled while wired Ethernet is active.
+
+```yaml
+- id: network
+  type: network
+  format: "{connection_icon} {network_name} {upload_icon} {upload}/s {download_icon} {download}/s"
 ```
 
 ### Bluetooth Widget

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WidgetFolder: View {
+  @Environment(\.kamidanaWidgetMotion) private var motion
   let config: WidgetFolderConfig
   private let verticalContentWidth: CGFloat = 220
   private let statusBarHeight: CGFloat = 40
@@ -17,7 +18,7 @@ struct WidgetFolder: View {
 
     Group {
       if config.direction == "below" {
-        Button(action: { showPopover.toggle() }) {
+        Button(action: { toggleExpansion($showPopover) }) {
           HStack(spacing: 4) {
             NerdFontIcon(folderIcon).foregroundColor(iconColor)
             if let name = config.name { Text(name).foregroundColor(iconColor) }
@@ -48,6 +49,7 @@ struct WidgetFolder: View {
             )
             .contentShape(Rectangle())
             .offset(y: statusBarHeight)
+            .transition(expansionTransition(edge: .top))
           }
         }
       } else {
@@ -56,9 +58,7 @@ struct WidgetFolder: View {
             nestedWidgets()
           }
 
-          Button(action: {
-            withAnimation { isExpandedInline.toggle() }
-          }) {
+          Button(action: { toggleExpansion($isExpandedInline) }) {
             HStack(spacing: 4) {
               NerdFontIcon(folderIcon).foregroundColor(iconColor)
               if let name = config.name { Text(name).foregroundColor(iconColor) }
@@ -85,6 +85,7 @@ struct WidgetFolder: View {
             .environment(\.kamidanaV1Style, instance.v1Style)
             .environment(\.kamidanaWidgetFormat, instance.v1Format)
             .environment(\.kamidanaWidgetActivation, instance.v1Activate)
+            .kamidanaWidgetMotion(instance.v1Motion)
             .environment(\.isInsideWidgetFolder, true)
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
@@ -92,9 +93,29 @@ struct WidgetFolder: View {
             .environment(\.kamidanaV1Style, instance.v1Style)
             .environment(\.kamidanaWidgetFormat, instance.v1Format)
             .environment(\.kamidanaWidgetActivation, instance.v1Activate)
+            .kamidanaWidgetMotion(instance.v1Motion)
             .environment(\.isInsideWidgetFolder, true)
         }
       }
     }
+  }
+
+  private func toggleExpansion(_ isExpanded: Binding<Bool>) {
+    if motion == .dynamic {
+      withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+        isExpanded.wrappedValue.toggle()
+      }
+    } else {
+      var transaction = Transaction()
+      transaction.disablesAnimations = true
+      withTransaction(transaction) {
+        isExpanded.wrappedValue.toggle()
+      }
+    }
+  }
+
+  private func expansionTransition(edge: Edge) -> AnyTransition {
+    guard motion == .dynamic else { return .identity }
+    return .move(edge: edge).combined(with: .opacity)
   }
 }

@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct NetworkWidget: View {
-    static let defaultFormat = "{connection_icon} {ssid} {upload} {upload_icon} {download} {download_icon}"
+    static let defaultFormat =
+        "{connection_icon} {network_name} {upload} {upload_icon} {download} {download_icon}"
 
     @EnvironmentObject var matrix: SystemMatrix
     @EnvironmentObject var netManager: NetworkManager
@@ -16,7 +17,8 @@ struct NetworkWidget: View {
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
         let upload = matrix.data.internetUsage.map { formatBytes($0.uploadBytesPerSecond) } ?? "--"
-        let download = matrix.data.internetUsage.map { formatBytes($0.downloadBytesPerSecond) } ?? "--"
+        let download =
+            matrix.data.internetUsage.map { formatBytes($0.downloadBytesPerSecond) } ?? "--"
 
         Button(action: { if activation == .click { showPopover.toggle() } }) {
             FormattedWidgetLabel(
@@ -25,6 +27,7 @@ struct NetworkWidget: View {
                 values: [
                     "connection_icon": connectionIcon,
                     "ssid": netManager.currentSSID,
+                    "network_name": netManager.networkDisplayName,
                     "upload": upload,
                     "upload_icon": config.uploadIcon,
                     "download": download,
@@ -41,13 +44,16 @@ struct NetworkWidget: View {
             popoverContent(colors: colors, upload: upload, download: download)
                 .onAppear { netManager.refreshNetworkDetails(forcePublicIP: false) }
                 .onHover {
-                    hoverState.updatePopoverHover($0, isPresented: $showPopover, activation: activation)
+                    hoverState.updatePopoverHover(
+                        $0, isPresented: $showPopover, activation: activation)
                 }
         }
     }
 
     @ViewBuilder
-    private func popoverContent(colors: GlobalColorsConfig, upload: String, download: String) -> some View {
+    private func popoverContent(colors: GlobalColorsConfig, upload: String, download: String)
+        -> some View
+    {
         let showsWiFiConnectionControls = netManager.currentConnection != "LAN"
 
         Group {
@@ -82,7 +88,7 @@ struct NetworkWidget: View {
         download: String
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Network")
+            Text(netManager.networkDisplayName)
                 .font(.headline)
                 .foregroundColor(Color(hex: colors.textPrimary))
 
@@ -113,7 +119,9 @@ struct NetworkWidget: View {
     }
 
     @ViewBuilder
-    private func detailRow(label: String, value: NetworkValueState, colors: GlobalColorsConfig) -> some View {
+    private func detailRow(label: String, value: NetworkValueState, colors: GlobalColorsConfig)
+        -> some View
+    {
         HStack(alignment: .firstTextBaseline) {
             Text(label)
                 .foregroundColor(Color(hex: colors.textSecondary))

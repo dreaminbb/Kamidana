@@ -64,7 +64,7 @@ final class ConfigManagerTests: XCTestCase {
       "Config file URL must be fixed to ~/.config/kamidana/config.yaml")
   }
 
-  func testResolveBuiltInConfigFileURL() {
+  func testResolveLegacyBuiltInConfigFileURL() {
     let expectedFileURL =
       defaultHomeURL
       .appendingPathComponent(".config")
@@ -74,7 +74,7 @@ final class ConfigManagerTests: XCTestCase {
     XCTAssertEqual(
       manager.resolveBuiltInConfigFileURL().path,
       expectedFileURL.path,
-      "Built-in config file URL must be fixed to ~/.config/kamidana/built_in_monitor.yaml"
+      "Legacy built-in config file URL must remain available for migration"
     )
   }
 
@@ -93,7 +93,7 @@ final class ConfigManagerTests: XCTestCase {
     print(manager.currentConfig)
   }
 
-  func testLoadConfigReadsSeparateMonitorFiles() throws {
+  func testLoadConfigReadsCombinedMonitorProfiles() throws {
     let temporaryHome = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString, isDirectory: true)
     defer { try? FileManager.default.removeItem(at: temporaryHome) }
@@ -103,28 +103,36 @@ final class ConfigManagerTests: XCTestCase {
       at: configDirectory,
       withIntermediateDirectories: true
     )
-    let regularYAML = """
-      center:
-        center_default: regular-clock
-        widgets:
-          - id: regular-clock
-            type: clock
-            compact_format: "regular {time}"
+    let yaml = """
+      external:
+        center:
+          center_default: regular-clock
+          widgets:
+            - id: regular-clock
+              type: clock
+              compact_format: "regular {time}"
+      built_in:
+        center:
+          center_default: built-in-clock
+          widgets:
+            - id: built-in-clock
+              type: clock
+              compact_format: "built-in {time}"
       """
-    let builtInYAML = """
-      center:
-        center_default: built-in-clock
-        widgets:
-          - id: built-in-clock
-            type: clock
-            compact_format: "built-in {time}"
-      """
-    try regularYAML.write(
+    try yaml.write(
       to: manager.resolveConfigFileURL(homeDirectory: temporaryHome),
       atomically: true,
       encoding: .utf8
     )
-    try builtInYAML.write(
+    let staleLegacyYAML = """
+      center:
+        center_default: stale-clock
+        widgets:
+          - id: stale-clock
+            type: clock
+            compact_format: "stale {time}"
+      """
+    try staleLegacyYAML.write(
       to: manager.resolveBuiltInConfigFileURL(homeDirectory: temporaryHome),
       atomically: true,
       encoding: .utf8

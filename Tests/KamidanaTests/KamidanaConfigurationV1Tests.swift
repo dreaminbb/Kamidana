@@ -36,6 +36,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
                 icon_color: "#aaaaaa"
         - id: network-main
           type: network
+          motion: static
           format: "{connection_icon} {upload} {upload_icon} {download} {download_icon}"
     center:
       activate: hover
@@ -68,6 +69,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
   func testDecodesValidRepresentativeConfiguration() throws {
     let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: validYAML)
+    XCTAssertEqual(configuration.left.widgets[1].motion, .static)
     XCTAssertEqual(configuration.global.backgroundMode, .perSection)
     XCTAssertTrue(configuration.global.hideInFullscreen)
     XCTAssertEqual(configuration.left.backgroundMode, .perWidget)
@@ -76,6 +78,44 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(configuration.center.widgets.count, 2)
     XCTAssertEqual(configuration.left.widgets[0].actionChildren[0].id, "sleep-action")
     XCTAssertEqual(configuration.center.widgets[0].partStyles["media"]?.color, "#ffffff")
+  }
+
+  func testDecodesCombinedMonitorProfiles() throws {
+    let yaml = """
+      external:
+        center:
+          center_default: external-clock
+          widgets:
+            - id: external-clock
+              type: clock
+              compact_format: "{time}"
+      built_in:
+        center:
+          center_default: built-in-clock
+          widgets:
+            - id: built-in-clock
+              type: clock
+              compact_format: "{time}"
+      """
+
+    let profiles = try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml)
+
+    XCTAssertEqual(profiles.external.center.centerDefault, "external-clock")
+    XCTAssertEqual(profiles.builtIn.center.centerDefault, "built-in-clock")
+  }
+
+  func testCombinedMonitorProfilesRequireBuiltInAndExternalSections() {
+    let yaml = """
+      external:
+        center:
+          center_default: external-clock
+          widgets:
+            - id: external-clock
+              type: clock
+              compact_format: "{time}"
+      """
+
+    XCTAssertThrowsError(try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml))
   }
 
   func testRejectsDuplicateIDsIncludingActionChildren() {

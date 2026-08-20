@@ -159,6 +159,7 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
           - id: cpu
             type: cpu
             activate: hover
+            motion: static
           - id: gpu
             type: gpu
       center:
@@ -174,6 +175,8 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
 
     XCTAssertEqual(runtime.externalDisplay.right[0].v1Activate, .hover)
     XCTAssertEqual(runtime.externalDisplay.right[1].v1Activate, .click)
+    XCTAssertEqual(runtime.externalDisplay.right[0].v1Motion, .static)
+    XCTAssertEqual(runtime.externalDisplay.right[1].v1Motion, .dynamic)
   }
 
   func testAdapterBuildsPlacementSpecificMusicConfiguration() throws {
@@ -225,56 +228,53 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(right.extend, .left)
   }
 
-  func testConfigManagerBuildsLayoutsFromSeparateMonitorFiles() throws {
-    let regularYAML = """
-      global:
-        style:
-          color: "#111111"
-      left:
-        widgets:
-          - id: regular-music
-            type: music
-            format: "{artwork} {title}"
-      center:
-        center_default: regular-center
-        widgets:
-          - id: regular-center
-            type: music
-            normal:
+  func testConfigManagerBuildsLayoutsFromCombinedMonitorProfiles() throws {
+    let yaml = """
+      external:
+        global:
+          style:
+            color: "#111111"
+        left:
+          widgets:
+            - id: external-music
+              type: music
               format: "{artwork} {title}"
-      right:
-        widgets:
-          - id: regular-cpu
-            type: cpu
-            format: "󰍛 {usage}%"
-      """
-    let builtInYAML = """
-      global:
-        style:
-          color: "#222222"
-      left:
-        widgets:
-          - id: built-in-volume
-            type: volume
-            format: "󰕾 {volume}%"
-      center:
-        center_default: built-in-center
-        widgets:
-          - id: built-in-center
-            type: clock
-            compact_format: "{time}"
-      right:
-        widgets:
-          - id: built-in-memory
-            type: memory
-            format: " {usage}%"
+        center:
+          center_default: external-center
+          widgets:
+            - id: external-center
+              type: music
+              normal:
+                format: "{artwork} {title}"
+        right:
+          widgets:
+            - id: external-cpu
+              type: cpu
+              format: "󰍛 {usage}%"
+      built_in:
+        global:
+          style:
+            color: "#222222"
+        left:
+          widgets:
+            - id: built-in-volume
+              type: volume
+              format: "󰕾 {volume}%"
+        center:
+          center_default: built-in-center
+          widgets:
+            - id: built-in-center
+              type: clock
+              compact_format: "{time}"
+        right:
+          widgets:
+            - id: built-in-memory
+              type: memory
+              format: " {usage}%"
       """
 
     let manager = ConfigManager(shouldLoadUserConfiguration: false)
-    try manager.applyV1Configurations(
-      regularYAML: regularYAML,
-      builtInYAML: builtInYAML
-    )
+    try manager.applyV1Configuration(yaml: yaml)
 
     XCTAssertEqual(manager.currentConfig.externalDisplay.left.first?.typeID, "music")
     XCTAssertEqual(manager.currentConfig.externalDisplay.center.first?.typeID, "music")
@@ -374,6 +374,7 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
       values: [
         "connection_icon": config.wiredIcon,
         "ssid": "",
+        "network_name": "Ethernet (en0)",
         "upload": "1 KB",
         "upload_icon": config.uploadIcon,
         "download": "2 KB",
@@ -382,7 +383,9 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     )
 
     XCTAssertEqual(
-      rendered, "\(config.wiredIcon)  1 KB \(config.uploadIcon) 2 KB \(config.downloadIcon)")
+      rendered,
+      "\(config.wiredIcon) Ethernet (en0) 1 KB \(config.uploadIcon) 2 KB \(config.downloadIcon)"
+    )
     XCTAssertEqual(KamidanaFormatRenderer.segments(in: rendered).first?.value, config.wiredIcon)
     XCTAssertTrue(KamidanaFormatRenderer.segments(in: rendered).first?.isIcon ?? false)
   }
@@ -415,20 +418,15 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
       .deletingLastPathComponent()
       .deletingLastPathComponent()
     let exampleURL = repositoryRoot.appendingPathComponent("Example/config.yaml")
-    let builtInExampleURL = repositoryRoot.appendingPathComponent(
-      "Example/built_in_monitor.yaml"
-    )
-    let regularYAML = try String(contentsOf: exampleURL, encoding: .utf8)
-    let builtInYAML = try String(contentsOf: builtInExampleURL, encoding: .utf8)
-    let regular = try KamidanaConfigurationV1Decoder.decode(yaml: regularYAML)
-    let builtIn = try KamidanaConfigurationV1Decoder.decode(yaml: builtInYAML)
-    XCTAssertEqual(regular.center.centerDefault, "music")
-    XCTAssertEqual(builtIn.center.centerDefault, "music")
-    XCTAssertTrue(regular.global.hideInFullscreen)
-    XCTAssertTrue(builtIn.global.hideInFullscreen)
-    let cpu = try XCTUnwrap(regular.right.widgets.first { $0.kind == .cpu })
+    let yaml = try String(contentsOf: exampleURL, encoding: .utf8)
+    let profiles = try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml)
+    XCTAssertEqual(profiles.external.center.centerDefault, "music")
+    XCTAssertEqual(profiles.builtIn.center.centerDefault, "music")
+    XCTAssertTrue(profiles.external.global.hideInFullscreen)
+    XCTAssertTrue(profiles.builtIn.global.hideInFullscreen)
+    let cpu = try XCTUnwrap(profiles.external.right.widgets.first { $0.kind == .cpu })
     XCTAssertEqual(cpu.style?.color, "#a6e3a1")
     XCTAssertEqual(cpu.style?.iconColor, "#a6e3a1")
-    XCTAssertEqual(builtIn.right.widgets.map(\.kind), [.cpu, .memory, .widgetFolder])
+    XCTAssertEqual(profiles.builtIn.right.widgets.map(\.kind), [.cpu, .memory, .widgetFolder])
   }
 }
