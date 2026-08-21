@@ -8,26 +8,33 @@ let package = Package(
     .macOS(.v13)
   ],
   products: [
-    .executable(name: "Kamidana", targets: ["Kamidana"])
+    .executable(name: "Kamidana", targets: ["KamidanaApp"]),
+    .executable(name: "kamidana-cli", targets: ["KamidanaCLI"])
   ],
   dependencies: [
     .package(url: "https://github.com/migueldeicaza/SwiftTerm", from: "1.0.0"),
-    .package(url: "https://github.com/jpsim/Yams.git", from: "5.0.6")
+    .package(url: "https://github.com/jpsim/Yams.git", from: "5.0.6"),
+    .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0")
   ],
   targets: [
-    // Targets are the basic building blocks of a package, defining a module or a test suite.
-    // Targets can depend on other targets in this package and products from dependencies.
     .executableTarget(
-      name: "Kamidana",
+      name: "KamidanaApp",
       dependencies: [
         .product(name: "SwiftTerm", package: "SwiftTerm"),
         .product(name: "Yams", package: "Yams")
       ],
-      path: "Sources/Kamidana"
+      path: "Sources/KamidanaApp"
+    ),
+    .executableTarget(
+      name: "KamidanaCLI",
+      dependencies: [
+        .product(name: "ArgumentParser", package: "swift-argument-parser")
+      ],
+      path: "Sources/KamidanaCLI"
     ),
     .testTarget(
       name: "KamidanaTests",
-      dependencies: ["Kamidana"],
+      dependencies: ["KamidanaApp"],
       path: "Tests/KamidanaTests"
     ),
   ]

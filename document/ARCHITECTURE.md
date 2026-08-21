@@ -28,5 +28,5 @@ Widgets often require access to shared system states (e.g., `SystemMatrix`, `Net
 ## 4. Component Restrictions
 To prevent complex UI states and clipping issues within SwiftUI popovers, there are explicit architectural restrictions on widget composition:
 - **Vertical `WidgetFolder` (`direction: "below"`) Content Constraint**: 
-  A vertically expanding WidgetFolder displays its children inside a popover. It is **strictly prohibited** to nest widgets that themselves expand on click or hover (e.g., another `WidgetFolder`, `NetworkWidget`, or `WiFiWidget`) inside this popover. 
+  A vertically expanding WidgetFolder displays its children inside a popover. It is **strictly prohibited** to nest widgets that themselves expand on click or hover (e.g., another `WidgetFolder` or `NetworkWidget`) inside this popover.
   Only simple, action-oriented widgets that trigger a command on click (such as `SystemActionWidget`) or purely informational widgets without sub-menus are permitted.

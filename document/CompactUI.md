@@ -27,8 +27,12 @@ Persisted in the following keys in `UserDefaults`:
 
 ## UI Behavior
 
+- Use the `built_in` profile from `config.yaml` when the active main display is built in
+- Use the `external` profile from `config.yaml` for an external or other regular main display
 - Reduce font size and spacing when compact mode is active
 - On the right side, **only CPU / Memory are always displayed**
 - Others (Network / GPU / Disk / Battery / Clock) are collapsed under the `list.bullet` icon
 - Audio codec is not always displayed; it is shown only inside the popover
-- Music is placed in the left group and displayed to the left of Wi-Fi
+- The compact center Music Island is pinned to the screen center and fully hidden in the built-in camera/notch region while collapsed
+- Hovering the center Music Island moves the complete expanded panel below the camera area so its tabs remain visible
+- A transparent application-defined hover bridge covers the camera-to-panel gap and keeps the expanded UI open while the pointer moves into it
