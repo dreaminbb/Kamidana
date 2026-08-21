@@ -2,7 +2,7 @@
 // import CoreBluetooth
 // import XCTest
 //
-// @testable import Kamidana
+// @testable import KamidanaApp
 //
 // final class BluetoothManagerTests: XCTestCase {
 //     var cancellables = Set<AnyCancellable>()

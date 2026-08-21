@@ -1,6 +1,6 @@
 import XCTest
 import CoreAudio
-@testable import Kamidana
+@testable import KamidanaApp
 
 final class AudioDeviceManagerTests: XCTestCase {
 

@@ -2,7 +2,6 @@ import AppKit
 import CoreWLAN
 import SwiftUI
 
-// TODO: change profile at display ID
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
   var statusBarWindow: NSWindow!
@@ -160,16 +159,12 @@ struct StatusBarView: View {
   @StateObject private var uiSettings = UISettingsStore()
   @StateObject private var bluetooth = BluetoothManager()
 
-  @State private var isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
+  @State private var currentScreen: NSScreen = NSScreen.screens.first ?? NSScreen.main!
 
   var body: some View {
-    let v1Configuration = ConfigManager.shared.configurationForDisplay(
-      isBuiltIn: isBuiltInDisplay
-    )
-    let currentLayout: DisplayLayoutConfig =
-      isBuiltInDisplay
-      ? ConfigManager.shared.currentConfig.builtInDisplay
-      : ConfigManager.shared.currentConfig.externalDisplay
+    let isBuiltInDisplay = DisplayDetector.isBuiltIn(screen: currentScreen)
+    let v1Configuration = ConfigManager.shared.configuration(for: currentScreen)
+    let currentLayout: DisplayLayoutConfig = ConfigManager.shared.layout(for: currentScreen)
     let globalMode = v1Configuration?.global.backgroundMode ?? .perWidget
     let leftMode = v1Configuration?.left.backgroundMode ?? globalMode
     let centerMode = v1Configuration?.center.backgroundMode ?? globalMode
@@ -261,19 +256,14 @@ struct StatusBarView: View {
     .onAppear {
       matrix.startMonitoring()
       localSend.scanNetwork()
-      isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
-      ConfigManager.shared.activateConfiguration(isBuiltIn: isBuiltInDisplay)
+      if let screen = NSScreen.screens.first { currentScreen = screen }
     }
     .onReceive(
       NotificationCenter.default.publisher(
         for: NSApplication.didChangeScreenParametersNotification)
     ) { _ in
-      // System screen info (NSScreen.screens) might not be updated yet right after receiving the notification,
-      // so evaluate asynchronously with a slight delay
       DispatchQueue.main.async {
-        isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
-        ConfigManager.shared.activateConfiguration(isBuiltIn: isBuiltInDisplay)
-        // print("Updated isBuiltInDisplay: \(isBuiltInDisplay)")
+        if let screen = NSScreen.screens.first { currentScreen = screen }
       }
     }
   }

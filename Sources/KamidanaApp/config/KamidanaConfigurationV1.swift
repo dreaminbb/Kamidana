@@ -637,7 +637,7 @@ public struct KamidanaWidget: Decodable, Equatable {
 }
 
 public struct KamidanaConfigurationV1Global: Decodable, Equatable {
-  public var backgroundMode: KamidanaBackgroundMode
+    public var backgroundMode: KamidanaBackgroundMode
   public var hideInFullscreen: Bool
   public var style: KamidanaStyle
   public var popupStyle: KamidanaStyle?
@@ -1188,45 +1188,58 @@ public struct KamidanaDisplayConfigurationV1: Decodable, Equatable {
   }
 }
 
+struct AnyCodingKey: CodingKey {
+  var stringValue: String
+  var intValue: Int?
+  
+  init?(stringValue: String) {
+    self.stringValue = stringValue
+  }
+  
+  init?(intValue: Int) {
+    self.intValue = intValue
+    self.stringValue = String(intValue)
+  }
+}
+
 /// Contains the complete UI configuration for both display classes in one file.
 /// `global` is deliberately shared: monitor-specific sections contain layout only.
 public struct KamidanaMonitorConfigurationV1: Decodable, Equatable {
   public var global: KamidanaConfigurationV1Global
-  public var external: KamidanaConfigurationV1
-  public var builtIn: KamidanaConfigurationV1
+  public var displays: [String: KamidanaConfigurationV1]
 
   public init(
     global: KamidanaConfigurationV1Global,
-    external: KamidanaConfigurationV1,
-    builtIn: KamidanaConfigurationV1
+    displays: [String: KamidanaConfigurationV1]
   ) {
     self.global = global
-    self.external = external
-    self.builtIn = builtIn
-  }
-
-  private enum CodingKeys: String, CodingKey, CaseIterable {
-    case global, external
-    case builtIn = "built_in"
+    self.displays = displays
   }
 
   public init(from decoder: Decoder) throws {
-    try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    let global = try container.decodeIfPresent(KamidanaConfigurationV1Global.self, forKey: .global)
+    let container = try decoder.container(keyedBy: AnyCodingKey.self)
+    
+    let globalKey = AnyCodingKey(stringValue: "global")!
+    let global = try container.decodeIfPresent(KamidanaConfigurationV1Global.self, forKey: globalKey)
       ?? KamidanaConfigurationV1Global()
-    let external = try container.decode(KamidanaDisplayConfigurationV1.self, forKey: .external)
-    let builtIn = try container.decode(KamidanaDisplayConfigurationV1.self, forKey: .builtIn)
-    self.init(
-      global: global,
-      external: external.configuration(global: global),
-      builtIn: builtIn.configuration(global: global)
-    )
+    
+    var parsedDisplays: [String: KamidanaConfigurationV1] = [:]
+    
+    for key in container.allKeys {
+      if key.stringValue == "global" { continue }
+      
+      let displayConfig = try container.decode(KamidanaDisplayConfigurationV1.self, forKey: key)
+      parsedDisplays[key.stringValue] = displayConfig.configuration(global: global)
+    }
+    
+    self.global = global
+    self.displays = parsedDisplays
   }
 
   public func validate() throws {
-    try external.validate()
-    try builtIn.validate()
+    for display in displays.values {
+      try display.validate()
+    }
   }
 }
 

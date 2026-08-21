@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import Kamidana
+@testable import KamidanaApp
 
 final class GPUProcessMonitorTests: XCTestCase {
   func testParsesGPUClientCreator() {

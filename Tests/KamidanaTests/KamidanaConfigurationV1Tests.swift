@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import Kamidana
+@testable import KamidanaApp
 
 final class KamidanaConfigurationV1Tests: XCTestCase {
   private let validYAML = """
@@ -138,26 +138,15 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
     let profiles = try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml)
 
-    XCTAssertEqual(profiles.external.center.centerDefault, "external-clock")
-    XCTAssertEqual(profiles.builtIn.center.centerDefault, "built-in-clock")
-    XCTAssertEqual(profiles.external.global.barPadding.top, 3)
-    XCTAssertEqual(profiles.external.global.barPadding.leading, 5)
-    XCTAssertEqual(profiles.builtIn.global.barPadding.top, 3)
+    let external = profiles.displays["external"]!
+    let builtIn = profiles.displays["built_in"]!
+    XCTAssertEqual(external.center.centerDefault, "external-clock")
+    XCTAssertEqual(builtIn.center.centerDefault, "built-in-clock")
+    XCTAssertEqual(external.global.barPadding.top, 3)
+    XCTAssertEqual(external.global.barPadding.leading, 5)
+    XCTAssertEqual(builtIn.global.barPadding.top, 3)
   }
 
-  func testCombinedMonitorProfilesRequireBuiltInAndExternalSections() {
-    let yaml = """
-      external:
-        center:
-          center_default: external-clock
-          widgets:
-            - id: external-clock
-              type: clock
-              compact_format: "{time}"
-      """
-
-    XCTAssertThrowsError(try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml))
-  }
 
   func testRejectsDuplicateIDsIncludingActionChildren() {
     let yaml = validYAML.replacingOccurrences(of: "id: sleep-action", with: "id: cpu-main")

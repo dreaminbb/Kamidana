@@ -1,7 +1,7 @@
 import Combine
 import XCTest
 
-@testable import Kamidana
+@testable import KamidanaApp
 
 private final class StubNetworkAddressSource: NetworkAddressSource {
     let snapshots: [NetworkInterfaceSnapshot]

@@ -574,6 +574,7 @@ public class ConfigManager {
   public private(set) var globalV1Config = KamidanaConfigurationV1Global()
   public private(set) var regularV1Config: KamidanaConfigurationV1?
   public private(set) var builtInV1Config: KamidanaConfigurationV1?
+  public private(set) var monitorProfiles: KamidanaMonitorConfigurationV1?
 
   public static let MAIN_CONFIG_FILE_NAME = "config.yaml"
   public static let BUILT_IN_CONFIG_FILE_NAME = "built_in_monitor.yaml"
@@ -637,9 +638,13 @@ public class ConfigManager {
   public func applyV1Configuration(yaml: String) throws {
     if Self.usesMonitorProfileSchema(yaml: yaml) {
       let profiles = try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml)
+      self.monitorProfiles = profiles
+      
+      let fallback = KamidanaConfigurationV1(global: profiles.global, left: .init(widgets: []), center: .init(centerDefault: "", widgets: []), right: .init(widgets: []))
+      
       applyDecodedConfigurations(
-        regularConfiguration: profiles.external,
-        builtInConfiguration: profiles.builtIn
+        regularConfiguration: profiles.displays["external"] ?? profiles.displays["default_layout"] ?? fallback,
+        builtInConfiguration: profiles.displays["built_in"] ?? profiles.displays["default_layout"] ?? fallback
       )
     } else {
       try applyV1Configurations(regularYAML: yaml, builtInYAML: yaml)
@@ -740,6 +745,44 @@ public class ConfigManager {
       }
     }
   }
+  public func configuration(for screen: NSScreen) -> KamidanaConfigurationV1? {
+    if let profiles = monitorProfiles {
+      let displays = profiles.displays
+      
+      // 1. Try ID
+      if let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID {
+        if let config = displays[String(number)] { return config }
+      }
+      
+      // 2. Try Name
+      if let config = displays[screen.localizedName] { return config }
+      
+      // 3. Try Type
+      let isBuiltIn = DisplayDetector.isBuiltIn(screen: screen)
+      if isBuiltIn, let config = displays["built_in"] { return config }
+      if !isBuiltIn, let config = displays["external"] { return config }
+      
+      // 4. Fallback to default layout
+      if let config = displays["default_layout"] { return config }
+      
+      return displays.values.first
+    }
+    
+    // Legacy fallback
+    let isBuiltIn = DisplayDetector.isBuiltIn(screen: screen)
+    return configurationForDisplay(isBuiltIn: isBuiltIn)
+  }
+
+  public func layout(for screen: NSScreen) -> DisplayLayoutConfig {
+    let v1 = configuration(for: screen) ?? KamidanaConfigurationV1(
+      global: KamidanaConfigurationV1Global(),
+      left: KamidanaConfigurationV1Section(widgets: []),
+      center: KamidanaConfigurationV1Center(centerDefault: "", widgets: []),
+      right: KamidanaConfigurationV1Section(widgets: [])
+    )
+    return KamidanaConfigurationV1Adapter.makeLegacyConfig(from: v1).externalDisplay
+  }
+
 
   public func configurationForDisplay(isBuiltIn: Bool) -> KamidanaConfigurationV1? {
     if isBuiltIn {

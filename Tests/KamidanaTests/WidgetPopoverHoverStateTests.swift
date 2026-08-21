@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import Kamidana
+@testable import KamidanaApp
 
 final class WidgetPopoverHoverStateTests: XCTestCase {
   func testPopoverStaysPresentedWhileEitherSurfaceIsHovered() {

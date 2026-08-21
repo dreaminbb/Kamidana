@@ -1,7 +1,7 @@
 import XCTest
 import os
 
-@testable import Kamidana
+@testable import KamidanaApp
 
 final class KamidanaTests: XCTestCase {
 

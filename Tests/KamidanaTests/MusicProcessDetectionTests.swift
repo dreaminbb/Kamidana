@@ -1,7 +1,7 @@
 import Darwin
 import XCTest
 
-@testable import Kamidana
+@testable import KamidanaApp
 
 final class MusicProcessDetectionTests: XCTestCase {
     func testProcessDetectionFindsCurrentTestProcess() throws {

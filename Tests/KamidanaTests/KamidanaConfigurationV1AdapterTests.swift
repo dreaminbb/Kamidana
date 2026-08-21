@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import Kamidana
+@testable import KamidanaApp
 
 final class KamidanaConfigurationV1AdapterTests: XCTestCase {
   func testAdapterPreservesSectionAndWidgetStyleAndCenterDefaultOrder() throws {
@@ -442,15 +442,18 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     let exampleURL = repositoryRoot.appendingPathComponent("Example/config.yaml")
     let yaml = try String(contentsOf: exampleURL, encoding: .utf8)
     let profiles = try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml)
-    XCTAssertEqual(profiles.external.center.centerDefault, "music")
-    XCTAssertEqual(profiles.builtIn.center.centerDefault, "music")
+    let external = profiles.displays["external"]!
+    let builtIn = profiles.displays["built_in"]!
+    
+    XCTAssertEqual(external.center.centerDefault, "music")
+    XCTAssertEqual(builtIn.center.centerDefault, "music")
     XCTAssertTrue(profiles.global.hideInFullscreen)
-    XCTAssertEqual(profiles.external.global, profiles.builtIn.global)
-    let cpu = try XCTUnwrap(profiles.external.right.widgets.first { $0.kind == .cpu })
+    XCTAssertEqual(external.global, builtIn.global)
+    let cpu = try XCTUnwrap(external.right.widgets.first { $0.kind == .cpu })
     XCTAssertEqual(cpu.style?.color, "#a6e3a1")
     XCTAssertEqual(cpu.style?.iconColor, "#a6e3a1")
     XCTAssertEqual(
-      profiles.builtIn.right.widgets.map(\.kind),
+      builtIn.right.widgets.map(\.kind),
       [.cpu, .memory, .widgetFolder, .battery, .clock]
     )
   }

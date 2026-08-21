@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 
-@testable import Kamidana
+@testable import KamidanaApp
 
 final class MusicPlayerControllerTests: XCTestCase {
     func testSpotifyParsesPlaybackInformation() throws {
