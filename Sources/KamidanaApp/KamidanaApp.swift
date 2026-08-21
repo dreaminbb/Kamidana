@@ -29,7 +29,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       defer: false
     )
 
-    statusBarWindow.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
+    // statusBarWindow.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
+    statusBarWindow.level = .statusBar
     var collectionBehavior: NSWindow.CollectionBehavior = [.stationary, .ignoresCycle]
     statusBarWindow.backgroundColor = .clear
     statusBarWindow.hasShadow = false
