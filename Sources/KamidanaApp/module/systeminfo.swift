@@ -27,12 +27,12 @@ struct SystemMatrixData {
     var powerUsage: PowerUsageInfo?
     var internetUsage: NetworkUsageInfo?
     var thermalState: String?  // Mac thermal state
-    var batteryUsage: BatteryUsageInfo? // Battery usage info
-    var topCPU: [ProcessStat]? // Top processes (CPU)
-    var topGPU: [GPUProcessStat]? // Top processes (GPU)
-    var topMemory: [ProcessStat]? // Top processes (Memory)
-    var topDisk: [ProcessStat]? // Top processes (Disk)
-    var diskIOUsage: DiskUsageInfo? // Overall disk I/O usage
+    var batteryUsage: BatteryUsageInfo?  // Battery usage info
+    var topCPU: [ProcessStat]?  // Top processes (CPU)
+    var topGPU: [GPUProcessStat]?  // Top processes (GPU)
+    var topMemory: [ProcessStat]?  // Top processes (Memory)
+    var topDisk: [ProcessStat]?  // Top processes (Disk)
+    var diskIOUsage: DiskUsageInfo?  // Overall disk I/O usage
 }
 
 // Structure for network transfer speeds
@@ -113,7 +113,7 @@ class SystemMatrix: ObservableObject {
     private var prevProcessorInfo: processor_info_array_t?
     private var prevProcessorCount: mach_msg_type_number_t = 0
     private var previousCPUUsage = CPUUsageInfo(total: 0.0, perCore: [])
-    
+
     // Manager for process monitoring
     private var processMonitor = ProcessMonitor()
     private var gpuProcessMonitor = GPUProcessMonitor()
@@ -142,7 +142,7 @@ class SystemMatrix: ObservableObject {
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
             var newData = self.data  // Base on current data
-            
+
             // Update process stats (for top CPU, Memory, Disk processes)
             self.processMonitor.update()
 
@@ -367,15 +367,21 @@ class SystemMatrix: ObservableObject {
     private func getDiskIOUsage() -> DiskUsageInfo? {
         let matchingDict = IOServiceMatching("IOBlockStorageDriver")
         var iterator: io_iterator_t = 0
-        
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator) == kIOReturnSuccess else { return nil }
-        
+
+        guard
+            IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator)
+                == kIOReturnSuccess
+        else { return nil }
+
         var currentRead: UInt64 = 0
         var currentWrite: UInt64 = 0
-        
+
         var object: io_object_t = IOIteratorNext(iterator)
         while object != 0 {
-            if let props = IORegistryEntryCreateCFProperty(object, "Statistics" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? [String: Any] {
+            if let props = IORegistryEntryCreateCFProperty(
+                object, "Statistics" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue()
+                as? [String: Any]
+            {
                 if let bytesRead = props["Bytes (Read)"] as? UInt64 { currentRead += bytesRead }
                 if let bytesWrite = props["Bytes (Write)"] as? UInt64 { currentWrite += bytesWrite }
             }
@@ -502,7 +508,7 @@ class SystemMatrix: ObservableObject {
                     if let d = props?.takeRetainedValue() as? [String: Any] {
                         _amperage = Float(d["Amperage"] as? Int ?? 0)
                         _voltage = Float(d["Voltage"] as? Int ?? 0)
-                        _isCharging = (_amperage >= 0) // Values >= 0 indicate charging / AC power
+                        _isCharging = (_amperage >= 0)  // Values >= 0 indicate charging / AC power
                         _activeWatts = Float(abs(_amperage) * _voltage) / 1_000_000.0
                     }
                 }
@@ -510,7 +516,9 @@ class SystemMatrix: ObservableObject {
                 object = IOIteratorNext(iterator)
             }
             IOObjectRelease(iterator)
-            return WatInfo(activeWatts: _activeWatts, amperage: _amperage, voltage: _voltage, isCharging: _isCharging)
+            return WatInfo(
+                activeWatts: _activeWatts, amperage: _amperage, voltage: _voltage,
+                isCharging: _isCharging)
         }
         return nil
     }
@@ -534,7 +542,7 @@ class SystemMatrix: ObservableObject {
         guard let desc = powerInfoSnapShot() else { return 0 }
         return (desc["Time to Full Charge"] as? Int64) ?? 0
     }
-    
+
     /// Fetch and return consolidated battery usage information
     private func getBatteryUsageInfo() -> BatteryUsageInfo {
         return BatteryUsageInfo(

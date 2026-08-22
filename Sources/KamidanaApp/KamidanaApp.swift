@@ -32,7 +32,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
 
-        // statusBarWindow.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
         statusBarWindow.level = .statusBar
         var collectionBehavior: NSWindow.CollectionBehavior = [.stationary, .ignoresCycle]
         statusBarWindow.backgroundColor = .clear
@@ -61,7 +60,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingController = NSHostingController(rootView: contentView)
         self.hostingController = hostingController
         statusBarWindow.contentView = hostingController.view
-
 
         // Calculate initial window position
         updateWindowPosition()
@@ -145,7 +143,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return NSRect(
             x: screenRect.minX + leading,
             y: screenRect.maxY - top - height,
-
 
             width: width,
             height: height
