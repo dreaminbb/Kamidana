@@ -853,23 +853,27 @@ public class ConfigManager {
     private var fileWatcher: DispatchSourceFileSystemObject?
     private var fileWatcherQueue: DispatchQueue = DispatchQueue(label: "com.kamidana.configWatcher")
 
-    public func startWatchingConfig( homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser) {
+    public func startWatchingConfig(
+        homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
+    ) {
         print("[LOG] Start config watcher")
-        let configURL = resolveConfigFileURL(
-            homeDirectory:
-                homeDirectory)
-        let fileDescriptor = open(configURL.path, O_EVTONLY)
+        let configDirectoryURL = resolveConfigDirectory(homeDirectory: homeDirectory)
+        let fileDescriptor = open(configDirectoryURL.path, O_EVTONLY)
         guard fileDescriptor != -1 else { return }
 
+        fileWatcher?.cancel()
         fileWatcher = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: fileDescriptor,
-            eventMask: .write,
+            eventMask: [.write, .rename, .delete, .attrib],
             queue: fileWatcherQueue
         )
 
         fileWatcher?.setEventHandler { [weak self] in
             DispatchQueue.main.async {
-                _ = self?.loadConfig(homeDirectory: homeDirectory)
+                guard let self else { return }
+                guard case .success = self.loadConfig(homeDirectory: homeDirectory) else {
+                    return
+                }
                 NotificationCenter.default.post(
                     name: Self.configDidChangeNotification,
                     object: nil

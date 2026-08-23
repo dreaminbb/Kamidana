@@ -87,7 +87,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(rerenderBar),
-            name: NSNotification.Name("KamidanaConfigDidChange"),
+            name: ConfigManager.configDidChangeNotification,
             object: nil
         )
     }
