@@ -1,3 +1,44 @@
+# AGENTS.md
+
+## Project Shape
+
+- Swift Package with two executables: `KamidanaApp` at `Sources/KamidanaApp` and `kamidana-cli` at `Sources/KamidanaCLI`.
+- Main app entrypoint is `Sources/KamidanaApp/KamidanaApp.swift`; it registers widgets, loads config, watches config changes, and owns the status-bar window.
+- Runtime user config is YAML at `~/.config/kamidana/config.yaml`; `Example/config.yaml` is the representative v1 schema sample.
+- Current widget config flow is v1 YAML model -> `KamidanaConfigurationV1Adapter` -> legacy `WidgetInstance`/view configs; do not add a widget only in a SwiftUI view.
+
+## Commands
+
+- Run the app for development: `make run` (`swift run`).
+- Build release binary: `make build` (`swift build -c release`).
+- Build signed `.app` bundle: `make app`; it copies `Resources/Info.plist`, uses `Resources/Kamidana.entitlements`, and signs with ad-hoc `codesign --sign -`.
+- Debug with terminal logging: `make debug`; this builds, packages `Kamidana.app`, signs it, then runs `./Kamidana.app/Contents/MacOS/Kamidana`.
+- Run all tests: `swift test`.
+- Run a focused test class or method: `swift test --filter KamidanaConfigurationV1Tests` or `swift test --filter KamidanaConfigurationV1Tests/testRejectsUnsupportedWidgetType`.
+- Run CLI target directly: `swift run kamidana-cli display id`.
+
+## Architecture Notes
+
+- Before UI/widget/audio/config changes, check relevant docs in `document/`; high-value files are `ARCHITECTURE.md`, `config.md`, `UI_DESIGN.md`, `WIDGET_STATES.md`, `Audio.md`, `Logging.md`, and `SwiftTermUsage.md`.
+- Some docs still mention old paths such as `Sources/Kamidana`; trust `Package.swift` and current source paths (`Sources/KamidanaApp`, `Sources/KamidanaCLI`).
+- Widgets are dynamically created through `WidgetRegistry`; add the v1 `KamidanaWidgetKind`, validation/decoding, adapter mapping, registry factory, and tests together.
+- Built-in vs external display layouts are selected automatically; combined monitor-profile YAML uses top-level `external` and `built_in`, with `default_layout` fallback support in code.
+- Vertical `WidgetFolder` with `direction: "below"` must not contain widgets that open their own popovers/expanders.
+
+## Code Conventions
+
+- Keep code artifacts in English and avoid emojis in new source, comments, logs, and tests, even though older tests contain Japanese/emoji output.
+- Do not hardcode user-specific paths; config path resolution belongs in `ConfigManager`.
+- Use `DebugRichConsole` for new debug output instead of scattering polling `print(...)` calls.
+- UI configuration may choose predefined widgets, content, colors, icons, and styles, but must not expose arbitrary coordinates or internal layout positioning.
+- For UI values that update frequently (CPU, memory, network, clock), preserve monospaced digits/text to avoid status-bar jitter.
+
+## Testing Gotchas
+
+- Several tests touch macOS APIs, AppleScript, CoreAudio, Bluetooth, or live system state; prefer focused filters when changing pure config/formatting code.
+- Live Spotify playback tests are skipped unless `KAMIDANA_RUN_MUSIC_INTEGRATION_TESTS=1` is set.
+- `Tests/KamidanaTests/musicTest.swift` and audio tests may depend on local permissions/devices and can print noisy output.
+
 # AI Assistant Development Guidelines (AI Rules)
 
 These rules and guidelines must be strictly adhered to by all AI assistants generating, modifying, or reviewing code in the **Kamidana** project.
@@ -5,9 +46,11 @@ These rules and guidelines must be strictly adhered to by all AI assistants gene
 ---
 
 ## 0. [MANDATORY] Pre-Implementation Documentation Review
+
 Before writing or modifying any code, designing UI components, or implementing new features, the AI assistant **MUST read and follow all relevant documents in the `document/` directory** to understand the architecture, design principles, and project standards.
 
 Key Reference Documents:
+
 - [`document/UI_DESIGN.md`](document/UI_DESIGN.md): UI architecture, Compact Mode, Island specifications, and widget design principles.
 - [`document/Logging.md`](document/Logging.md): Logging standards and guidelines.
 - [`document/CompactUI.md`](document/CompactUI.md): Compact Mode implementation guidelines.
@@ -17,6 +60,7 @@ Key Reference Documents:
 ---
 
 ## 1. OSS Architectural Foundation & Development Consistency
+
 Kamidana is built as a collaborative, open-source status bar engine inspired by YASB. To support long-term scalability and external contributors:
 
 1. **Foundational Architecture Over Quick-Wins**:
@@ -31,6 +75,7 @@ Kamidana is built as a collaborative, open-source status bar engine inspired by 
 ---
 
 ## 2. Core AI Constraints & Code Quality Standards
+
 To maintain high code quality, readability, and portability as an open-source project:
 
 1. **English Only**:
@@ -61,15 +106,18 @@ To maintain high code quality, readability, and portability as an open-source pr
 ## 3. Architecture & System Design Rules
 
 ### View & Model Separation
+
 - Keep SwiftUI `View` bodies purely declarative and lightweight.
 - Move heavy data fetching, system polling, process inspection, and C-API bindings (CoreAudio, CoreWLAN, IOBluetooth, mach kernel APIs) into dedicated manager classes conforming to `ObservableObject`.
 - Place backend managers in `Sources/Kamidana/module/` or `Sources/Kamidana/Audio/`.
 
 ### Threading & UI Safety
+
 - **Main Thread UI Updates**: Any mutation to `@Published` properties that drives UI re-renders must occur on the main thread (`DispatchQueue.main.async` or `@MainActor`).
 - **Background Execution**: Perform heavy system inspection, process monitoring, disk I/O calculations, and shell commands on background queues (`DispatchQueue.global(qos: .utility)` or `.userInitiated`). Never block the main thread.
 
 ### Widget Consistency & Theming
+
 - **Module Wrapper**: All standalone status bar widgets must be wrapped with `.SmoothUIModule(theme:)` to ensure uniform frosted glass backgrounds (`.ultraThinMaterial`), corner radiuses, padding, and hover states.
 - **Semantic Colors**: Never hardcode colors (`Color.red`, raw RGB/Hex values). Always use semantic tokens from the active `Theme` instance (e.g., `theme.textPrimary`, `theme.textSecondary`, `theme.accent`, `theme.surface`, `theme.warning`, `theme.caution`).
 - **Layout Stability**: Use `.monospaced` or `.monospacedDigit()` for real-time dynamic numerical values (CPU %, RAM usage, network speeds, clock) to prevent UI jitter and width fluctuations.
@@ -81,6 +129,7 @@ To maintain high code quality, readability, and portability as an open-source pr
 Follow the official **Swift API Design Guidelines**:
 
 ### Functions & Methods
+
 - **Action Verbs for Mutating / Imperative Operations**: Name methods starting with clear verbs describing the action:
   - `startMonitoring()`, `stopMonitoring()`
   - `fetchAvailableNetworks()`, `scanForDevices()`
@@ -91,6 +140,7 @@ Follow the official **Swift API Design Guidelines**:
   - `resolveConfigPath() -> String?`
 
 ### Properties & Variables
+
 - **Boolean Properties**: Must read as assertions. Prefix with `is`, `has`, `can`, or `should`:
   - `isPlaying`, `isHovered`, `isBluetoothOn`, `isInputMuted`
   - `hasBattery`, `canExpand`
@@ -99,6 +149,7 @@ Follow the official **Swift API Design Guidelines**:
   - `@ObservedObject var musicManager: MusicPlayingManager`
 
 ### Types & Protocols
+
 - **Types (Classes, Structs, Enums)**: Use UpperCamelCase (PascalCase) with descriptive nouns:
   - `BluetoothManager`, `SystemMatrix`, `NerdFontIconType`
 - **Protocols**:
@@ -110,6 +161,7 @@ Follow the official **Swift API Design Guidelines**:
 ---
 
 ## 5. Communication & File Editing Principles
+
 - **Response Language**: Communicate with the user in Japanese (or user's preferred language), while keeping all codebase artifacts in English.
 - **Conciseness**: Keep responses clear, concise, and focused. Avoid unnecessary fluff.
 - **Pinpoint Edits**: Make surgical, minimal edits only to relevant sections of files. Do not modify unrelated files.
