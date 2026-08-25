@@ -4,7 +4,7 @@ import SwiftUI
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var statusBarWindow: NSWindow!
+    var statusBarWindow: StatusBarWindow!
     private var hostingController: NSHostingController<StatusBarView>?
     let barHeight: CGFloat = 600  // Enlarged height to support island expansion
 
@@ -25,7 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let contentView = StatusBarView()
 
         // Create initial window
-        statusBarWindow = NSWindow(
+        statusBarWindow = StatusBarWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
             styleMask: [.borderless],
             backing: .buffered,
@@ -65,6 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateWindowPosition()
 
         statusBarWindow.orderFront(nil)
+        NativelyBarWindowBridge.shared.configure(window: statusBarWindow)
 
         // Monitor display configuration changes (connect/disconnect, resolution changes)
         NotificationCenter.default.addObserver(
@@ -104,6 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func handleFullScreenExit(notification: Notification) {
         statusBarWindow.orderFront(nil)
+        NativelyBarWindowBridge.shared.configure(window: statusBarWindow)
     }
     // Reposition window forcibly to the top of the screen
     @objc func updateWindowPosition() {
@@ -180,6 +182,7 @@ struct StatusBarView: View {
         let isBuiltInDisplay = DisplayDetector.isBuiltIn(screen: currentScreen)
         let v1Configuration = ConfigManager.shared.configuration(for: currentScreen)
         let currentLayout: DisplayLayoutConfig = ConfigManager.shared.layout(for: currentScreen)
+        let builtInTopInset = isBuiltInDisplay ? currentScreen.safeAreaInsets.top : 0
         let globalMode = v1Configuration?.global.backgroundMode ?? .perWidget
         let leftMode = v1Configuration?.left.backgroundMode ?? globalMode
         let centerMode = v1Configuration?.center.backgroundMode ?? globalMode
@@ -242,7 +245,8 @@ struct StatusBarView: View {
             // compact state with the camera/notch instead of moving with the left section.
             KamidanaIsland(
                 centerWidgets: currentLayout.center,
-                isBuiltInDisplay: isBuiltInDisplay
+                isBuiltInDisplay: isBuiltInDisplay,
+                builtInTopInset: builtInTopInset
             )
             .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
             .environment(\.kamidanaPopupHorizontalAlignment, .center)
@@ -268,6 +272,7 @@ struct StatusBarView: View {
         .font(.system(size: isBuiltInDisplay ? 13 : 14, weight: .semibold, design: .monospaced))
         .frame(maxWidth: .infinity, maxHeight: 600, alignment: .top)
         .background(Color.clear)
+        .ignoresSafeArea(.all)
         .onAppear {
             matrix.startMonitoring()
             localSend.scanNetwork()

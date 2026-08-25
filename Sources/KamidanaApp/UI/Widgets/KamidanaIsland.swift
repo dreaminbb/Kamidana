@@ -9,6 +9,7 @@ struct KamidanaIsland: View {
     @Environment(\.showsKamidanaWidgetSurface) private var showsWidgetSurface
     let centerWidgets: [WidgetInstance]
     let isBuiltInDisplay: Bool
+    let builtInTopInset: CGFloat
 
     @State private var isHovered = false
     @State private var selectedTab: WidgetInstance? = nil
@@ -20,7 +21,6 @@ struct KamidanaIsland: View {
     static let defaultHoveredSize = CGSize(width: 600, height: 300)
     static let terminalHoveredSize = CGSize(width: 800, height: 500)
     static let collapsedHeight: CGFloat = 32
-    static let builtInExpandedTopOffset: CGFloat = 38
 
     private func expandedIslandSize() -> CGSize {
         // If size change by tab is needed, calculate here
@@ -64,45 +64,45 @@ struct KamidanaIsland: View {
                 if isHovered {
                     // Expanded UI
 
-                // 1. Browser-style tab bar
-                HStack(spacing: 12) {
-                    ForEach(centerWidgets, id: \.id) { tab in
-                        Button(action: {
-                            if (tab.v1Motion ?? .dynamic) == .dynamic {
-                                withAnimation(.easeInOut(duration: 0.2)) {
+                    // 1. Browser-style tab bar
+                    HStack(spacing: 12) {
+                        ForEach(centerWidgets, id: \.id) { tab in
+                            Button(action: {
+                                if (tab.v1Motion ?? .dynamic) == .dynamic {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        selectedTab = tab
+                                    }
+                                } else {
                                     selectedTab = tab
                                 }
-                            } else {
-                                selectedTab = tab
+                            }) {
+                                Text(tabName(for: tab))
+                                    .font(.system(size: 14, weight: .bold))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        selectedTab == tab
+                                            ? Color(hex: colors.surfaceHighlight) : Color.clear
+                                    )
+                                    .foregroundColor(
+                                        selectedTab == tab
+                                            ? Color(hex: colors.textPrimary)
+                                            : Color(hex: colors.textSecondary)
+                                    )
+                                    .cornerRadius(8)
                             }
-                        }) {
-                            Text(tabName(for: tab))
-                                .font(.system(size: 14, weight: .bold))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 6)
-                                .background(
-                                    selectedTab == tab
-                                        ? Color(hex: colors.surfaceHighlight) : Color.clear
-                                )
-                                .foregroundColor(
-                                    selectedTab == tab
-                                        ? Color(hex: colors.textPrimary)
-                                        : Color(hex: colors.textSecondary)
-                                )
-                                .cornerRadius(8)
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
-                }
-                .padding(.top, 12)
-                .padding(.bottom, 8)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
 
-                Divider().background(Color(hex: colors.surfaceBorder))
+                    Divider().background(Color(hex: colors.surfaceBorder))
 
-                // 2. Tab content
-                Group {
-                    if let selected = selectedTab {
-                        if let factory = WidgetRegistry.shared.factory(for: selected.typeID) {
+                    // 2. Tab content
+                    Group {
+                        if let selected = selectedTab {
+                            if let factory = WidgetRegistry.shared.factory(for: selected.typeID) {
                                 factory.makeView(config: selected.config)
                                     .environment(\.kamidanaV1Style, selected.v1Style)
                                     .environment(\.kamidanaPopupStyle, selected.v1PopupStyle)
@@ -110,11 +110,11 @@ struct KamidanaIsland: View {
                                     .environment(\.kamidanaWidgetActivation, selected.v1Activate)
                                     .kamidanaWidgetMotion(selected.v1Motion)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        } else {
-                            EmptyView()
+                            } else {
+                                EmptyView()
+                            }
                         }
                     }
-                }
 
                 } else {
                     // Compact UI (collapsed state)
@@ -167,7 +167,7 @@ struct KamidanaIsland: View {
 
     private var builtInVerticalOffset: CGFloat {
         guard isBuiltInDisplay else { return 0 }
-        return isHovered ? Self.builtInExpandedTopOffset : -Self.collapsedHeight
+        return isHovered ? builtInTopInset : 0
     }
 
     private func updateHover(_ hovering: Bool) {
