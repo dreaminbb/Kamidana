@@ -21,17 +21,19 @@ struct BluetoothWidget: View {
                 bluetooth.refreshPairedDevices()
             }
         }) {
-            let statusColor = bluetooth.isBluetoothOn
+            let statusColor =
+                bluetooth.isBluetoothOn
                 ? Color(hex: config.connectedColor) : Color(hex: config.disconnectedColor)
             let deviceValues = Self.connectedDeviceFormatValues(bluetooth.pairedDevices)
             FormattedWidgetLabel(
                 format: widgetFormat ?? "{icon}",
                 values: [
-                    "icon": bluetooth.isBluetoothOn ? config.iconConnected : config.iconDisconnected,
+                    "icon": bluetooth.isBluetoothOn
+                        ? config.iconConnected : config.iconDisconnected,
                     "status": bluetooth.isBluetoothOn ? "on" : "off",
-                    "device_count": "\(bluetooth.pairedDevices.count)",
+                    "device_count": deviceValues.deviceCount,
                     "device": deviceValues.deviceCount,
-                    "device_name": deviceValues.deviceName
+                    "device_name": deviceValues.deviceName,
                 ],
                 iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? statusColor,
                 textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
@@ -72,20 +74,12 @@ struct BluetoothWidget: View {
                                 }
                             }
                         }
-                        .frame(maxHeight: 260)
+                        .frame(height: Self.deviceListHeight(for: connectedDevices.count))
                     }
-                }
-
-                Divider()
-                    .background(Color(hex: colors.surfaceHighlight))
-
-                // Open settings button
-                SettingsRowButton() {
-                    bluetooth.openBluetoothSettings()
                 }
             }
             .padding(12)
-            .frame(width: 260)
+            .frame(width: 320)
         }
     }
 
@@ -104,6 +98,14 @@ struct BluetoothWidget: View {
     static func connectedDevices(_ devices: [BluetoothDeviceInfo]) -> [BluetoothDeviceInfo] {
         devices.filter(\.isConnected)
     }
+
+    static func deviceListHeight(for deviceCount: Int) -> CGFloat {
+        let rowHeight: CGFloat = 112
+        let rowSpacing: CGFloat = 6
+        let contentHeight =
+            CGFloat(deviceCount) * rowHeight + CGFloat(max(0, deviceCount - 1)) * rowSpacing
+        return min(max(contentHeight, rowHeight), 260)
+    }
 }
 
 struct DeviceRow: View {
@@ -116,7 +118,9 @@ struct DeviceRow: View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
                 NerdFontIcon(info.isConnected ? "󰂱" : "󰂯", size: 16)
-                    .foregroundColor(info.isConnected ? Color(hex: colors.accent) : Color(hex: colors.textTertiary))
+                    .foregroundColor(
+                        info.isConnected
+                            ? Color(hex: colors.accent) : Color(hex: colors.textTertiary))
 
                 Text(info.name)
                     .lineLimit(1)
@@ -126,35 +130,37 @@ struct DeviceRow: View {
 
                 Text(info.isConnected ? "Connected" : "Saved")
                     .font(.caption)
-                    .foregroundColor(info.isConnected ? Color(hex: colors.accent) : Color(hex: colors.textTertiary))
+                    .foregroundColor(
+                        info.isConnected
+                            ? Color(hex: colors.accent) : Color(hex: colors.textTertiary))
             }
 
-            if isHovered {
-                Divider()
-                    .overlay(Color(hex: colors.surfaceBorder))
+            Divider()
+                .overlay(Color(hex: colors.surfaceBorder))
 
-                VStack(alignment: .leading, spacing: 4) {
-                    detailRow(label: "Address", value: info.id, colors: colors)
-                    detailRow(
-                        label: "Connection",
-                        value: info.isConnected ? "Connected" : "Not connected",
-                        colors: colors
-                    )
-                    detailRow(
-                        label: "Pairing",
-                        value: info.isPaired ? "Paired" : "Not paired",
-                        colors: colors
-                    )
-                }
-                .font(.system(size: 11, design: .monospaced))
+            VStack(alignment: .leading, spacing: 4) {
+                detailRow(label: "Address", value: info.id, colors: colors)
+                detailRow(
+                    label: "Connection",
+                    value: info.isConnected ? "Connected" : "Not connected",
+                    colors: colors
+                )
+                detailRow(
+                    label: "Pairing",
+                    value: info.isPaired ? "Paired" : "Not paired",
+                    colors: colors
+                )
             }
+            .font(.system(size: 11, design: .monospaced))
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .background(
             isHovered
                 ? Color(hex: colors.surfaceHighlight).opacity(0.8)
-                : (info.isConnected ? Color(hex: colors.surfaceHighlight).opacity(0.4) : Color(hex: colors.surface).opacity(0.3))
+                : (info.isConnected
+                    ? Color(hex: colors.surfaceHighlight).opacity(0.4)
+                    : Color(hex: colors.surface).opacity(0.3))
         )
         .cornerRadius(6)
         .contentShape(Rectangle())
@@ -176,34 +182,6 @@ struct DeviceRow: View {
                 .foregroundColor(Color(hex: colors.textPrimary))
                 .lineLimit(1)
             Spacer(minLength: 0)
-        }
-    }
-}
-
-struct SettingsRowButton: View {
-    let action: () -> Void
-    @State private var isHovered = false
-
-    var body: some View {
-        let colors = ConfigManager.shared.currentConfig.colors
-        HStack {
-            NerdFontIcon("󰝖")
-                .foregroundColor(Color(hex: colors.accent))
-            Text("Bluetooth Settings...")
-                .font(.subheadline)
-                .foregroundColor(Color(hex: colors.textPrimary))
-            Spacer()
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 8)
-        .background(isHovered ? Color(hex: colors.surfaceHighlight).opacity(0.8) : Color(hex: colors.surface).opacity(0.5))
-        .cornerRadius(6)
-        .contentShape(Rectangle())
-        .onHover { hover in
-            isHovered = hover
-        }
-        .onTapGesture {
-            action()
         }
     }
 }

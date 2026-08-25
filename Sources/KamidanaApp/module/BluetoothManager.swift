@@ -36,38 +36,87 @@ class BluetoothManager: NSObject, ObservableObject {
 
     /// Check Bluetooth power state
     func checkBluetoothState() {
-        if IOBluetoothHostController.default() != nil {
-            isBluetoothOn = true
-        } else {
-            isBluetoothOn = false
+        isBluetoothOn = IOBluetoothHostController.default()?.powerState == kBluetoothHCIPowerStateON
+    }
+
+    /// Fetch and update Bluetooth devices known to the Mac.
+    public func refreshPairedDevices() {
+        let pairedDevices = IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] ?? []
+        let recentDevices = IOBluetoothDevice.recentDevices(20) as? [IOBluetoothDevice] ?? []
+        let deviceInfos = Self.deviceInfos(from: pairedDevices + recentDevices)
+
+        DispatchQueue.main.async {
+            self.pairedDevices = deviceInfos
         }
     }
 
-    /// Fetch and update all paired devices on the Mac
-    public func refreshPairedDevices() {
-        guard let devices = IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] else {
-            self.pairedDevices = []
-            return
+    static func deviceInfos(from devices: [IOBluetoothDevice]) -> [BluetoothDeviceInfo] {
+        var devicesByID: [String: BluetoothDeviceInfo] = [:]
+
+        for device in devices {
+            let id = device.addressString ?? device.name ?? UUID().uuidString
+            let info = BluetoothDeviceInfo(
+                id: id,
+                name: device.name ?? "Unknown Device",
+                isConnected: device.isConnected(),
+                isPaired: device.isPaired()
+            )
+
+            if let existing = devicesByID[id] {
+                devicesByID[id] = preferredDeviceInfo(existing, info)
+            } else {
+                devicesByID[id] = info
+            }
         }
 
-        // Update on main thread (sort connected devices to the top)
-        DispatchQueue.main.async {
-            self.pairedDevices = devices.map { device in
-                BluetoothDeviceInfo(
-                    id: device.addressString ?? UUID().uuidString,
-                    name: device.name ?? "Unknown Device",
-                    isConnected: device.isConnected(),
-                    isPaired: device.isPaired()
-                )
-            }
-            .sorted { $0.isConnected && !$1.isConnected }
+        return devicesByID.values.sorted { lhs, rhs in
+            if lhs.isConnected != rhs.isConnected { return lhs.isConnected }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
+    }
+
+    private static func preferredDeviceInfo(
+        _ lhs: BluetoothDeviceInfo,
+        _ rhs: BluetoothDeviceInfo
+    ) -> BluetoothDeviceInfo {
+        if lhs.isConnected != rhs.isConnected { return lhs.isConnected ? lhs : rhs }
+        if lhs.isPaired != rhs.isPaired { return lhs.isPaired ? lhs : rhs }
+        return lhs
     }
 
     /// Open macOS Bluetooth settings
-    public func openBluetoothSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.BluetoothSettings") {
-            NSWorkspace.shared.open(url)
+    @discardableResult
+    public func openBluetoothSettings() -> Bool {
+        Self.openBluetoothSettings()
+    }
+
+    @discardableResult
+    static func openBluetoothSettings(
+        openURL: (URL) -> Bool = { NSWorkspace.shared.open($0) },
+        openSettingsApp: () -> Bool = { BluetoothManager.openSystemSettings() }
+    ) -> Bool {
+        for url in bluetoothSettingsURLs where openURL(url) {
+            return true
         }
+        return openSettingsApp()
+    }
+
+    static let bluetoothSettingsURLs: [URL] = [
+        URL(string: "x-apple.systempreferences:com.apple.BluetoothSettings"),
+        URL(string: "x-apple.systempreferences:com.apple.preference.bluetooth"),
+    ].compactMap { $0 }
+
+    private static func openSystemSettings() -> Bool {
+        guard let settingsURL = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: "com.apple.systempreferences"
+        ) else {
+            return false
+        }
+
+        NSWorkspace.shared.openApplication(
+            at: settingsURL,
+            configuration: NSWorkspace.OpenConfiguration()
+        )
+        return true
     }
 }
