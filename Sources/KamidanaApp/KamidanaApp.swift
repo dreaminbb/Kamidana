@@ -32,7 +32,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
 
-        statusBarWindow.level = .statusBar
+        statusBarWindow.level = .normal
         var collectionBehavior: NSWindow.CollectionBehavior = [.stationary, .ignoresCycle]
         statusBarWindow.backgroundColor = .clear
         statusBarWindow.hasShadow = false
@@ -64,9 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Calculate initial window position
         updateWindowPosition()
 
-        statusBarWindow.makeKeyAndOrderFront(nil)
-        // statusBarWindow.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
+        statusBarWindow.orderFront(nil)
 
         // Monitor display configuration changes (connect/disconnect, resolution changes)
         NotificationCenter.default.addObserver(
@@ -101,14 +99,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func handleFullScreenEnter(notification: Notification) {
-        // 隠したい補助ウィンドウを非表示にする
         statusBarWindow.orderOut(nil)
     }
 
-    // フルスクリーンから戻ったとき
     @objc func handleFullScreenExit(notification: Notification) {
-        // render window FIX
-        statusBarWindow.orderFrontRegardless()
+        statusBarWindow.orderFront(nil)
     }
     // Reposition window forcibly to the top of the screen
     @objc func updateWindowPosition() {
