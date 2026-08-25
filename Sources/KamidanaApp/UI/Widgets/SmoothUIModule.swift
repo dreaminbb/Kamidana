@@ -26,12 +26,13 @@ struct SmoothUIModuleModifier: ViewModifier {
 
   func body(content: Content) -> some View {
     let colors = ConfigManager.shared.currentConfig.colors
-    let effectiveStyle = v1Style.map {
+    let baseStyle = v1Style
+    let effectiveStyle = baseStyle.map {
       isHovered
         ? KamidanaConfigurationV1Adapter.style($0, applyingState: "hover")
         : $0
     }
-    let padding = effectiveStyle?.padding
+    let padding = baseStyle?.padding
     let leadingPadding =
       (padding?.leading ?? style.paddingHorizontal)
       + WidgetSurfaceMetrics.additionalHorizontalPadding
@@ -40,7 +41,7 @@ struct SmoothUIModuleModifier: ViewModifier {
       + WidgetSurfaceMetrics.additionalHorizontalPadding
     let topPadding = padding?.top ?? style.paddingTop
     let bottomPadding = padding?.bottom ?? style.paddingBottom
-    let cornerRadius = effectiveStyle?.cornerRadius ?? style.cornerRadius
+    let cornerRadius = baseStyle?.cornerRadius ?? style.cornerRadius
     let background =
       effectiveStyle?.background
       ?? (isHovered ? colors.surfaceHighlight : colors.background)
