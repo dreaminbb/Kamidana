@@ -180,4 +180,11 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertNil(NetworkManager.validPublicIPAddress("not-an-ip-address"))
         XCTAssertNil(NetworkManager.validPublicIPAddress(""))
     }
+
+    func testWiFiNetworkNameAccessAcceptsWhenInUseAuthorization() {
+        XCTAssertTrue(NetworkManager.canAccessWiFiNetworkNames(.authorizedAlways))
+        XCTAssertFalse(NetworkManager.canAccessWiFiNetworkNames(.notDetermined))
+        XCTAssertFalse(NetworkManager.canAccessWiFiNetworkNames(.denied))
+        XCTAssertFalse(NetworkManager.canAccessWiFiNetworkNames(.restricted))
+    }
 }

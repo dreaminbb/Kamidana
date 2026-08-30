@@ -163,6 +163,10 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     var canScanWiFi: Bool { currentConnection != "LAN" }
 
+    var isWiFiAuthorizationDetermined: Bool {
+        locationManager.authorizationStatus != .notDetermined
+    }
+
     var networkDisplayName: String { currentNetworkName }
 
     override convenience init() {
@@ -179,7 +183,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         super.init()
         locationManager.delegate = self
         if locationManager.authorizationStatus == .notDetermined {
-            locationManager.requestWhenInUseAuthorization()
+            locationManager.requestAlwaysAuthorization()
         }
         if startMonitoring { self.startMonitoring() }
         refreshNetworkDetails(forcePublicIP: true)
@@ -284,6 +288,15 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return trimmed
     }
 
+    static func canAccessWiFiNetworkNames(_ status: CLAuthorizationStatus) -> Bool {
+        switch status {
+        case .authorizedAlways:
+            return true
+        default:
+            return false
+        }
+    }
+
     func refreshNetworkDetails(
         forcePublicIP: Bool = true,
         preferredInterfaceName: String? = nil
@@ -326,6 +339,11 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func scanForNetworks() {
+        DebugRichConsole.printWiFiScanStart(
+            authorizationStatus: String(describing: locationManager.authorizationStatus),
+            currentConnection: currentConnection,
+            activeInterfaceName: activeInterfaceName
+        )
         guard canScanWiFi else {
             availableNetworks = []
             wifiScanState = .unavailable(
@@ -342,6 +360,16 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             )
             return
         }
+        guard Self.canAccessWiFiNetworkNames(locationManager.authorizationStatus) else {
+            availableNetworks = []
+            if locationManager.authorizationStatus == .notDetermined {
+                wifiScanState = .unavailable("Location access is not determined.")
+                locationManager.requestAlwaysAuthorization()
+            } else {
+                wifiScanState = .unavailable(NetworkManagerError.locationPermissionDenied.localizedDescription)
+            }
+            return
+        }
 
         wifiScanState = .scanning
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -352,10 +380,15 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 case .success(let networks):
                     self.availableNetworks = networks.sorted { $0.rssiValue > $1.rssiValue }
                     self.wifiScanState = networks.isEmpty ? .empty : .loaded
+                    DebugRichConsole.printWiFiScanResult(
+                        networkCount: self.availableNetworks.count,
+                        networkNames: self.availableNetworks.compactMap(\.ssid)
+                    )
                     self.refreshConnectionIdentity()
                 case .failure(let error):
                     self.availableNetworks = []
                     self.wifiScanState = .failed(error.localizedDescription)
+                    DebugRichConsole.printWiFiScanFailure(error)
                 }
             }
         }
@@ -365,7 +398,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         guard canScanWiFi else {
             return .failure(NetworkManagerError.wiredConnectionActive)
         }
-        guard let interface = CWWiFiClient.shared().interface() else {
+        guard let interface = wifiInterface() else {
             return .failure(NetworkManagerError.wifiInterfaceUnavailable)
         }
         do {
@@ -403,8 +436,54 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return Set(unique.values)
     }
 
+    private func wifiInterface() -> CWInterface? {
+        let client = CWWiFiClient.shared()
+        let availableInterfaceNames = client.interfaceNames() ?? []
+
+        if let activeInterfaceName,
+            let interface = client.interface(withName: activeInterfaceName)
+        {
+            DebugRichConsole.printWiFiInterfaceSelection(
+                activeInterfaceName: activeInterfaceName,
+                selectedInterfaceName: interface.interfaceName,
+                availableInterfaceNames: availableInterfaceNames
+            )
+            return interface
+        }
+
+        if let interface = client.interface() {
+            DebugRichConsole.printWiFiInterfaceSelection(
+                activeInterfaceName: activeInterfaceName,
+                selectedInterfaceName: interface.interfaceName,
+                availableInterfaceNames: availableInterfaceNames
+            )
+            return interface
+        }
+
+        if let interfaceNames = client.interfaceNames() {
+            for interfaceName in interfaceNames {
+                if let interface = client.interface(withName: interfaceName) {
+                    DebugRichConsole.printWiFiInterfaceSelection(
+                        activeInterfaceName: activeInterfaceName,
+                        selectedInterfaceName: interface.interfaceName,
+                        availableInterfaceNames: availableInterfaceNames
+                    )
+                    return interface
+                }
+            }
+        }
+
+        DebugRichConsole.printWiFiInterfaceSelection(
+            activeInterfaceName: activeInterfaceName,
+            selectedInterfaceName: nil,
+            availableInterfaceNames: availableInterfaceNames
+        )
+
+        return nil
+    }
+
     private func refreshConnectionIdentity() {
-        let liveSSID = CWWiFiClient.shared().interface()?.ssid()
+        let liveSSID = wifiInterface()?.ssid()
         let retainedSSID = currentSSID.isEmpty ? nil : currentSSID
         let resolvedSSID = liveSSID ?? retainedSSID
         currentSSID = Self.displaySSID(connection: currentConnection, ssid: resolvedSSID)
@@ -419,7 +498,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         switch manager.authorizationStatus {
         case .authorizedAlways:
             refreshConnectionIdentity()
-            if currentConnection == "WIFI" { scanForNetworks() }
+            if canScanWiFi { scanForNetworks() }
         case .denied, .restricted:
             currentSSID = ""
             currentNetworkName = Self.networkDisplayName(
@@ -439,7 +518,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func isKnownNetwork(ssid: String) -> Bool {
-        guard let interface = CWWiFiClient.shared().interface(),
+        guard let interface = wifiInterface(),
             let config = interface.configuration()
         else {
             return false
@@ -464,7 +543,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     )
                 )
             }
-            guard let interface = CWWiFiClient.shared().interface() else {
+            guard let interface = wifiInterface() else {
                 return .failure(NetworkManagerError.wifiInterfaceUnavailable)
             }
             do {

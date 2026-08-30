@@ -59,6 +59,40 @@ enum DebugRichConsole {
         print("\(yellow)[Launch at Login] Failed to \(action): \(error)\(reset)")
     }
 
+    static func printWiFiScanStart(
+        authorizationStatus: String,
+        currentConnection: String,
+        activeInterfaceName: String?
+    ) {
+        guard isEnabled else { return }
+        print(
+            "\(cyan)[Wi-Fi] Scan start auth=\(authorizationStatus) connection=\(currentConnection) activeInterface=\(activeInterfaceName ?? "nil")\(reset)"
+        )
+    }
+
+    static func printWiFiInterfaceSelection(
+        activeInterfaceName: String?,
+        selectedInterfaceName: String?,
+        availableInterfaceNames: [String]
+    ) {
+        guard isEnabled else { return }
+        print(
+            "\(blue)[Wi-Fi] Interface selection active=\(activeInterfaceName ?? "nil") selected=\(selectedInterfaceName ?? "nil") available=\(availableInterfaceNames)\(reset)"
+        )
+    }
+
+    static func printWiFiScanResult(networkCount: Int, networkNames: [String]) {
+        guard isEnabled else { return }
+        print(
+            "\(green)[Wi-Fi] Scan result count=\(networkCount) networks=\(networkNames)\(reset)"
+        )
+    }
+
+    static func printWiFiScanFailure(_ error: Error) {
+        guard isEnabled else { return }
+        print("\(red)[Wi-Fi] Scan failed: \(error)\(reset)")
+    }
+
     static func formatBytes(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useKB, .useBytes]

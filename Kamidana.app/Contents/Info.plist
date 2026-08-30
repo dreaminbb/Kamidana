@@ -18,6 +18,8 @@
 	<string>Kamidana uses your location to scan and display nearby Wi-Fi networks.</string>
 	<key>NSLocationUsageDescription</key>
 	<string>Kamidana uses your location to scan and display nearby Wi-Fi networks.</string>
+	<key>NSLocalNetworkUsageDescriptio n</key>
+	<string>Kamidana uses the local network to discover and connect with nearby LocalSend devices. </string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Kamidana uses Bluetooth to scan for and display nearby device connection status.</string>
 </dict>

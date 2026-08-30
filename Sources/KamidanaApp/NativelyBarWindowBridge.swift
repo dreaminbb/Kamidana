@@ -81,6 +81,6 @@ final class StatusBarWindow: NSWindow {
         frameRect
     }
 
-    override var canBecomeKey: Bool { false }
-    override var canBecomeMain: Bool { false }
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
 }

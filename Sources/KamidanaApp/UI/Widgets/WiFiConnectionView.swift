@@ -11,6 +11,7 @@ struct WiFiConnectionView: View {
     @State private var selectedSSID: String?
     @State private var wifiPassword = ""
     @State private var connectionStatusMessage = ""
+    @FocusState private var isPasswordFieldFocused: Bool
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
@@ -77,6 +78,10 @@ struct WiFiConnectionView: View {
 
     private func scanIfAllowed() {
         guard netManager.canScanWiFi else { return }
+        if !netManager.isWiFiAuthorizationDetermined {
+            netManager.scanForNetworks() // triggers auth request
+            return
+        }
         netManager.scanForNetworks()
     }
 
@@ -89,6 +94,12 @@ struct WiFiConnectionView: View {
             SecureField("Password", text: $wifiPassword)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .frame(width: 230)
+                .focused($isPasswordFieldFocused)
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isPasswordFieldFocused = true
+                    }
+                }
 
             if !connectionStatusMessage.isEmpty {
                 Text(connectionStatusMessage)
@@ -123,8 +134,9 @@ struct WiFiConnectionView: View {
                         .padding(.bottom, 5)
                 }
 
-                ForEach(Array(netManager.availableNetworks.enumerated()), id: \.offset) {
+                ForEach(Array(orderedNetworks.enumerated()), id: \.offset) {
                     _, network in
+                    let isCurrentNetwork = network.ssid == netManager.currentSSID
                     Button {
                         guard let ssid = network.ssid else { return }
                         if netManager.isKnownNetwork(ssid: ssid) {
@@ -133,23 +145,32 @@ struct WiFiConnectionView: View {
                             selectedSSID = ssid
                             wifiPassword = ""
                             connectionStatusMessage = ""
+                            NSApp.activate(ignoringOtherApps: true)
                         }
                     } label: {
                         HStack {
                             NerdFontIcon(config.wirelessIcon)
-                                .foregroundColor(Color(hex: colors.textPrimary))
+                                .foregroundColor(
+                                    Color(hex: isCurrentNetwork ? colors.accent : colors.textPrimary)
+                                )
                             Text(network.ssid ?? "Hidden")
                                 .lineLimit(1)
-                                .foregroundColor(Color(hex: colors.textPrimary))
+                                .foregroundColor(
+                                    Color(hex: isCurrentNetwork ? colors.accent : colors.textPrimary)
+                                )
                             Spacer()
                             Text("\(network.rssiValue) dBm")
                                 .font(.caption)
-                                .foregroundColor(Color(hex: colors.textTertiary))
+                                .foregroundColor(
+                                    Color(hex: isCurrentNetwork ? colors.accent : colors.textTertiary)
+                                )
                         }
                         .frame(width: 230)
                         .padding(.vertical, 4)
                         .padding(.horizontal, 8)
-                        .background(Color(hex: colors.surface))
+                        .background(
+                            Color(hex: isCurrentNetwork ? colors.surfaceHighlight : colors.surface)
+                        )
                         .cornerRadius(6)
                     }
                     .buttonStyle(.plain)
@@ -157,6 +178,17 @@ struct WiFiConnectionView: View {
             }
         }
         .frame(maxHeight: 300)
+    }
+
+    private var orderedNetworks: [CWNetwork] {
+        netManager.availableNetworks.sorted { lhs, rhs in
+            let lhsIsCurrent = lhs.ssid == netManager.currentSSID
+            let rhsIsCurrent = rhs.ssid == netManager.currentSSID
+            if lhsIsCurrent != rhsIsCurrent {
+                return lhsIsCurrent
+            }
+            return lhs.rssiValue > rhs.rssiValue
+        }
     }
 
     private func connect(ssid: String) {
