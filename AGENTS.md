@@ -2,8 +2,8 @@
 
 ## Project Shape
 
-- Swift Package with two executables: `KamidanaApp` at `Sources/KamidanaApp` and `kamidana-cli` at `Sources/KamidanaCLI`.
-- Main app entrypoint is `Sources/KamidanaApp/KamidanaApp.swift`; it registers widgets, loads config, watches config changes, and owns the status-bar window.
+- Swift Package has a `KamidanaApp` core module at `Sources/KamidanaApp` and two development executables: `KamidanaApp` at `Sources/KamidanaAppLauncher` and `kamidana` at `Sources/KamidanaCLI`. The packaged `.app` continues to expose `Kamidana` as its executable.
+- The main app entrypoint is `Sources/KamidanaAppLauncher/main.swift`; it invokes the lifecycle in `Sources/KamidanaApp/KamidanaApp.swift`, which registers widgets, loads config, watches config changes, and owns the status-bar window.
 - Runtime user config is YAML at `~/.config/kamidana/config.yaml`; `Example/config.yaml` is the representative v1 schema sample.
 - Current widget config flow is v1 YAML model -> `KamidanaConfigurationV1Adapter` -> legacy `WidgetInstance`/view configs; do not add a widget only in a SwiftUI view.
 
@@ -15,7 +15,7 @@
 - Debug with terminal logging: `make debug`; this builds, packages `Kamidana.app`, signs it, then runs `./Kamidana.app/Contents/MacOS/Kamidana`.
 - Run all tests: `swift test`.
 - Run a focused test class or method: `swift test --filter KamidanaConfigurationV1Tests` or `swift test --filter KamidanaConfigurationV1Tests/testRejectsUnsupportedWidgetType`.
-- Run CLI target directly: `swift run kamidana-cli display id`.
+- Run CLI target directly: `swift run kamidana display id`.
 
 ## Architecture Notes
 

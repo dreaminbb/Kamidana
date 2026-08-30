@@ -2,13 +2,17 @@ Main Config folder path should be `$HOME/.config/kamidana`
 
 ## Monitor Profiles
 
-Kamidana reads both display profiles from `~/.config/kamidana/config.yaml`. The top-level `external` and `built_in` keys each contain a complete `global`, `left`, `center`, and `right` configuration.
+Kamidana reads both display profiles from `~/.config/kamidana/config.yaml`. Shared settings are in the top-level `global` key, while `external` and `built_in` contain their respective `left`, `center`, and `right` layouts.
 
 ```yaml
+global:
+  background_mode: per_widget
+  bar_padding: 0
+  launch_at_login: false
+  display_targets:
+    - kind: primary
+
 external:
-  global:
-    background_mode: per_widget
-    bar_padding: 0
   left:
     widgets: []
   center:
@@ -21,9 +25,6 @@ external:
     widgets: []
 
 built_in:
-  global:
-    background_mode: per_widget
-    bar_padding: 0
   left:
     widgets: []
   center:
@@ -36,9 +37,40 @@ built_in:
     widgets: []
 ```
 
-The application selects the profile automatically by checking whether the active main display is built in. Both profiles are required. Widget IDs must be unique inside each profile, but the same IDs may be reused between `external` and `built_in`.
+The application selects the profile for each targeted display by checking whether it is built in. Both profiles are required. Widget IDs must be unique inside each profile, but the same IDs may be reused between `external` and `built_in`.
 
 The previous two-file layout remains readable for migration, but new configuration and documentation use only the combined file.
+
+## Display Targets
+
+`global.display_targets` selects the screens that receive a status-bar window. It is an ordered list of typed selectors, but selector order does not control window placement: resolved screens retain AppKit's `NSScreen.screens` order and overlapping selectors are de-duplicated. When omitted, it defaults to the primary display only.
+
+```yaml
+global:
+  display_targets:
+    - kind: primary
+    - kind: external
+    - kind: name
+      name: "Studio Display"
+    - kind: id
+      id: 69733568
+```
+
+| `kind` | Required field | Selection |
+|---|---|---|
+| `primary` | None | The primary display, first in AppKit's screen order. |
+| `secondary` | None | Every non-primary display. |
+| `built_in` | None | Every built-in display. |
+| `external` | None | Every non-built-in display. |
+| `all` | None | Every connected display. |
+| `name` | `name` | Every display whose localized name exactly matches `name`. |
+| `id` | `id` | The display whose numeric Core Graphics display ID exactly matches `id`. |
+
+Each selector must contain `kind` and only the field required by that kind. `name` must not be empty. `id` must be a positive unsigned 32-bit display ID. Unknown selector kinds and fields are rejected when the configuration is loaded. Use `kamidana display id` to inspect the current display ID before adding an `id` selector.
+
+## Launch at Login
+
+`global.launch_at_login` controls whether Kamidana registers its main application as a login item. It defaults to `false`. The setting is synchronized when the app launches and after each valid configuration reload. Set it to `true` to register the app, or `false` to unregister it. `kamidana --launch-at-login <bool>` updates this same configuration value. When Kamidana is running, its configuration watcher synchronizes the login item after the update; otherwise, the setting is synchronized at the next app launch.
 
 ## Widget and Popup Surfaces
 

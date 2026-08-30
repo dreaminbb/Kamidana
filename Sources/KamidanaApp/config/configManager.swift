@@ -575,6 +575,35 @@ private enum MonitorConfigurationRole {
     case builtIn
 }
 
+public enum ConfigManagerError: LocalizedError {
+    case configurationFileNotFound(URL)
+    case combinedMonitorProfilesRequired
+    case yamlMappingRequired
+    case launchAtLoginRequiresBlockGlobal
+    case launchAtLoginRequiresDirectScalar
+
+    public var errorDescription: String? {
+        switch self {
+        case .configurationFileNotFound(let url):
+            return "Configuration file not found at \(url.path)."
+        case .combinedMonitorProfilesRequired:
+            return
+                "Launch at login can be updated only in a combined monitor profile configuration."
+        case .yamlMappingRequired:
+            return "Configuration must be a YAML mapping."
+        case .launchAtLoginRequiresBlockGlobal:
+            return "Launch at login requires a standard top-level 'global:' block mapping."
+        case .launchAtLoginRequiresDirectScalar:
+            return "Launch at login must be a direct plain scalar in the top-level 'global:' block."
+        }
+    }
+}
+
+private struct YAMLSourceLine {
+    let contentRange: Range<String.Index>
+    let endIndex: String.Index
+}
+
 public class ConfigManager {
 
     public static let shared = ConfigManager()
@@ -651,13 +680,328 @@ public class ConfigManager {
         }
     }
 
+    /// Updates the shared launch-at-login setting after validating the complete combined profile.
+    public func updateLaunchAtLogin(
+        isEnabled: Bool,
+        homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
+    ) throws {
+        try updateLaunchAtLogin(
+            isEnabled: isEnabled,
+            configurationFileURL: resolveConfigFileURL(homeDirectory: homeDirectory)
+        )
+    }
+
+    /// Updates the shared launch-at-login setting in an explicitly supplied configuration file.
+    public func updateLaunchAtLogin(
+        isEnabled: Bool,
+        configurationFileURL: URL
+    ) throws {
+        guard FileManager.default.fileExists(atPath: configurationFileURL.path) else {
+            throw ConfigManagerError.configurationFileNotFound(configurationFileURL)
+        }
+
+        let originalData = try Data(contentsOf: configurationFileURL)
+        guard let yaml = String(data: originalData, encoding: .utf8) else {
+            throw ConfigManagerError.yamlMappingRequired
+        }
+
+        // Decode and validate before altering the source file.
+        _ = try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml)
+        guard Self.usesMonitorProfileSchema(yaml: yaml) else {
+            throw ConfigManagerError.combinedMonitorProfilesRequired
+        }
+
+        let updatedData = try Self.updatedLaunchAtLoginData(
+            yaml: yaml,
+            originalData: originalData,
+            isEnabled: isEnabled
+        )
+        try updatedData.write(to: configurationFileURL, options: .atomic)
+    }
+
+    private static func updatedLaunchAtLoginData(
+        yaml: String,
+        originalData: Data,
+        isEnabled: Bool
+    ) throws -> Data {
+        guard let document = try Yams.load(yaml: yaml) as? [String: Any] else {
+            throw ConfigManagerError.yamlMappingRequired
+        }
+
+        let lines = sourceLines(in: yaml)
+        let globalHeaderIndexes = lines.indices.filter {
+            globalHeaderKind(in: yaml[lines[$0].contentRange]) != nil
+        }
+        guard globalHeaderIndexes.count <= 1 else {
+            throw ConfigManagerError.launchAtLoginRequiresBlockGlobal
+        }
+
+        let hasGlobal = document.keys.contains("global")
+        guard let globalHeaderIndex = globalHeaderIndexes.first else {
+            guard !hasGlobal, canInsertGlobalBlock(in: yaml, lines: lines) else {
+                throw ConfigManagerError.launchAtLoginRequiresBlockGlobal
+            }
+            let insertionIndex =
+                yaml.first == "\u{FEFF}"
+                ? yaml.index(after: yaml.startIndex)
+                : yaml.startIndex
+            return try applying(
+                replacement: "global:\n  launch_at_login: \(isEnabled)\n\n",
+                to: insertionIndex..<insertionIndex,
+                in: yaml,
+                originalData: originalData
+            )
+        }
+
+        guard hasGlobal,
+            globalHeaderKind(in: yaml[lines[globalHeaderIndex].contentRange]) == .block
+        else {
+            throw ConfigManagerError.launchAtLoginRequiresBlockGlobal
+        }
+
+        let globalHeader = lines[globalHeaderIndex]
+        let globalBlockEnd = endOfBlock(
+            after: globalHeaderIndex,
+            parentIndentation: 0,
+            in: yaml,
+            lines: lines
+        )
+        let globalMapping = document["global"] as? [String: Any]
+        let hasLaunchAtLogin = globalMapping?.keys.contains("launch_at_login") ?? false
+        var directChildIndentation: Int?
+        var launchAtLoginValueRanges: [Range<String.Index>] = []
+        var lastGlobalContentIndex: Int?
+
+        for lineIndex in (globalHeaderIndex + 1)..<globalBlockEnd {
+            let line = yaml[lines[lineIndex].contentRange]
+            guard !isBlankOrComment(line) else { continue }
+
+            let indentation = leadingSpaceCount(in: line)
+            lastGlobalContentIndex = lineIndex
+            if directChildIndentation == nil {
+                directChildIndentation = indentation
+            }
+            guard indentation == directChildIndentation else { continue }
+
+            if let range = try launchAtLoginValueRange(
+                in: line,
+                indentation: indentation
+            ) {
+                launchAtLoginValueRanges.append(range)
+            }
+        }
+
+        guard launchAtLoginValueRanges.count <= 1 else {
+            throw ConfigManagerError.launchAtLoginRequiresDirectScalar
+        }
+        if let valueRange = launchAtLoginValueRanges.first {
+            return try applying(
+                replacement: String(isEnabled),
+                to: valueRange,
+                in: yaml,
+                originalData: originalData
+            )
+        }
+        guard !hasLaunchAtLogin else {
+            throw ConfigManagerError.launchAtLoginRequiresDirectScalar
+        }
+
+        let indentation = String(repeating: " ", count: directChildIndentation ?? 2)
+        let insertionLine = lastGlobalContentIndex.map { lines[$0] } ?? globalHeader
+        let insertionIndex = insertionLine.endIndex
+        let lineEnding = String(
+            yaml[insertionLine.contentRange.upperBound..<insertionLine.endIndex])
+        let replacement: String
+        if lineEnding.isEmpty {
+            replacement = "\n\(indentation)launch_at_login: \(isEnabled)"
+        } else {
+            replacement = "\(indentation)launch_at_login: \(isEnabled)\(lineEnding)"
+        }
+        return try applying(
+            replacement: replacement,
+            to: insertionIndex..<insertionIndex,
+            in: yaml,
+            originalData: originalData
+        )
+    }
+
+    private static func sourceLines(in yaml: String) -> [YAMLSourceLine] {
+        var lines: [YAMLSourceLine] = []
+        var lineStart = yaml.startIndex
+
+        while lineStart < yaml.endIndex {
+            var lineEnd = lineStart
+            while lineEnd < yaml.endIndex, yaml[lineEnd] != "\n", yaml[lineEnd] != "\r" {
+                lineEnd = yaml.index(after: lineEnd)
+            }
+
+            var nextLineStart = lineEnd
+            if nextLineStart < yaml.endIndex {
+                let firstLineEndingCharacter = yaml[nextLineStart]
+                nextLineStart = yaml.index(after: nextLineStart)
+                if firstLineEndingCharacter == "\r",
+                    nextLineStart < yaml.endIndex,
+                    yaml[nextLineStart] == "\n"
+                {
+                    nextLineStart = yaml.index(after: nextLineStart)
+                }
+            }
+
+            lines.append(YAMLSourceLine(contentRange: lineStart..<lineEnd, endIndex: nextLineStart))
+            lineStart = nextLineStart
+        }
+
+        return lines
+    }
+
+    private static func globalHeaderKind(in line: Substring) -> GlobalHeaderKind? {
+        let content = line.first == "\u{FEFF}" ? line.dropFirst() : line[...]
+        guard content.starts(with: "global:") else { return nil }
+
+        let valueStart = content.index(content.startIndex, offsetBy: "global:".count)
+        let value = content[valueStart...]
+        guard value.isEmpty || value.first?.isWhitespace == true else { return .unsupported }
+
+        let trimmedValue = value.trimmingCharacters(in: .whitespaces)
+        guard !trimmedValue.isEmpty, trimmedValue.first != "#" else { return .block }
+        guard trimmedValue.first == "&" else { return .unsupported }
+
+        let anchor = trimmedValue.dropFirst().prefix { !$0.isWhitespace }
+        let remaining = trimmedValue.dropFirst().dropFirst(anchor.count)
+            .trimmingCharacters(in: .whitespaces)
+        return !anchor.isEmpty && (remaining.isEmpty || remaining.first == "#")
+            ? .block : .unsupported
+    }
+
+    private enum GlobalHeaderKind {
+        case block
+        case unsupported
+    }
+
+    private static func canInsertGlobalBlock(in yaml: String, lines: [YAMLSourceLine]) -> Bool {
+        for line in lines {
+            let lineContent = yaml[line.contentRange]
+            let content = lineContent.first == "\u{FEFF}" ? lineContent.dropFirst() : lineContent
+            guard !isBlankOrComment(content) else { continue }
+            guard leadingSpaceCount(in: content) == 0,
+                !content.starts(with: "---"),
+                !content.starts(with: "%")
+            else { return false }
+
+            guard let firstCharacter = content.first,
+                !"{[*&!".contains(firstCharacter)
+            else { return false }
+            return true
+        }
+        return false
+    }
+
+    private static func endOfBlock(
+        after headerIndex: Int,
+        parentIndentation: Int,
+        in yaml: String,
+        lines: [YAMLSourceLine]
+    ) -> Int {
+        for lineIndex in (headerIndex + 1)..<lines.count {
+            let line = yaml[lines[lineIndex].contentRange]
+            if !isBlankOrComment(line), leadingSpaceCount(in: line) <= parentIndentation {
+                return lineIndex
+            }
+        }
+        return lines.count
+    }
+
+    private static func launchAtLoginValueRange(
+        in line: Substring,
+        indentation: Int
+    ) throws -> Range<String.Index>? {
+        guard leadingSpaceCount(in: line) == indentation else { return nil }
+        let keyStart = line.index(line.startIndex, offsetBy: indentation)
+        let key = "launch_at_login:"
+        guard line[keyStart...].starts(with: key) else { return nil }
+
+        let valueStart = line.index(keyStart, offsetBy: key.count)
+        guard valueStart == line.endIndex || line[valueStart].isWhitespace else { return nil }
+        let commentStart = inlineCommentStart(in: line[valueStart...]) ?? line.endIndex
+        var scalarStart = valueStart
+        while scalarStart < commentStart, line[scalarStart].isWhitespace {
+            scalarStart = line.index(after: scalarStart)
+        }
+        var scalarEnd = commentStart
+        while scalarEnd > scalarStart, line[line.index(before: scalarEnd)].isWhitespace {
+            scalarEnd = line.index(before: scalarEnd)
+        }
+
+        let scalar = line[scalarStart..<scalarEnd]
+        guard !scalar.isEmpty,
+            !scalar.contains(where: \Character.isWhitespace),
+            !"*&!\"'[{|>".contains(scalar.first!)
+        else {
+            throw ConfigManagerError.launchAtLoginRequiresDirectScalar
+        }
+        return scalarStart..<scalarEnd
+    }
+
+    private static func inlineCommentStart(in value: Substring) -> String.Index? {
+        var index = value.startIndex
+        while index < value.endIndex {
+            if value[index] == "#",
+                index > value.startIndex,
+                value[value.index(before: index)].isWhitespace
+            {
+                return index
+            }
+            index = value.index(after: index)
+        }
+        return nil
+    }
+
+    private static func isBlankOrComment(_ line: Substring) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        return trimmed.isEmpty || trimmed.first == "#"
+    }
+
+    private static func leadingSpaceCount(in line: Substring) -> Int {
+        line.prefix { $0 == " " }.count
+    }
+
+    private static func applying(
+        replacement: String,
+        to range: Range<String.Index>,
+        in yaml: String,
+        originalData: Data
+    ) throws -> Data {
+        let stringByteCount = yaml.utf8.count
+        let leadingByteCount = originalData.count - stringByteCount
+        guard leadingByteCount >= 0,
+            let start = range.lowerBound.samePosition(in: yaml.utf8),
+            let end = range.upperBound.samePosition(in: yaml.utf8)
+        else {
+            throw ConfigManagerError.launchAtLoginRequiresBlockGlobal
+        }
+
+        let startOffset =
+            leadingByteCount + yaml.utf8.distance(from: yaml.utf8.startIndex, to: start)
+        let endOffset = leadingByteCount + yaml.utf8.distance(from: yaml.utf8.startIndex, to: end)
+        guard startOffset <= endOffset, endOffset <= originalData.count else {
+            throw ConfigManagerError.launchAtLoginRequiresBlockGlobal
+        }
+
+        var updatedData = Data()
+        updatedData.append(contentsOf: originalData.prefix(startOffset))
+        updatedData.append(contentsOf: replacement.utf8)
+        updatedData.append(contentsOf: originalData.suffix(from: endOffset))
+        return updatedData
+    }
+
     public func applyV1Configuration(yaml: String) throws {
         if Self.usesMonitorProfileSchema(yaml: yaml) {
             let profiles = try KamidanaMonitorConfigurationV1Decoder.decode(yaml: yaml)
             self.monitorProfiles = profiles
 
             let fallback = KamidanaConfigurationV1(
-                global: profiles.global, left: .init(widgets: []), center: .init(centerDefault: "", widgets: []), right: .init(widgets: []))
+                global: profiles.global, left: .init(widgets: []),
+                center: .init(centerDefault: "", widgets: []), right: .init(widgets: []))
 
             applyDecodedConfigurations(
                 regularConfiguration: profiles.displays["external"] ?? profiles.displays[
@@ -679,6 +1023,7 @@ public class ConfigManager {
             yaml: builtInYAML,
             role: .builtIn
         )
+        monitorProfiles = nil
         applyDecodedConfigurations(
             regularConfiguration: regularConfiguration,
             builtInConfiguration: builtInConfiguration
@@ -713,6 +1058,7 @@ public class ConfigManager {
             let mapping = value as? [String: Any]
         else { return false }
         return mapping.keys.contains("external") || mapping.keys.contains("built_in")
+            || mapping.keys.contains("default_layout")
     }
 
     private func decodeConfiguration(
@@ -749,9 +1095,13 @@ public class ConfigManager {
                     global: KamidanaConfigurationV1Global(
                         backgroundMode: baseGlobal.backgroundMode,
                         hideInFullscreen: baseGlobal.hideInFullscreen,
+                        launchAtLogin: baseGlobal.launchAtLogin,
+                        displayTargets: baseGlobal.displayTargets,
                         style: display.style.map {
                             KamidanaConfigurationV1Adapter.mergedStyle(baseGlobal.style, $0)
-                        } ?? baseGlobal.style
+                        } ?? baseGlobal.style,
+                        popupStyle: baseGlobal.popupStyle,
+                        barPadding: baseGlobal.barPadding
                     ),
                     left: display.left ?? KamidanaConfigurationV1Section(),
                     center: display.center,
@@ -769,10 +1119,8 @@ public class ConfigManager {
             let displays = profiles.displays
 
             // 1. Try ID
-            if let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
-                as? CGDirectDisplayID
-            {
-                if let config = displays[String(number)] { return config }
+            if let displayID = DisplayDetector.displayID(for: screen) {
+                if let config = displays[String(displayID)] { return config }
             }
 
             // 2. Try Name

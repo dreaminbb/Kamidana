@@ -54,6 +54,11 @@ enum DebugRichConsole {
         print(out)
     }
 
+    static func printLaunchAtLoginFailure(action: String, error: Error) {
+        guard isEnabled else { return }
+        print("\(yellow)[Launch at Login] Failed to \(action): \(error)\(reset)")
+    }
+
     static func formatBytes(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useKB, .useBytes]

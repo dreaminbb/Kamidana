@@ -1,5 +1,8 @@
 global:
   hide_in_fullscreen: true
+  launch_at_login: false
+  display_targets:
+    - kind: primary
   bar_padding:
     top: 0
     leading: 0

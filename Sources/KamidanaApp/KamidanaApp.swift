@@ -2,24 +2,27 @@ import AppKit
 import CoreWLAN
 import SwiftUI
 
-@main
-class AppDelegate: NSObject, NSApplicationDelegate {
+public class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarWindow: StatusBarWindow!
     private var hostingController: NSHostingController<StatusBarView>?
+    private let launchAtLoginManager = LaunchAtLoginManager()
     let barHeight: CGFloat = 600  // Enlarged height to support island expansion
 
     static let sharedDelegate = AppDelegate()
 
-    static func main() {
+    public static func main() {
         let app = NSApplication.shared
         app.delegate = sharedDelegate
         app.run()
     }
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    public func applicationDidFinishLaunching(_ notification: Notification) {
         WidgetRegistry.shared.registerAllWidgets()
         let isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
         ConfigManager.shared.activateConfiguration(isBuiltIn: isBuiltInDisplay)
+        launchAtLoginManager.synchronize(
+            isEnabled: ConfigManager.shared.globalV1Config.launchAtLogin
+        )
         ConfigManager.shared.startWatchingConfig()
 
         let contentView = StatusBarView()
@@ -85,10 +88,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(rerenderBar),
+            selector: #selector(handleConfigChange),
             name: ConfigManager.configDidChangeNotification,
             object: nil
         )
+    }
+
+    @objc func handleConfigChange() {
+        launchAtLoginManager.synchronize(
+            isEnabled: ConfigManager.shared.globalV1Config.launchAtLogin
+        )
+        rerenderBar()
     }
 
     @objc func rerenderBar() {

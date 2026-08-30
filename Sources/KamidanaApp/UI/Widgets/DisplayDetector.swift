@@ -7,14 +7,21 @@ enum DisplayDetector {
         return isBuiltIn(screen: screen)
     }
 
-    static func isBuiltIn(screen: NSScreen) -> Bool {
+    static func displayID(for screen: NSScreen) -> CGDirectDisplayID? {
         guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
                 as? NSNumber
         else {
+            return nil
+        }
+
+        return CGDirectDisplayID(number.uint32Value)
+    }
+
+    static func isBuiltIn(screen: NSScreen) -> Bool {
+        guard let displayID = displayID(for: screen) else {
             return false
         }
 
-        let displayID = CGDirectDisplayID(number.uint32Value)
         return CGDisplayIsBuiltin(displayID) == 1
     }
 }

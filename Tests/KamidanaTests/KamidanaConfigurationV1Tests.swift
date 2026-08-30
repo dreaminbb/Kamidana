@@ -7,6 +7,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     global:
       background_mode: per_section
       hide_in_fullscreen: true
+      launch_at_login: true
       bar_padding: 4
       style:
         background: "#111111"
@@ -83,6 +84,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(configuration.left.widgets[1].motion, .static)
     XCTAssertEqual(configuration.global.backgroundMode, .perSection)
     XCTAssertTrue(configuration.global.hideInFullscreen)
+    XCTAssertTrue(configuration.global.launchAtLogin)
     XCTAssertEqual(configuration.global.barPadding.top, 4)
     XCTAssertEqual(configuration.global.barPadding.leading, 4)
     XCTAssertEqual(configuration.global.popupStyle?.cornerRadius, 14)
@@ -368,6 +370,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
     XCTAssertEqual(configuration.global.backgroundMode, .singleBar)
     XCTAssertFalse(configuration.global.hideInFullscreen)
+    XCTAssertFalse(configuration.global.launchAtLogin)
     XCTAssertTrue(configuration.left.widgets.isEmpty)
     XCTAssertTrue(configuration.right.widgets.isEmpty)
   }

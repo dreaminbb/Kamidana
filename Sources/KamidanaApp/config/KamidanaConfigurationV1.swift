@@ -32,6 +32,17 @@ private func rejectUnknownKeys<Key: CodingKey & CaseIterable>(
   )
 }
 
+private func displayTargetError(in message: String) -> KamidanaConfigurationV1Error? {
+  guard let marker = message.range(of: "Invalid display target at ") else { return nil }
+  let details = message[marker.upperBound...]
+  let parts = details.split(separator: ":", maxSplits: 1)
+  guard parts.count == 2 else { return nil }
+  return .invalidDisplayTarget(
+    path: String(parts[0]),
+    reason: String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+  )
+}
+
 /// Errors reported while decoding or validating the independent v1 configuration schema.
 public enum KamidanaConfigurationV1Error: Error, CustomStringConvertible, Equatable {
   case yamlDecoding(String)
@@ -45,6 +56,7 @@ public enum KamidanaConfigurationV1Error: Error, CustomStringConvertible, Equata
   case emptyCustomCommand(String)
   case invalidStyle(path: String, reason: String)
   case invalidWidget(path: String, reason: String)
+  case invalidDisplayTarget(path: String, reason: String)
 
   public var description: String {
     switch self {
@@ -72,6 +84,8 @@ public enum KamidanaConfigurationV1Error: Error, CustomStringConvertible, Equata
       return "Invalid style at \(path): \(reason)"
     case .invalidWidget(let path, let reason):
       return "Invalid widget at \(path): \(reason)"
+    case .invalidDisplayTarget(let path, let reason):
+      return "Invalid display target at \(path): \(reason)"
     }
   }
 }
@@ -107,6 +121,81 @@ public enum KamidanaActivation: String, Codable, Equatable {
 public enum KamidanaMotion: String, Codable, Equatable {
   case `static`
   case dynamic
+}
+
+public enum KamidanaDisplayTargetKind: String, Decodable, Equatable {
+  case primary
+  case secondary
+  case builtIn = "built_in"
+  case external
+  case all
+  case name
+  case id
+}
+
+/// A validated selector for the screens that should host the status bar.
+public struct KamidanaDisplayTarget: Decodable, Equatable {
+  public var kind: KamidanaDisplayTargetKind
+  public var name: String?
+  public var id: UInt32?
+
+  public init(
+    kind: KamidanaDisplayTargetKind,
+    name: String? = nil,
+    id: UInt32? = nil
+  ) {
+    self.kind = kind
+    self.name = name
+    self.id = id
+  }
+
+  private enum CodingKeys: String, CodingKey, CaseIterable {
+    case kind, name, id
+  }
+
+  public init(from decoder: Decoder) throws {
+    try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.init(
+      kind: try container.decode(KamidanaDisplayTargetKind.self, forKey: .kind),
+      name: try container.decodeIfPresent(String.self, forKey: .name),
+      id: try container.decodeIfPresent(UInt32.self, forKey: .id)
+    )
+    try validate(path: "display target")
+  }
+
+  fileprivate func validate(path: String) throws {
+    switch kind {
+    case .name:
+      guard let name, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        throw KamidanaConfigurationV1Error.invalidDisplayTarget(
+          path: path, reason: "name must be non-empty for kind 'name'"
+        )
+      }
+      guard id == nil else {
+        throw KamidanaConfigurationV1Error.invalidDisplayTarget(
+          path: path, reason: "id is allowed only for kind 'id'"
+        )
+      }
+    case .id:
+      guard let id, id != 0 else {
+        throw KamidanaConfigurationV1Error.invalidDisplayTarget(
+          path: path, reason: "id must be a positive display ID for kind 'id'"
+        )
+      }
+      guard name == nil else {
+        throw KamidanaConfigurationV1Error.invalidDisplayTarget(
+          path: path, reason: "name is allowed only for kind 'name'"
+        )
+      }
+    case .primary, .secondary, .builtIn, .external, .all:
+      guard name == nil, id == nil else {
+        throw KamidanaConfigurationV1Error.invalidDisplayTarget(
+          path: path, reason: "name and id are not allowed for kind '\(kind.rawValue)'"
+        )
+      }
+    }
+  }
 }
 
 public enum KamidanaMusicExtendDirection: String, Codable, Equatable {
@@ -639,6 +728,8 @@ public struct KamidanaWidget: Decodable, Equatable {
 public struct KamidanaConfigurationV1Global: Decodable, Equatable {
     public var backgroundMode: KamidanaBackgroundMode
   public var hideInFullscreen: Bool
+  public var launchAtLogin: Bool
+  public var displayTargets: [KamidanaDisplayTarget]
   public var style: KamidanaStyle
   public var popupStyle: KamidanaStyle?
   public var barPadding: KamidanaInsets
@@ -646,12 +737,16 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
   public init(
     backgroundMode: KamidanaBackgroundMode = .singleBar,
     hideInFullscreen: Bool = false,
+    launchAtLogin: Bool = false,
+    displayTargets: [KamidanaDisplayTarget] = [KamidanaDisplayTarget(kind: .primary)],
     style: KamidanaStyle = KamidanaStyle(),
     popupStyle: KamidanaStyle? = nil,
     barPadding: KamidanaInsets = KamidanaInsets()
   ) {
     self.backgroundMode = backgroundMode
     self.hideInFullscreen = hideInFullscreen
+    self.launchAtLogin = launchAtLogin
+    self.displayTargets = displayTargets
     self.style = style
     self.popupStyle = popupStyle
     self.barPadding = barPadding
@@ -660,6 +755,8 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
   private enum CodingKeys: String, CodingKey, CaseIterable {
     case backgroundMode = "background_mode"
     case hideInFullscreen = "hide_in_fullscreen"
+    case launchAtLogin = "launch_at_login"
+    case displayTargets = "display_targets"
     case style
     case popupStyle = "popup_style"
     case barPadding = "bar_padding"
@@ -668,11 +765,25 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
   public init(from decoder: Decoder) throws {
     try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
     let container = try decoder.container(keyedBy: CodingKeys.self)
+    let displayTargets = try container.decodeIfPresent(
+      [KamidanaDisplayTarget].self, forKey: .displayTargets
+    ) ?? [KamidanaDisplayTarget(kind: .primary)]
+    guard !displayTargets.isEmpty else {
+      throw KamidanaConfigurationV1Error.invalidDisplayTarget(
+        path: "global.display_targets", reason: "at least one target is required"
+      )
+    }
+    for (index, target) in displayTargets.enumerated() {
+      try target.validate(path: "global.display_targets[\(index)]")
+    }
     self.init(
       backgroundMode: try container.decodeIfPresent(
         KamidanaBackgroundMode.self, forKey: .backgroundMode) ?? .singleBar,
       hideInFullscreen: try container.decodeIfPresent(Bool.self, forKey: .hideInFullscreen)
         ?? false,
+      launchAtLogin: try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin)
+        ?? false,
+      displayTargets: displayTargets,
       style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style) ?? KamidanaStyle(),
       popupStyle: try container.decodeIfPresent(KamidanaStyle.self, forKey: .popupStyle),
       barPadding: try container.decodeIfPresent(KamidanaInsets.self, forKey: .barPadding)
@@ -822,6 +933,14 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
     try validateStyle(global.style, path: "global.style")
     try global.popupStyle.map { try validateStyle($0, path: "global.popup_style") }
     try validateInsets(global.barPadding, path: "global.bar_padding")
+    guard !global.displayTargets.isEmpty else {
+      throw KamidanaConfigurationV1Error.invalidDisplayTarget(
+        path: "global.display_targets", reason: "at least one target is required"
+      )
+    }
+    for (index, target) in global.displayTargets.enumerated() {
+      try target.validate(path: "global.display_targets[\(index)]")
+    }
   }
 
   private func validateSection(_ section: KamidanaConfigurationV1Section, name: String) throws {
@@ -1256,6 +1375,9 @@ public struct KamidanaMonitorConfigurationV1Decoder {
       throw error
     } catch {
       let message = String(describing: error)
+      if let displayTargetError = displayTargetError(in: message) {
+        throw displayTargetError
+      }
       if let marker = message.range(of: "Unsupported widget type '") {
         let remainder = message[marker.upperBound...]
         if let end = remainder.firstIndex(of: "'") {
@@ -1284,6 +1406,9 @@ public struct KamidanaConfigurationV1Decoder {
       throw error
     } catch {
       let message = String(describing: error)
+      if let displayTargetError = displayTargetError(in: message) {
+        throw displayTargetError
+      }
       if let marker = message.range(of: "Unsupported widget type '") {
         let remainder = message[marker.upperBound...]
         if let end = remainder.firstIndex(of: "'") {

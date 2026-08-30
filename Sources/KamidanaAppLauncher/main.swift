@@ -1,0 +1,3 @@
+import KamidanaApp
+
+AppDelegate.main()

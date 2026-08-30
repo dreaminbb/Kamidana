@@ -8,8 +8,8 @@ let package = Package(
     .macOS(.v13)
   ],
   products: [
-    .executable(name: "Kamidana", targets: ["KamidanaApp"]),
-    .executable(name: "kamidana-cli", targets: ["KamidanaCLI"])
+    .executable(name: "KamidanaApp", targets: ["KamidanaLauncher"]),
+    .executable(name: "kamidana", targets: ["KamidanaCLI"])
   ],
   dependencies: [
     .package(url: "https://github.com/migueldeicaza/SwiftTerm", from: "1.0.0"),
@@ -17,7 +17,7 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0")
   ],
   targets: [
-    .executableTarget(
+    .target(
       name: "KamidanaApp",
       dependencies: [
         .product(name: "SwiftTerm", package: "SwiftTerm"),
@@ -26,8 +26,14 @@ let package = Package(
       path: "Sources/KamidanaApp"
     ),
     .executableTarget(
+      name: "KamidanaLauncher",
+      dependencies: ["KamidanaApp"],
+      path: "Sources/KamidanaAppLauncher"
+    ),
+    .executableTarget(
       name: "KamidanaCLI",
       dependencies: [
+        "KamidanaApp",
         .product(name: "ArgumentParser", package: "swift-argument-parser")
       ],
       path: "Sources/KamidanaCLI"

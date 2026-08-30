@@ -448,6 +448,8 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(external.center.centerDefault, "music")
     XCTAssertEqual(builtIn.center.centerDefault, "music")
     XCTAssertTrue(profiles.global.hideInFullscreen)
+    XCTAssertFalse(profiles.global.launchAtLogin)
+    XCTAssertEqual(profiles.global.displayTargets, [KamidanaDisplayTarget(kind: .primary)])
     XCTAssertEqual(external.global, builtIn.global)
     let cpu = try XCTUnwrap(external.right.widgets.first { $0.kind == .cpu })
     XCTAssertEqual(cpu.style?.color, "#a6e3a1")
