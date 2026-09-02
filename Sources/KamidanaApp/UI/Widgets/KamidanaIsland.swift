@@ -19,14 +19,17 @@ struct KamidanaIsland: View {
         width: nil, height: nil)
 
     static let defaultHoveredSize = CGSize(width: 600, height: 300)
-    static let terminalHoveredSize = CGSize(width: 800, height: 500)
     static let collapsedHeight: CGFloat = 32
 
     private func expandedIslandSize() -> CGSize {
         // If size change by tab is needed, calculate here
         if let tab = selectedTab {
             if tab.typeID == "terminal" {
-                return Self.terminalHoveredSize
+                let terminal = tab.config as? TerminalWidgetConfig
+                return CGSize(
+                    width: CGFloat(terminal?.width ?? 700) + 24,
+                    height: CGFloat(terminal?.height ?? 400) + 80
+                )
             }
         }
 

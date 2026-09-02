@@ -126,6 +126,8 @@ external:
       - id: btop
         type: btop
         compact_format: ""
+        width: 700
+        height: 400
 
   right:
     style:
@@ -172,6 +174,19 @@ external:
       - id: battery
         type: battery
         motion: dynamic
+        icon:
+          charging_right_now: "󰂄"
+          100_capacity: "󰁹"
+          90_capacity: "󰂂"
+          80_capacity: "󰂁"
+          70_capacity: "󰂀"
+          60_capacity: "󰁿"
+          50_capacity: "󰁾"
+          40_capacity: "󰁽"
+          30_capacity: "󰁼"
+          20_capacity: "󰁹"
+          10_capacity: "󰁻"
+          sub_10_charged: "󰂃"
         format: "󰁹 {capacity}%"
         style:
           color: "#cdd6f4"

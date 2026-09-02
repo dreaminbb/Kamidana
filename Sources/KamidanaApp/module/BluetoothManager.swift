@@ -25,8 +25,8 @@ class BluetoothManager: NSObject, ObservableObject {
         checkBluetoothState()
         refreshPairedDevices()
 
-        // Update connection state of paired devices every 3 seconds
-        timer = Timer.publish(every: 3.0, on: .main, in: .common)
+        // Update connection state of paired devices every 10 seconds
+        timer = Timer.publish(every: 10.0, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.checkBluetoothState()

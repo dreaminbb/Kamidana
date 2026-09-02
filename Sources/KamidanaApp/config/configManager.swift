@@ -139,6 +139,20 @@ public struct MusicWidgetConfig: Codable {
 public struct TerminalWidgetConfig: Codable, Hashable {
     public var name: String
     public var terminalPath: String
+    public var width: Double
+    public var height: Double
+
+    public init(
+        name: String,
+        terminalPath: String,
+        width: Double = 700,
+        height: Double = 400
+    ) {
+        self.name = name
+        self.terminalPath = terminalPath
+        self.width = width
+        self.height = height
+    }
 }
 
 public struct GpuWidgetConfig: Codable, Hashable {

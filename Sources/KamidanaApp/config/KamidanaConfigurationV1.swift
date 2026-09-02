@@ -467,6 +467,53 @@ public struct KamidanaMusicActionState: Decodable, Equatable {
   }
 }
 
+public struct KamidanaBatteryIconConfig: Decodable, Equatable {
+  public let chargingRightNow: String?
+  public let capacity100: String?
+  public let capacity90: String?
+  public let capacity80: String?
+  public let capacity70: String?
+  public let capacity60: String?
+  public let capacity50: String?
+  public let capacity40: String?
+  public let capacity30: String?
+  public let capacity20: String?
+  public let capacity10: String?
+  public let sub10Charged: String?
+
+  private enum CodingKeys: String, CodingKey, CaseIterable {
+    case chargingRightNow = "charging_right_now"
+    case capacity100 = "100_capacity"
+    case capacity90 = "90_capacity"
+    case capacity80 = "80_capacity"
+    case capacity70 = "70_capacity"
+    case capacity60 = "60_capacity"
+    case capacity50 = "50_capacity"
+    case capacity40 = "40_capacity"
+    case capacity30 = "30_capacity"
+    case capacity20 = "20_capacity"
+    case capacity10 = "10_capacity"
+    case sub10Charged = "sub_10_charged"
+  }
+
+  public init(from decoder: Decoder) throws {
+    try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    chargingRightNow = try container.decodeIfPresent(String.self, forKey: .chargingRightNow)
+    capacity100 = try container.decodeIfPresent(String.self, forKey: .capacity100)
+    capacity90 = try container.decodeIfPresent(String.self, forKey: .capacity90)
+    capacity80 = try container.decodeIfPresent(String.self, forKey: .capacity80)
+    capacity70 = try container.decodeIfPresent(String.self, forKey: .capacity70)
+    capacity60 = try container.decodeIfPresent(String.self, forKey: .capacity60)
+    capacity50 = try container.decodeIfPresent(String.self, forKey: .capacity50)
+    capacity40 = try container.decodeIfPresent(String.self, forKey: .capacity40)
+    capacity30 = try container.decodeIfPresent(String.self, forKey: .capacity30)
+    capacity20 = try container.decodeIfPresent(String.self, forKey: .capacity20)
+    capacity10 = try container.decodeIfPresent(String.self, forKey: .capacity10)
+    sub10Charged = try container.decodeIfPresent(String.self, forKey: .sub10Charged)
+  }
+}
+
 public struct KamidanaWidget: Decodable, Equatable {
   public let id: String
   public let kind: KamidanaWidgetKind
@@ -484,9 +531,12 @@ public struct KamidanaWidget: Decodable, Equatable {
   public var tooltipFormat: String?
   public var widgets: [KamidanaWidget]
   public var actionChildren: [KamidanaSystemActionChild]
+  public var batteryIcons: KamidanaBatteryIconConfig?
   public var partStyles: [String: KamidanaStyle]
   public var command: String?
   public var arguments: [String]
+  public var width: Double?
+  public var height: Double?
   public var inputManagement: Bool?
   public var outputManagement: Bool?
   public var formatOnAction: String?
@@ -515,9 +565,12 @@ public struct KamidanaWidget: Decodable, Equatable {
     tooltipFormat: String? = nil,
     widgets: [KamidanaWidget] = [],
     actionChildren: [KamidanaSystemActionChild] = [],
+    batteryIcons: KamidanaBatteryIconConfig? = nil,
     partStyles: [String: KamidanaStyle] = [:],
     command: String? = nil,
     arguments: [String] = [],
+    width: Double? = nil,
+    height: Double? = nil,
     inputManagement: Bool? = nil,
     outputManagement: Bool? = nil,
     formatOnAction: String? = nil,
@@ -545,9 +598,12 @@ public struct KamidanaWidget: Decodable, Equatable {
     self.tooltipFormat = tooltipFormat
     self.widgets = widgets
     self.actionChildren = actionChildren
+    self.batteryIcons = batteryIcons
     self.partStyles = partStyles
     self.command = command
     self.arguments = arguments
+    self.width = width
+    self.height = height
     self.inputManagement = inputManagement
     self.outputManagement = outputManagement
     self.formatOnAction = formatOnAction
@@ -575,12 +631,19 @@ public struct KamidanaWidget: Decodable, Equatable {
     let inputManagement = try container.decodeIfPresent(Bool.self, forKey: .inputManagement)
     let outputManagement = try container.decodeIfPresent(Bool.self, forKey: .outputManagement)
 
+    let regularIcon = kind == .battery
+      ? nil
+      : try container.decodeIfPresent(String.self, forKey: .icon)
+    let batteryIcons = kind == .battery
+      ? try container.decodeIfPresent(KamidanaBatteryIconConfig.self, forKey: .icon)
+      : nil
+
     self.init(
       id: id,
       kind: kind,
       format: try container.decodeIfPresent(String.self, forKey: .format),
       compactFormat: try container.decodeIfPresent(String.self, forKey: .compactFormat),
-      icon: try container.decodeIfPresent(String.self, forKey: .icon),
+      icon: regularIcon,
       foldedIcon: try container.decodeIfPresent(String.self, forKey: .foldedIcon),
       direction: kind == .widgetFolder ? direction ?? .below : direction,
       style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style),
@@ -593,10 +656,13 @@ public struct KamidanaWidget: Decodable, Equatable {
       widgets: try container.decodeIfPresent([KamidanaWidget].self, forKey: .widgets) ?? [],
       actionChildren: try container.decodeIfPresent(
         [KamidanaSystemActionChild].self, forKey: .children) ?? [],
+      batteryIcons: batteryIcons,
       partStyles: try container.decodeIfPresent([String: KamidanaStyle].self, forKey: .partStyles)
         ?? [:],
       command: try container.decodeIfPresent(String.self, forKey: .command),
       arguments: try container.decodeIfPresent([String].self, forKey: .arguments) ?? [],
+      width: try container.decodeIfPresent(Double.self, forKey: .width),
+      height: try container.decodeIfPresent(Double.self, forKey: .height),
       inputManagement: kind == .volume ? inputManagement ?? true : inputManagement,
       outputManagement: kind == .volume ? outputManagement ?? true : outputManagement,
       formatOnAction: try container.decodeIfPresent(String.self, forKey: .formatOnAction),
@@ -622,7 +688,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     case tooltipFormat = "tooltip_format"
     case widgets, children
     case partStyles = "part_styles"
-    case command, arguments
+    case command, arguments, width, height
     case inputManagement = "input_management"
     case outputManagement = "output_management"
     case formatOnAction = "format_on_action"
@@ -870,6 +936,14 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
         throw KamidanaConfigurationV1Error.invalidWidget(
           path: widgetPath, reason: "interval must be positive")
       }
+      if let width = widget.width, width <= 0 || !width.isFinite {
+        throw KamidanaConfigurationV1Error.invalidWidget(
+          path: widgetPath, reason: "width must be positive")
+      }
+      if let height = widget.height, height <= 0 || !height.isFinite {
+        throw KamidanaConfigurationV1Error.invalidWidget(
+          path: widgetPath, reason: "height must be positive")
+      }
       if widget.kind == .custom,
         widget.command?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false
       {
@@ -906,6 +980,11 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
   }
 
   private func validateKindSpecificFields(_ widget: KamidanaWidget, path: String) throws {
+    if widget.kind != .btop && (widget.width != nil || widget.height != nil) {
+      throw KamidanaConfigurationV1Error.invalidWidget(
+        path: path, reason: "width and height are valid only for btop"
+      )
+    }
     if widget.kind == .widgetFolder && widget.widgets.isEmpty {
       throw KamidanaConfigurationV1Error.invalidWidget(
         path: path,

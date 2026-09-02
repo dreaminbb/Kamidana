@@ -33,7 +33,7 @@ public class AudioViewModel: ObservableObject {
         listener.start()
         
         // Polling to detect external volume changes (safer)
-        timer = Timer.publish(every: 1.0, on: .main, in: .common)
+        timer = Timer.publish(every: 5.0, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.fetchVolumeOnly()

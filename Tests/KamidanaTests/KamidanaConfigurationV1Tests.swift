@@ -90,11 +90,28 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(configuration.left.backgroundMode, .perWidget)
     XCTAssertEqual(configuration.left.popupStyle?.cornerRadius, 16)
     XCTAssertEqual(configuration.left.widgets[1].popupStyle?.cornerRadius, 18)
-    XCTAssertEqual(configuration.center.centerDefault, "music-main")
+     XCTAssertEqual(configuration.center.centerDefault, "music-main")
     XCTAssertEqual(configuration.center.activate, .hover)
-    XCTAssertEqual(configuration.center.widgets.count, 2)
-    XCTAssertEqual(configuration.left.widgets[0].actionChildren[0].id, "sleep-action")
-    XCTAssertEqual(configuration.center.widgets[0].partStyles["media"]?.color, "#ffffff")
+     XCTAssertEqual(configuration.center.widgets.count, 2)
+     XCTAssertEqual(configuration.left.widgets[0].actionChildren[0].id, "sleep-action")
+     XCTAssertEqual(configuration.center.widgets[0].partStyles["media"]?.color, "#ffffff")
+  }
+
+  func testDecodesTerminalSize() throws {
+    let yaml = """
+      center:
+        center_default: terminal
+        widgets:
+          - id: terminal
+            type: btop
+            compact_format: "btop"
+            width: 1000
+            height: 700
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    XCTAssertEqual(configuration.center.widgets.first?.width, 1000)
+    XCTAssertEqual(configuration.center.widgets.first?.height, 700)
   }
 
   func testRejectsInvalidPopupStyleNumericValue() {

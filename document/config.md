@@ -145,6 +145,47 @@ NerdFont icons are no longer configured via `nerdfont.toml`. Instead, they are d
 
 You can override any of these icons in your `config.yaml` by specifying the character string directly in the respective widget's configuration.
 
+### Terminal Widget
+
+The `btop` widget accepts `width` and `height` in points. Both values must be
+positive numbers and default to `700` and `400`.
+
+```yaml
+- id: btop
+  type: btop
+  width: 900
+  height: 500
+```
+
+The size is applied to the application-defined terminal surface; arbitrary
+positioning is not configurable.
+
+### Battery Widget Icons
+
+The battery widget accepts a separate icon for charging and each capacity
+range. Values are Nerd Font strings and can be overridden per battery widget.
+
+```yaml
+- id: battery
+  type: battery
+  icon:
+    charging_right_now: "󰂄"
+    100_capacity: "󰁹"
+    90_capacity: "󰂂"
+    80_capacity: "󰂁"
+    70_capacity: "󰂀"
+    60_capacity: "󰁿"
+    50_capacity: "󰁾"
+    40_capacity: "󰁽"
+    30_capacity: "󰁼"
+    20_capacity: "󰁹"
+    10_capacity: "󰁻"
+    sub_10_charged: "󰂃"
+```
+
+The ranges are `95-100`, `85-94`, `75-84`, `65-74`, `55-64`, `45-54`,
+`35-44`, `25-34`, `15-24`, `10-14`, and below `10` percent.
+
 ## Widget Format Placeholders
 
 The v1 configuration file is located at `~/.config/kamidana/config.yaml`. Widgets inside either monitor profile use the `format` property to control their compact text. Nerd Font glyphs written directly in a format are rendered with `style.icon_color`; text and placeholder values use `style.color`.

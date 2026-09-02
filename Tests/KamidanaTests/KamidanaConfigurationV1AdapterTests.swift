@@ -80,6 +80,26 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     )
   }
 
+  func testAdapterPassesTerminalSizeToRuntimeConfig() throws {
+    let yaml = """
+      center:
+        center_default: terminal
+        widgets:
+          - id: terminal
+            type: btop
+            compact_format: "btop"
+            width: 1000
+            height: 700
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let terminal = try XCTUnwrap(runtime.externalDisplay.center.first?.config as? TerminalWidgetConfig)
+
+    XCTAssertEqual(terminal.width, 1000)
+    XCTAssertEqual(terminal.height, 700)
+  }
+
   func testAdapterPropagatesSystemActionChildStyle() throws {
     let yaml = """
       left:
@@ -158,6 +178,35 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(audio.outputManagement, false)
     XCTAssertTrue(audio.showsInputManagement)
     XCTAssertFalse(audio.showsOutputManagement)
+  }
+
+  func testAdapterPassesBatteryCapacityIconsToRuntimeConfig() throws {
+    let yaml = """
+      left:
+        widgets:
+          - id: battery
+            type: battery
+            icon:
+              charging_right_now: "charging"
+              100_capacity: "full"
+              10_capacity: "low"
+              sub_10_charged: "critical"
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let battery = try XCTUnwrap(runtime.externalDisplay.left.first?.config as? BatteryWidgetConfig)
+
+    XCTAssertEqual(battery.charging_right_now, "charging")
+    XCTAssertEqual(battery._100_capacity, "full")
+    XCTAssertEqual(battery._10_capacity, "low")
+    XCTAssertEqual(battery._sub_10_charged, "critical")
   }
 
   func testStyleStateOverridesBaseStyle() {
