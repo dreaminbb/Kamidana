@@ -68,7 +68,13 @@ public class WidgetRegistry {
       factory: GenericWidgetFactory<TerminalWidgetConfig, AnyView>(
         typeID: "terminal",
         viewMaker: { config in
-          AnyView(TerminalView(executable: config.terminalPath).cornerRadius(12).padding(12))
+          AnyView(
+            TerminalView(executable: config.terminalPath)
+              .frame(width: CGFloat(config.width), height: CGFloat(config.height))
+              .clipped()
+              .cornerRadius(12)
+              .padding(12)
+          )
         },
         tabNameMaker: { config in config.name }
       ))

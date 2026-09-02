@@ -98,6 +98,11 @@ class SystemMatrix: ObservableObject {
 
     // Internal state
     private var timer: AnyCancellable?
+    private var batteryTimer: AnyCancellable?
+    private let fetchQueue = DispatchQueue(
+        label: "com.shin.Kamidana.system-fetch",
+        qos: .utility
+    )
 
     // State for network calculation
     private var prevNetworkInput: UInt64 = 0
@@ -124,22 +129,32 @@ class SystemMatrix: ObservableObject {
 
     /// Start periodic monitoring
     func startMonitoring() {
-        timer = Timer.publish(every: 1.0, on: .main, in: .common)
+        timer = Timer.publish(every: 3.0, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.fetchData()
             }
+        if args.battery {
+            batteryTimer = Timer.publish(every: 5.0, on: .main, in: .common)
+                .autoconnect()
+                .sink { [weak self] _ in
+                    self?.fetchBatteryData()
+                }
+            fetchBatteryData()
+        }
     }
 
     func stopMonitoring() {
         timer?.cancel()
         timer = nil
+        batteryTimer?.cancel()
+        batteryTimer = nil
     }
 
     /// Fetch only the necessary data based on args configuration
     func fetchData() {
         // Execute asynchronously in the background
-        DispatchQueue.global(qos: .background).async { [weak self] in
+        fetchQueue.async { [weak self] in
             guard let self = self else { return }
             var newData = self.data  // Base on current data
 
@@ -173,14 +188,21 @@ class SystemMatrix: ObservableObject {
             if self.args.internet {
                 newData.internetUsage = self.getNetworkUsage()
             }
-            if self.args.battery {
-                newData.batteryUsage = self.getBatteryUsageInfo()
-            }
-
             // Reflect to UI on the main thread after fetching
             DispatchQueue.main.async {
                 self.data = newData
                 // DebugRichConsole.printSystemMatrix(newData)
+            }
+        }
+    }
+
+    private func fetchBatteryData() {
+        guard args.battery else { return }
+        fetchQueue.async { [weak self] in
+            guard let self else { return }
+            let batteryUsage = self.getBatteryUsageInfo()
+            DispatchQueue.main.async {
+                self.data.batteryUsage = batteryUsage
             }
         }
     }
@@ -543,13 +565,27 @@ class SystemMatrix: ObservableObject {
         return (desc["Time to Full Charge"] as? Int64) ?? 0
     }
 
+    private static func batteryInt64(_ value: Any?) -> Int64 {
+        if let number = value as? NSNumber { return number.int64Value }
+        if let value = value as? Int64 { return value }
+        if let value = value as? Int { return Int64(value) }
+        return 0
+    }
+
+    private static func batteryBool(_ value: Any?) -> Bool {
+        if let value = value as? Bool { return value }
+        if let number = value as? NSNumber { return number.boolValue }
+        return false
+    }
+
     /// Fetch and return consolidated battery usage information
     private func getBatteryUsageInfo() -> BatteryUsageInfo {
+        let snapshot = powerInfoSnapShot()
         return BatteryUsageInfo(
-            isCharging: getIsNowCharging(),
-            currentCapacity: currentBatteryCharged(),
-            timeToEmpty: batteryTimeLeft(),
-            timeToFull: chargingTimeLeft(),
+            isCharging: Self.batteryBool(snapshot?["Is Charging"]),
+            currentCapacity: Self.batteryInt64(snapshot?["Current Capacity"]),
+            timeToEmpty: Self.batteryInt64(snapshot?["Time to Empty"]),
+            timeToFull: Self.batteryInt64(snapshot?["Time to Full Charge"]),
             wattInfo: getChargingPowerWat()
         )
     }

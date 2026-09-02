@@ -187,7 +187,9 @@ public enum KamidanaConfigurationV1Adapter {
         typeID: "terminal",
         config: TerminalWidgetConfig(
           name: "btop",
-          terminalPath: path
+          terminalPath: path,
+          width: widget.width ?? 700,
+          height: widget.height ?? 400
         ), v1Style: style, v1PopupStyle: popupStyle, v1Format: displayFormat,
         v1Motion: motion
       )
@@ -294,6 +296,20 @@ public enum KamidanaConfigurationV1Adapter {
     case .battery:
       var value = BatteryWidgetConfig()
       if let color = style.color { value.dischargingColor = color }
+      if let icons = widget.batteryIcons {
+        value.charging_right_now = icons.chargingRightNow ?? value.charging_right_now
+        value._100_capacity = icons.capacity100 ?? value._100_capacity
+        value._90_capacity = icons.capacity90 ?? value._90_capacity
+        value._80_capacity = icons.capacity80 ?? value._80_capacity
+        value._70_capacity = icons.capacity70 ?? value._70_capacity
+        value._60_capacity = icons.capacity60 ?? value._60_capacity
+        value._50_capacity = icons.capacity50 ?? value._50_capacity
+        value._40_capacity = icons.capacity40 ?? value._40_capacity
+        value._30_capacity = icons.capacity30 ?? value._30_capacity
+        value._20_capacity = icons.capacity20 ?? value._20_capacity
+        value._10_capacity = icons.capacity10 ?? value._10_capacity
+        value._sub_10_charged = icons.sub10Charged ?? value._sub_10_charged
+      }
       return WidgetInstance(
         typeID: "battery", config: value, v1Style: style, v1PopupStyle: popupStyle,
         v1Format: displayFormat,
