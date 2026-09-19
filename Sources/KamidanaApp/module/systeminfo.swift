@@ -107,11 +107,13 @@ class SystemMatrix: ObservableObject {
     // State for network calculation
     private var prevNetworkInput: UInt64 = 0
     private var prevNetworkOutput: UInt64 = 0
+    private var lastNetworkFetch: Date?
     private var isFirstNetworkFetch = true
 
     // State for disk I/O calculation
     private var prevDiskRead: UInt64 = 0
     private var prevDiskWrite: UInt64 = 0
+    private var lastDiskFetch: Date?
     private var isFirstDiskFetch = true
 
     // State for CPU calculation
@@ -367,22 +369,31 @@ class SystemMatrix: ObservableObject {
         }
         freeifaddrs(ifaddr)
 
+        let now = Date()
+
         // Create baseline on first call and return 0
         if isFirstNetworkFetch {
             prevNetworkInput = currentInput
             prevNetworkOutput = currentOutput
+            lastNetworkFetch = now
             isFirstNetworkFetch = false
             return NetworkUsageInfo(uploadBytesPerSecond: 0, downloadBytesPerSecond: 0)
         }
 
-        // Calculate diff from previous interval (1 second ago)
+        let elapsed = max(1.0, now.timeIntervalSince(lastNetworkFetch ?? now))
+
+        // Calculate diff from previous interval
         let diffInput = currentInput >= prevNetworkInput ? currentInput - prevNetworkInput : 0
         let diffOutput = currentOutput >= prevNetworkOutput ? currentOutput - prevNetworkOutput : 0
 
         prevNetworkInput = currentInput
         prevNetworkOutput = currentOutput
+        lastNetworkFetch = now
 
-        return NetworkUsageInfo(uploadBytesPerSecond: diffOutput, downloadBytesPerSecond: diffInput)
+        let uploadSec = UInt64(Double(diffOutput) / elapsed)
+        let downloadSec = UInt64(Double(diffInput) / elapsed)
+
+        return NetworkUsageInfo(uploadBytesPerSecond: uploadSec, downloadBytesPerSecond: downloadSec)
     }
 
     /// Fetch disk I/O speeds (Read/Write)
@@ -412,20 +423,29 @@ class SystemMatrix: ObservableObject {
         }
         IOObjectRelease(iterator)
 
+        let now = Date()
+
         if isFirstDiskFetch {
             prevDiskRead = currentRead
             prevDiskWrite = currentWrite
+            lastDiskFetch = now
             isFirstDiskFetch = false
             return DiskUsageInfo(readBytesPerSecond: 0, writeBytesPerSecond: 0)
         }
+
+        let elapsed = max(1.0, now.timeIntervalSince(lastDiskFetch ?? now))
 
         let diffRead = currentRead >= prevDiskRead ? currentRead - prevDiskRead : 0
         let diffWrite = currentWrite >= prevDiskWrite ? currentWrite - prevDiskWrite : 0
 
         prevDiskRead = currentRead
         prevDiskWrite = currentWrite
+        lastDiskFetch = now
 
-        return DiskUsageInfo(readBytesPerSecond: diffRead, writeBytesPerSecond: diffWrite)
+        let readSec = UInt64(Double(diffRead) / elapsed)
+        let writeSec = UInt64(Double(diffWrite) / elapsed)
+
+        return DiskUsageInfo(readBytesPerSecond: readSec, writeBytesPerSecond: writeSec)
     }
 
     private func getMemoryUsed() -> MegaByte? {

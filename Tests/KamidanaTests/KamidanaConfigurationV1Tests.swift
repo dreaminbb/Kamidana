@@ -561,20 +561,15 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     )
   }
 
-  func testRejectsUnknownConfigurationKey() {
+  func testIgnoresUnknownConfigurationKey() {
     let yaml = validYAML.replacingOccurrences(
       of: "color: \"#eeeeee\"",
       with: "colour: \"#eeeeee\""
     )
 
-    assertError(
-      yaml,
-      matches: {
-        if case .yamlDecoding(let message) = $0 {
-          return message.contains("Unknown configuration key 'colour'")
-        }
-        return false
-      })
+    XCTAssertNoThrow(
+      try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    )
   }
 
   private func assertError(

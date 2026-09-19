@@ -1,5 +1,5 @@
-import ArgumentParser
 import AppKit
+import ArgumentParser
 import KamidanaApp
 
 @main
@@ -12,7 +12,8 @@ struct KamidanaCLI: ParsableCommand {
 
     @Option(
         name: .long,
-        help: "Write true or false to global.launch_at_login in ~/.config/kamidana/config.yaml. A running Kamidana synchronizes the change; otherwise it synchronizes at the next launch."
+        help:
+            "Write true or false to global.launch_at_login in ~/.config/kamidana/config.yaml. A running Kamidana synchronizes the change; otherwise it synchronizes at the next launch."
     )
     var launchAtLogin: String?
 
@@ -29,7 +30,8 @@ struct KamidanaCLI: ParsableCommand {
             throw ValidationError("--launch-at-login must be true or false.")
         }
 
-        try ConfigManager(shouldLoadUserConfiguration: false).updateLaunchAtLogin(isEnabled: isEnabled)
+        try ConfigManager(shouldLoadUserConfiguration: false).updateLaunchAtLogin(
+            isEnabled: isEnabled)
     }
 }
 
@@ -51,8 +53,9 @@ struct Display: ParsableCommand {
 
     private func fetchDisplayIDs() -> [String] {
         NSScreen.screens.compactMap { screen in
-            guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
-                as? NSNumber
+            guard
+                let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
+                    as? NSNumber
             else {
                 return nil
             }

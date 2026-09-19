@@ -114,11 +114,15 @@ final class KamidanaDisplayTargetTests: XCTestCase {
         display_name: "Studio Display"
       """)
 
-    for yaml in [unknownKind, unknownField] {
-      XCTAssertThrowsError(try KamidanaConfigurationV1Decoder.decode(yaml: yaml)) { error in
-        guard case KamidanaConfigurationV1Error.yamlDecoding = error else {
-          return XCTFail("Unexpected error: \(error)")
-        }
+    XCTAssertThrowsError(try KamidanaConfigurationV1Decoder.decode(yaml: unknownKind)) { error in
+      guard case KamidanaConfigurationV1Error.yamlDecoding = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+    }
+
+    XCTAssertThrowsError(try KamidanaConfigurationV1Decoder.decode(yaml: unknownField)) { error in
+      guard case KamidanaConfigurationV1Error.invalidDisplayTarget = error else {
+        return XCTFail("Unexpected error: \(error)")
       }
     }
   }

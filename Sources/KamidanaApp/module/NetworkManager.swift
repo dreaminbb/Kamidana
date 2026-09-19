@@ -355,9 +355,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             locationManager.authorizationStatus != .restricted
         else {
             availableNetworks = []
-            wifiScanState = .unavailable(
-                NetworkManagerError.locationPermissionDenied.localizedDescription
-            )
+            wifiScanState = .unavailable("Location permission denied. Wi-Fi scanning disabled.")
             return
         }
         guard Self.canAccessWiFiNetworkNames(locationManager.authorizationStatus) else {
@@ -366,7 +364,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 wifiScanState = .unavailable("Location access is not determined.")
                 locationManager.requestAlwaysAuthorization()
             } else {
-                wifiScanState = .unavailable(NetworkManagerError.locationPermissionDenied.localizedDescription)
+                wifiScanState = .unavailable("Location permission denied. Wi-Fi scanning disabled.")
             }
             return
         }
@@ -507,9 +505,7 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 ssid: nil
             )
             availableNetworks = []
-            wifiScanState = .unavailable(
-                NetworkManagerError.locationPermissionDenied.localizedDescription
-            )
+            wifiScanState = .unavailable("Location permission denied. Wi-Fi scanning disabled.")
         case .notDetermined:
             wifiScanState = .idle
         @unknown default:

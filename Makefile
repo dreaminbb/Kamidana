@@ -1,4 +1,11 @@
-.PHONY: build run app debug clean
+.DEFAULT_GOAL := check
+.PHONY: check build test run app debug clean
+
+# The default command verifies both production binaries and the test suite.
+check: build test
+
+test:
+	swift test
 
 APP_NAME = Kamidana
 BUILD_PRODUCT = KamidanaApp

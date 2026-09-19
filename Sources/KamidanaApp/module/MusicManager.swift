@@ -70,7 +70,7 @@ final class MusicPlayingManager: ObservableObject {
         }
     }
 
-    private func fetchNowPlaying() {
+    func fetchNowPlaying() {
         guard !isFetchInProgress else { return }
         isFetchInProgress = true
 

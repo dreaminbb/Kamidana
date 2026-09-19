@@ -113,6 +113,7 @@ struct SmoothUIModuleModifier: ViewModifier {
           x: effectiveStyle?.shadow?.x ?? 0,
           y: effectiveStyle?.shadow?.y ?? 0
         )
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
         .onHover { hovering in
           isHovered = hovering
         })

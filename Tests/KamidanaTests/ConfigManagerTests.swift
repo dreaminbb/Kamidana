@@ -451,21 +451,9 @@ final class ConfigManagerTests: XCTestCase {
     let configURL = manager.resolveConfigFileURL(homeDirectory: temporaryHome)
     let invalidYAML = """
       global:
-        unsupported_setting: true
+        [unclosed_bracket: syntax_error
       external:
         center:
-          center_default: external-clock
-          widgets:
-            - id: external-clock
-              type: clock
-              compact_format: "{time}"
-      built_in:
-        center:
-          center_default: built-in-clock
-          widgets:
-            - id: built-in-clock
-              type: clock
-              compact_format: "{time}"
       """
     try invalidYAML.write(to: configURL, atomically: true, encoding: .utf8)
 

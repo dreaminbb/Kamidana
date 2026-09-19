@@ -26,55 +26,52 @@ class SystemController {
     static let sleepScript = "tell application \"System Events\" to sleep"
     static let aboutThisMacAppPath = "/System/Applications/Utilities/System Information.app"
 
-    static func runAppleScript(_ script: String) -> Result<Bool, SystemControlError> {
-
-        guard let appleScript = NSAppleScript(source: script) else {
-            return .failure(.scriptFailed("Failed to initialize NSAppleScript"))
-        }
+    static func runAppleScript(_ script: String) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let appleScript = NSAppleScript(source: script) else {
+                print("System controlling failed: Failed to initialize NSAppleScript")
+                return
+            }
         var error: NSDictionary?
 
         appleScript.executeAndReturnError(&error)
         if let error = error {
             let errorMsg = error[NSAppleScript.errorMessage] as? String ?? "Unknown error"
             print("System controlling failed: \(errorMsg)")
-            return .failure(.scriptFailed(errorMsg))
+        } else {
+            print("System command completed.")
         }
-
-        return .success(true)
+        }
     }
 
-    func shutdownSystem() -> Result<Bool, SystemControlError> {
-        return SystemController.runAppleScript(SystemController.shutdownScript)
+    func shutdownSystem() {
+        SystemController.runAppleScript(SystemController.shutdownScript)
     }
 
-    func rebootSystem() -> Result<Bool, SystemControlError> {
-        return SystemController.runAppleScript(SystemController.rebootScript)
+    func rebootSystem() {
+        SystemController.runAppleScript(SystemController.rebootScript)
     }
 
-    func sleepSystem() -> Result<Bool, SystemControlError> {
-        return SystemController.runAppleScript(SystemController.sleepScript)
+    func sleepSystem() {
+        SystemController.runAppleScript(SystemController.sleepScript)
     }
 
-    func logoutSystem() -> Result<Bool, SystemControlError> {
-        return SystemController.runAppleScript(SystemController.logoutScript)
+    func logoutSystem() {
+        SystemController.runAppleScript(SystemController.logoutScript)
     }
-    func lockScreen() -> Result<Bool, SystemControlError> {
-        return SystemController.runAppleScript(SystemController.screenLockScript)
+    func lockScreen() {
+        SystemController.runAppleScript(SystemController.screenLockScript)
     }
 
-    func showAboutThisMac() -> Result<Bool, SystemControlError> {
-
+    func showAboutThisMac() {
         let url = URL(fileURLWithPath: SystemController.aboutThisMacAppPath)
         let result = NSWorkspace.shared.open(url)
 
         if result {
             print("'About this Mac' has been opened")
-            return .success(true)
         } else {
             print("failed to open 'About this Mac'")
-            return .failure(.scriptFailed("Failed to open 'About this Mac'"))
         }
-
     }
 
 }

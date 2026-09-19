@@ -13,7 +13,7 @@ Thanks for considering a contribution. This project is still under active develo
 
 - Follow the existing formatting and naming conventions in the codebase.
 - Keep pull requests focused — one feature or fix per PR.
-- Include a short description of *what* changed and *why*.
+- Include a short description of _what_ changed and _why_.
 
 ## Use of AI Tools
 

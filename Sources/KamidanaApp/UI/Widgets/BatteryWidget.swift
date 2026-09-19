@@ -11,7 +11,7 @@ struct BatteryWidget: View {
     let config: BatteryWidgetConfig
 
     private func resolveBatteryIcon(capacity: Int64, isCharging: Bool) -> String {
-        if isCharging && capacity > 95 {
+        if isCharging {
             return config.charging_right_now
         }
         switch capacity {
@@ -29,13 +29,27 @@ struct BatteryWidget: View {
         }
     }
 
+    private func resolveBatteryIconColor(capacity: Int64, isCharging: Bool) -> Color {
+        if isCharging {
+            return Color(hex: config.chargingColor)
+        }
+        if capacity < 10 {
+            return Color(hex: config.dangerColor)
+        }
+        if capacity < 20 {
+            return Color(hex: config.warningColor)
+        }
+        return Color(hex: config.dischargingColor)
+    }
+
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
         if let battery = matrix.data.batteryUsage {
             Button(action: { if activation == .click { showPopover.toggle() } }) {
-                let statusColor =
-                    battery.isCharging
-                    ? Color(hex: config.chargingColor) : Color(hex: config.dischargingColor)
+                let statusColor = resolveBatteryIconColor(
+                    capacity: battery.currentCapacity,
+                    isCharging: battery.isCharging
+                )
                 FormattedWidgetLabel(
                     format: widgetFormat ?? "{icon} {capacity}%",
                     values: [
@@ -46,7 +60,7 @@ struct BatteryWidget: View {
                         "capacity": "\(battery.currentCapacity)",
                         "status": battery.isCharging ? "charging" : "discharging",
                     ],
-                    iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? statusColor,
+                    iconColor: statusColor,
                     textColor: v1Style?.color.map(Color.init(hex:)) ?? statusColor
                 )
             }

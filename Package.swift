@@ -1,6 +1,15 @@
 // swift-tools-version: 5.9
 
 import PackageDescription
+import Foundation
+
+// Local integration experiments are not part of the reproducible package test suite.
+let localTestFiles = ["musicTest.swift"].filter {
+  FileManager.default.fileExists(
+    atPath: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+      .appendingPathComponent("Tests/KamidanaTests/\($0)").path
+  )
+}
 
 let package = Package(
   name: "Kamidana",
@@ -41,7 +50,8 @@ let package = Package(
     .testTarget(
       name: "KamidanaTests",
       dependencies: ["KamidanaApp"],
-      path: "Tests/KamidanaTests"
+      path: "Tests/KamidanaTests",
+      exclude: localTestFiles
     ),
   ]
 )

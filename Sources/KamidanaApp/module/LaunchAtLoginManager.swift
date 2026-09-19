@@ -65,7 +65,7 @@ final class LaunchAtLoginManager {
         do {
             try operation()
         } catch {
-            DebugRichConsole.printLaunchAtLoginFailure(action: action, error: error)
+            print("[Launch at Login] Failed to \(action): \(error)")
         }
     }
 }

@@ -191,6 +191,11 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
               100_capacity: "full"
               10_capacity: "low"
               sub_10_charged: "critical"
+            style:
+              color: "#ffffff"
+              danger_color: "#ff0000"
+              discharging_color: "#eeeeee"
+              icon_color: "#123456"
       center:
         center_default: clock
         widgets:
@@ -207,6 +212,8 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(battery._100_capacity, "full")
     XCTAssertEqual(battery._10_capacity, "low")
     XCTAssertEqual(battery._sub_10_charged, "critical")
+    XCTAssertEqual(battery.dangerColor, "#ff0000")
+    XCTAssertEqual(battery.dischargingColor, "#eeeeee")
   }
 
   func testStyleStateOverridesBaseStyle() {

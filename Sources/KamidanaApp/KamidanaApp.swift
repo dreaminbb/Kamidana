@@ -3,8 +3,7 @@ import CoreWLAN
 import SwiftUI
 
 public class AppDelegate: NSObject, NSApplicationDelegate {
-    var statusBarWindow: StatusBarWindow!
-    private var hostingController: NSHostingController<StatusBarView>?
+    private var windowControllers: [CGDirectDisplayID: StatusBarWindowController] = [:]
     private let launchAtLoginManager = LaunchAtLoginManager()
     let barHeight: CGFloat = 600  // Enlarged height to support island expansion
 
@@ -25,63 +24,18 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         )
         ConfigManager.shared.startWatchingConfig()
 
-        let contentView = StatusBarView()
+        updateWindows()
 
-        // Create initial window
-        statusBarWindow = StatusBarWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false
-        )
-
-        statusBarWindow.level = .floating
-        var collectionBehavior: NSWindow.CollectionBehavior = [.stationary, .ignoresCycle]
-        statusBarWindow.backgroundColor = .clear
-        statusBarWindow.hasShadow = false
-        statusBarWindow.isOpaque = false
-
-        if !ConfigManager.shared.globalV1Config.hideInFullscreen {
-            print("[LOG CONFIG] Hide in full screen : false")
-            collectionBehavior.insert(.canJoinAllSpaces)
-            collectionBehavior.insert(.fullScreenAuxiliary)
-        } else {
-            print("[LOG CONFIG] Hide in full screen : true")
-            NotificationCenter.default.addObserver(
-                self, selector: #selector(handleFullScreenEnter),
-                name: NSWindow.didEnterFullScreenNotification, object: nil
-            )
-
-            NotificationCenter.default.addObserver(
-                self, selector: #selector(handleFullScreenExit),
-                name: NSWindow.didExitFullScreenNotification,
-                object: nil
-            )
-        }
-        statusBarWindow.collectionBehavior = collectionBehavior
-
-        let hostingController = NSHostingController(rootView: contentView)
-        self.hostingController = hostingController
-        statusBarWindow.contentView = hostingController.view
-
-        // Calculate initial window position
-        updateWindowPosition()
-
-        statusBarWindow.orderFront(nil)
-        NativelyBarWindowBridge.shared.configure(window: statusBarWindow)
-
-        // Monitor display configuration changes (connect/disconnect, resolution changes)
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(updateWindowPosition),
+            selector: #selector(updateWindows),
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil
         )
 
-        // Monitor wake from sleep
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
-            selector: #selector(updateWindowPosition),
+            selector: #selector(updateWindows),
             name: NSWorkspace.didWakeNotification,
             object: nil
         )
@@ -98,44 +52,166 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         launchAtLoginManager.synchronize(
             isEnabled: ConfigManager.shared.globalV1Config.launchAtLogin
         )
-        rerenderBar()
+        updateWindows()
     }
 
-    @objc func rerenderBar() {
-        print("[LOG] rerenderBar called")
-        hostingController?.rootView = StatusBarView()
-        statusBarWindow.contentView?.needsDisplay = true
-        statusBarWindow.contentView?.displayIfNeeded()
-        updateWindowPosition()
-    }
-
-    @objc func handleFullScreenEnter(notification: Notification) {
-        statusBarWindow.orderOut(nil)
-    }
-
-    @objc func handleFullScreenExit(notification: Notification) {
-        statusBarWindow.orderFront(nil)
-        NativelyBarWindowBridge.shared.configure(window: statusBarWindow)
-    }
-    // Reposition window forcibly to the top of the screen
-    @objc func updateWindowPosition() {
-        // Run asynchronously to wait for system screen info updates to complete
+    @objc func updateWindows() {
         DispatchQueue.main.async {
-            guard let screen = NSScreen.screens.first else { return }
-            let screenRect = screen.frame
-            let barPadding = ConfigManager.shared.globalV1Config.barPadding
+            let displays = self.resolveDisplays()
+            var activeIDs = Set<CGDirectDisplayID>()
 
-            let windowRect = Self.windowRect(
-                for: screenRect,
-                barHeight: self.barHeight,
-                barPadding: barPadding
-            )
+            for display in displays {
+                activeIDs.insert(display.id)
+                if let existing = self.windowControllers[display.id] {
+                    existing.updateConfiguration()
+                } else {
+                    let controller = StatusBarWindowController(displayID: display.id, barHeight: self.barHeight)
+                    self.windowControllers[display.id] = controller
+                    controller.showWindow()
+                }
+            }
 
-            // Snap immediately to the correct position and size without animation
-            self.statusBarWindow.setFrame(windowRect, display: true)
+            for id in self.windowControllers.keys {
+                if !activeIDs.contains(id) {
+                    self.windowControllers[id]?.closeWindow()
+                    self.windowControllers.removeValue(forKey: id)
+                }
+            }
         }
     }
 
+    private func resolveDisplays() -> [KamidanaDisplayTargetScreen] {
+        let screens = NSScreen.screens
+        guard !screens.isEmpty else { return [] }
+
+        var targetScreens: [KamidanaDisplayTargetScreen] = []
+        for screen in screens {
+            guard let id = DisplayDetector.displayID(for: screen) else { continue }
+            targetScreens.append(
+                KamidanaDisplayTargetScreen(
+                    id: id,
+                    name: screen.localizedName,
+                    isBuiltIn: DisplayDetector.isBuiltIn(screen: screen),
+                    isPrimary: screen == screens.first
+                )
+            )
+        }
+
+        return KamidanaDisplayTargetResolver.resolve(
+            targets: ConfigManager.shared.globalV1Config.displayTargets,
+            screens: targetScreens
+        )
+    }
+}
+
+class StatusBarWindowController {
+    let displayID: CGDirectDisplayID
+    let barHeight: CGFloat
+    let window: StatusBarWindow
+    private var hostingController: NSHostingController<StatusBarView>?
+    private var fullscreenObserverEnter: NSObjectProtocol?
+    private var fullscreenObserverExit: NSObjectProtocol?
+
+    init(displayID: CGDirectDisplayID, barHeight: CGFloat) {
+        self.displayID = displayID
+        self.barHeight = barHeight
+
+        self.window = StatusBarWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+
+        window.level = .floating
+        window.backgroundColor = .clear
+        window.hasShadow = false
+        window.isOpaque = false
+
+        let contentView = StatusBarView(displayID: displayID)
+        let hostingController = NSHostingController(rootView: contentView)
+        self.hostingController = hostingController
+        window.contentView = hostingController.view
+
+        updateConfiguration()
+    }
+
+    func showWindow() {
+        window.orderFront(nil)
+        NativelyBarWindowBridge.shared.configure(window: window)
+        updateWindowPosition()
+    }
+
+    func closeWindow() {
+        window.orderOut(nil)
+        if let enter = fullscreenObserverEnter {
+            NotificationCenter.default.removeObserver(enter)
+        }
+        if let exit = fullscreenObserverExit {
+            NotificationCenter.default.removeObserver(exit)
+        }
+    }
+
+    func updateConfiguration() {
+        let hideInFullscreen = ConfigManager.shared.globalV1Config.hideInFullscreen
+        var collectionBehavior: NSWindow.CollectionBehavior = [.stationary, .ignoresCycle]
+
+        if let enter = fullscreenObserverEnter {
+            NotificationCenter.default.removeObserver(enter)
+            fullscreenObserverEnter = nil
+        }
+        if let exit = fullscreenObserverExit {
+            NotificationCenter.default.removeObserver(exit)
+            fullscreenObserverExit = nil
+        }
+
+        if !hideInFullscreen {
+            collectionBehavior.insert(.canJoinAllSpaces)
+            collectionBehavior.insert(.fullScreenAuxiliary)
+        } else {
+            fullscreenObserverEnter = NotificationCenter.default.addObserver(
+                forName: NSWindow.didEnterFullScreenNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.window.orderOut(nil)
+            }
+
+            fullscreenObserverExit = NotificationCenter.default.addObserver(
+                forName: NSWindow.didExitFullScreenNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self = self else { return }
+                self.window.orderFront(nil)
+                NativelyBarWindowBridge.shared.configure(window: self.window)
+            }
+        }
+        window.collectionBehavior = collectionBehavior
+
+        hostingController?.rootView = StatusBarView(displayID: displayID)
+        window.contentView?.needsDisplay = true
+        window.contentView?.displayIfNeeded()
+
+        updateWindowPosition()
+    }
+
+    func updateWindowPosition() {
+        guard let screen = NSScreen.screens.first(where: { DisplayDetector.displayID(for: $0) == displayID }) else { return }
+        let screenRect = screen.frame
+        let barPadding = ConfigManager.shared.globalV1Config.barPadding
+
+        let windowRect = AppDelegate.windowRect(
+            for: screenRect,
+            barHeight: barHeight,
+            barPadding: barPadding
+        )
+
+        window.setFrame(windowRect, display: true)
+    }
+}
+
+extension AppDelegate {
     static func windowRect(
         for screenRect: NSRect,
         barHeight: CGFloat,
@@ -150,7 +226,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         return NSRect(
             x: screenRect.minX + leading,
             y: screenRect.maxY - top - height,
-
             width: width,
             height: height
         )
@@ -158,41 +233,37 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 struct StatusBarView: View {
-    // Initialize SystemMatrix
+    // Shared states
     @StateObject private var matrix = SystemMatrix(
         args: SystemMatrixArgs(
             cpu: true,
             memory: true,
-            disk: true,  // For disk I/O
+            disk: true,
             internet: true,
-            power: true,  // For battery calculation
+            power: true,
             gpu: true,
             thermal: true,
-            battery: true  // For battery UI
+            battery: true
         ))
 
-    // Initialize LocalSend manager
     @StateObject private var localSend = LocalSendManager()
-
-    // Initialize network manager
     @StateObject private var netManager = NetworkManager()
-
-    // Initialize music manager (media playback)
     @StateObject private var musicManager = MusicPlayingManager()
-
-    // Initialize audio manager
     @StateObject private var audioVM = AudioViewModel()
-    @StateObject private var uiSettings = UISettingsStore()
     @StateObject private var bluetooth = BluetoothManager()
 
-    @State private var currentScreen: NSScreen = NSScreen.screens.first ?? NSScreen.main!
-    @State private var configReloadToken = UUID()
+    let displayID: CGDirectDisplayID
+
+    private var currentScreen: NSScreen {
+        NSScreen.screens.first(where: { DisplayDetector.displayID(for: $0) == displayID }) ?? NSScreen.main!
+    }
 
     var body: some View {
-        let isBuiltInDisplay = DisplayDetector.isBuiltIn(screen: currentScreen)
-        let v1Configuration = ConfigManager.shared.configuration(for: currentScreen)
-        let currentLayout: DisplayLayoutConfig = ConfigManager.shared.layout(for: currentScreen)
-        let builtInTopInset = isBuiltInDisplay ? currentScreen.safeAreaInsets.top : 0
+        let screen = currentScreen
+        let isBuiltInDisplay = DisplayDetector.isBuiltIn(screen: screen)
+        let v1Configuration = ConfigManager.shared.configuration(for: screen)
+        let currentLayout = ConfigManager.shared.layout(for: screen)
+        let builtInTopInset = isBuiltInDisplay ? screen.safeAreaInsets.top : 0
         let globalMode = v1Configuration?.global.backgroundMode ?? .perWidget
         let leftMode = v1Configuration?.left.backgroundMode ?? globalMode
         let centerMode = v1Configuration?.center.backgroundMode ?? globalMode
@@ -286,31 +357,10 @@ struct StatusBarView: View {
         .onAppear {
             matrix.startMonitoring()
             localSend.scanNetwork()
-            if let screen = NSScreen.screens.first { currentScreen = screen }
-        }
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: NSApplication.didChangeScreenParametersNotification)
-        ) { _ in
-            DispatchQueue.main.async {
-                if let screen = NSScreen.screens.first { currentScreen = screen }
-            }
-        }
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: ConfigManager.configDidChangeNotification
-            )
-        ) { _ in
-            DispatchQueue.main.async {
-                configReloadToken = UUID()
-            }
         }
     }
 
-    private func mergedStyle(
-        _ parent: KamidanaStyle?,
-        _ child: KamidanaStyle?
-    ) -> KamidanaStyle? {
+    private func mergedStyle(_ parent: KamidanaStyle?, _ child: KamidanaStyle?) -> KamidanaStyle? {
         guard let parent else { return child }
         guard let child else { return parent }
         return KamidanaConfigurationV1Adapter.mergedStyle(parent, child)

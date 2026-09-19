@@ -25,11 +25,7 @@ private func rejectUnknownKeys<Key: CodingKey & CaseIterable>(
   guard let unknownKey = container.allKeys.first(where: { !knownKeys.contains($0.stringValue) })
   else { return }
 
-  throw DecodingError.dataCorruptedError(
-    forKey: unknownKey,
-    in: container,
-    debugDescription: "Unknown configuration key '\(unknownKey.stringValue)'."
-  )
+  print("[Config Warning] Unknown configuration key '\(unknownKey.stringValue)'.")
 }
 
 private func displayTargetError(in message: String) -> KamidanaConfigurationV1Error? {
@@ -347,6 +343,10 @@ public struct KamidanaStyle: Codable, Hashable {
   public var background: String?
   public var color: String?
   public var iconColor: String?
+  public var chargingColor: String?
+  public var dischargingColor: String?
+  public var warningColor: String?
+  public var dangerColor: String?
   public var opacity: Double?
   public var padding: KamidanaInsets?
   public var spacing: Double?
@@ -361,6 +361,10 @@ public struct KamidanaStyle: Codable, Hashable {
     background: String? = nil,
     color: String? = nil,
     iconColor: String? = nil,
+    chargingColor: String? = nil,
+    dischargingColor: String? = nil,
+    warningColor: String? = nil,
+    dangerColor: String? = nil,
     opacity: Double? = nil,
     padding: KamidanaInsets? = nil,
     spacing: Double? = nil,
@@ -374,6 +378,10 @@ public struct KamidanaStyle: Codable, Hashable {
     self.background = background
     self.color = color
     self.iconColor = iconColor
+    self.chargingColor = chargingColor
+    self.dischargingColor = dischargingColor
+    self.warningColor = warningColor
+    self.dangerColor = dangerColor
     self.opacity = opacity
     self.padding = padding
     self.spacing = spacing
@@ -388,6 +396,10 @@ public struct KamidanaStyle: Codable, Hashable {
   private enum CodingKeys: String, CodingKey, CaseIterable {
     case background, color
     case iconColor = "icon_color"
+    case chargingColor = "charging_color"
+    case dischargingColor = "discharging_color"
+    case warningColor = "warning_color"
+    case dangerColor = "danger_color"
     case opacity
     case padding, spacing
     case cornerRadius = "corner_radius"
@@ -401,6 +413,10 @@ public struct KamidanaStyle: Codable, Hashable {
       background: try container.decodeIfPresent(String.self, forKey: .background),
       color: try container.decodeIfPresent(String.self, forKey: .color),
       iconColor: try container.decodeIfPresent(String.self, forKey: .iconColor),
+      chargingColor: try container.decodeIfPresent(String.self, forKey: .chargingColor),
+      dischargingColor: try container.decodeIfPresent(String.self, forKey: .dischargingColor),
+      warningColor: try container.decodeIfPresent(String.self, forKey: .warningColor),
+      dangerColor: try container.decodeIfPresent(String.self, forKey: .dangerColor),
       opacity: try container.decodeIfPresent(Double.self, forKey: .opacity),
       padding: try container.decodeIfPresent(KamidanaInsets.self, forKey: .padding),
       spacing: try container.decodeIfPresent(Double.self, forKey: .spacing),

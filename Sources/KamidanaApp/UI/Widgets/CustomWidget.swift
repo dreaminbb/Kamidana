@@ -70,9 +70,13 @@ public struct CustomWidget: View {
         try process.run()
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
-        result =
-          String(data: data, encoding: .utf8)?
-          .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if process.terminationStatus != 0 {
+            result = "Process failed with status \(process.terminationStatus)"
+        } else {
+            result =
+              String(data: data, encoding: .utf8)?
+              .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        }
       } catch {
         result = "Process failed: \(error.localizedDescription)"
       }

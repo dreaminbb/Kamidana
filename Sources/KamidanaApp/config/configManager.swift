@@ -72,8 +72,8 @@ public struct BatteryWidgetConfig: Codable {
     public var _50_capacity: String = "󰁾"
     public var _40_capacity: String = "󰁽"
     public var _30_capacity: String = "󰁼"
-    public var _20_capacity: String = "󰁹"
-    public var _10_capacity: String = "󰁻"
+    public var _20_capacity: String = "󰁻"
+    public var _10_capacity: String = "󰁺"
     public var _sub_10_charged: String = "󰂃"
 }
 
@@ -160,7 +160,7 @@ public struct GpuWidgetConfig: Codable, Hashable {
 }
 
 public struct WidgetInstance: Hashable, Decodable {
-    public let id = UUID()
+    public let id: String
     public let typeID: String
     public let config: AnyHashable
     public let v1Style: KamidanaStyle?
@@ -170,6 +170,7 @@ public struct WidgetInstance: Hashable, Decodable {
     public let v1Motion: KamidanaMotion?
 
     public init(
+        id: String? = nil,
         typeID: String,
         config: AnyHashable,
         v1Style: KamidanaStyle? = nil,
@@ -178,6 +179,7 @@ public struct WidgetInstance: Hashable, Decodable {
         v1Activate: KamidanaActivation? = nil,
         v1Motion: KamidanaMotion? = nil
     ) {
+        self.id = id ?? UUID().uuidString
         self.typeID = typeID
         self.config = config
         self.v1Style = v1Style
@@ -188,13 +190,14 @@ public struct WidgetInstance: Hashable, Decodable {
     }
 
     public static func == (lhs: WidgetInstance, rhs: WidgetInstance) -> Bool {
-        lhs.typeID == rhs.typeID && lhs.config == rhs.config && lhs.v1Style == rhs.v1Style
+        lhs.id == rhs.id && lhs.typeID == rhs.typeID && lhs.config == rhs.config && lhs.v1Style == rhs.v1Style
             && lhs.v1PopupStyle == rhs.v1PopupStyle
             && lhs.v1Format == rhs.v1Format
             && lhs.v1Activate == rhs.v1Activate
             && lhs.v1Motion == rhs.v1Motion
     }
     public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
         hasher.combine(typeID)
         hasher.combine(config)
         hasher.combine(v1Style)
@@ -226,6 +229,7 @@ public struct WidgetInstance: Hashable, Decodable {
         }
 
         self.init(
+            id: nil,
             typeID: key.stringValue,
             config: try factory.decodeConfiguration(from: container.superDecoder(forKey: key))
         )
@@ -545,6 +549,7 @@ extension Color {
         case 8:  // ARGB (32-bit)
             (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
         default:
+            print("[Config Warning] Invalid color hex: \(hex)")
             (a, r, g, b) = (255, 0, 0, 0)
         }
         self.init(
