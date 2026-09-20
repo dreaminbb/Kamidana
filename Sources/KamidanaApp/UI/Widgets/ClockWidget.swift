@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ClockWidget: View {
-    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.theme) private var theme
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     let config: ClockWidgetConfig
     @State private var currentTime = Date()
@@ -24,11 +24,11 @@ struct ClockWidget: View {
         FormattedWidgetLabel(
             format: widgetFormat ?? "{date} {time}",
             values: ["date": dateText, "time": timeText],
-            iconColor: Color(hex: v1Style?.iconColor ?? config.textColor),
-            textColor: Color(hex: v1Style?.color ?? config.textColor)
+            iconColor: theme?.iconForeground ?? Color(hex: config.textColor),
+            textColor: theme?.foreground ?? Color(hex: config.textColor)
         )
         .fontWeight(.bold)
-        .SmoothUIModule()
+        .SmoothUIModule(theme: theme)
         .onReceive(clockTimer) { input in
             currentTime = input
         }

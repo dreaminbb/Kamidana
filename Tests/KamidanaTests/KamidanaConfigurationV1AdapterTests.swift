@@ -3,6 +3,31 @@ import XCTest
 @testable import KamidanaApp
 
 final class KamidanaConfigurationV1AdapterTests: XCTestCase {
+  func testResolvedThemeIncludesMotionPressedAndSeverityTokens() {
+    let animation = KamidanaAnimation(preset: .linear, durationSeconds: 0.12)
+    let style = KamidanaStyle(
+      color: "#ffffff",
+      animation: animation,
+      states: [
+        "hover": KamidanaStyle(background: "#222222"),
+        "pressed": KamidanaStyle(opacity: 0.75),
+        "warning": KamidanaStyle(color: "#ffff00"),
+        "critical": KamidanaStyle(color: "#ff0000"),
+      ]
+    )
+
+    let theme = KamidanaConfigurationV1Adapter.resolveTheme(
+      style: style,
+      colors: GlobalColorsConfig()
+    )
+
+    XCTAssertEqual(theme.motion.hover, animation)
+    XCTAssertEqual(theme.motion.expand, animation)
+    XCTAssertEqual(theme.motion.colorChange, animation)
+    XCTAssertEqual(theme.pressedTheme?.opacity, 0.75)
+    XCTAssertNotNil(theme.hoverTheme?.background)
+  }
+
   func testAdapterPreservesSectionAndWidgetStyleAndCenterDefaultOrder() throws {
     let yaml = """
       global:
@@ -65,6 +90,9 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.cornerRadius, 18)
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.border?.width, 2)
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.border?.color, "#00ff00")
+    XCTAssertEqual(legacy.externalDisplay.left.first?.theme?.padding.top, 9)
+    XCTAssertEqual(legacy.externalDisplay.left.first?.theme?.cornerRadius, 12)
+    XCTAssertEqual(legacy.externalDisplay.left.first?.popupTheme?.cornerRadius, 18)
     XCTAssertEqual(legacy.externalDisplay.barPadding.top, 4)
     XCTAssertEqual(legacy.externalDisplay.barPadding.leading, 6)
     XCTAssertEqual(legacy.externalDisplay.barPadding.trailing, 6)
@@ -232,11 +260,12 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     let yaml = """
       right:
         activate: click
+        animation: static
         widgets:
           - id: cpu
             type: cpu
             activate: hover
-            motion: static
+            animation: static
           - id: gpu
             type: gpu
       center:
@@ -252,8 +281,8 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
 
     XCTAssertEqual(runtime.externalDisplay.right[0].v1Activate, .hover)
     XCTAssertEqual(runtime.externalDisplay.right[1].v1Activate, .click)
-    XCTAssertEqual(runtime.externalDisplay.right[0].v1Motion, .static)
-    XCTAssertEqual(runtime.externalDisplay.right[1].v1Motion, .dynamic)
+    XCTAssertEqual(runtime.externalDisplay.right[0].v1Animation, .static)
+    XCTAssertEqual(runtime.externalDisplay.right[1].v1Animation, .static)
   }
 
   func testAdapterBuildsPlacementSpecificMusicConfiguration() throws {

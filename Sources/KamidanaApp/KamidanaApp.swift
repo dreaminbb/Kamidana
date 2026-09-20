@@ -26,6 +26,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         updateWindows()
 
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleRuntimeExplanationRequest(_:)),
+            name: .kamidanaRuntimeExplanationRequest,
+            object: nil
+        )
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(updateWindows),
@@ -78,6 +85,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+    }
+
+    @objc private func handleRuntimeExplanationRequest(_ notification: Notification) {
+        let requestID = notification.userInfo?["request_id"] as? String
+        ConfigManager.shared.publishRuntimeExplanation(requestID: requestID)
     }
 
     private func resolveDisplays() -> [KamidanaDisplayTargetScreen] {
@@ -279,11 +291,11 @@ struct StatusBarView: View {
                 ForEach(currentLayout.left, id: \.id) { instance in
                     if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
                         factory.makeView(config: instance.config)
-                            .environment(\.kamidanaV1Style, instance.v1Style)
-                            .environment(\.kamidanaPopupStyle, instance.v1PopupStyle)
+                            .environment(\.theme, instance.theme)
+                            .environment(\.popupTheme, instance.popupTheme)
                             .environment(\.kamidanaWidgetFormat, instance.v1Format)
                             .environment(\.kamidanaWidgetActivation, instance.v1Activate)
-                            .kamidanaWidgetMotion(instance.v1Motion)
+                            .kamidanaWidgetAnimation(instance.v1Animation)
                             .environment(\.showsKamidanaWidgetSurface, leftMode == .perWidget)
                     }
                 }
@@ -304,11 +316,11 @@ struct StatusBarView: View {
                     ForEach(currentLayout.right, id: \.id) { instance in
                         if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
                             factory.makeView(config: instance.config)
-                                .environment(\.kamidanaV1Style, instance.v1Style)
-                                .environment(\.kamidanaPopupStyle, instance.v1PopupStyle)
+                                .environment(\.theme, instance.theme)
+                                .environment(\.popupTheme, instance.popupTheme)
                                 .environment(\.kamidanaWidgetFormat, instance.v1Format)
                                 .environment(\.kamidanaWidgetActivation, instance.v1Activate)
-                                .kamidanaWidgetMotion(instance.v1Motion)
+                                .kamidanaWidgetAnimation(instance.v1Animation)
                                 .environment(\.showsKamidanaWidgetSurface, rightMode == .perWidget)
                         }
                     }
@@ -344,7 +356,6 @@ struct StatusBarView: View {
             appliesOuterPaddingToContent: false,
             hideBorderWhenOuterPaddingIsZero: true
         )
-        .environment(\.widgetStyle, currentLayout.style)
         .environmentObject(netManager)
         .environmentObject(audioVM)
         .environmentObject(matrix)

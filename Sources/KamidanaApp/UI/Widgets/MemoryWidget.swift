@@ -2,44 +2,43 @@ import SwiftUI
 
 struct MemoryWidget: View {
     @EnvironmentObject var matrix: SystemMatrix
-    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.theme) private var theme
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @Environment(\.kamidanaWidgetActivation) private var widgetActivation
-    @State private var showPopover = false
-    @State private var hoverState = WidgetPopoverHoverState()
+    @StateObject private var interaction = WidgetInteractionController()
     let config: MemoryWidgetConfig
-    
+
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        if let mem = matrix.data.memoryMB {
-            let values = Self.formatValues(
-                usedMB: mem,
+        let values = matrix.data.memoryMB.map {
+            Self.formatValues(
+                usedMB: $0,
                 totalBytes: ProcessInfo.processInfo.physicalMemory
             )
-            Button(action: { if activation == .click { showPopover.toggle() } }) {
-                FormattedWidgetLabel(
-                    format: widgetFormat ?? "󰘚 {used_gb} / {total_gb} GB",
-                    values: values,
-                    iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? Color(hex: config.iconColor),
-                    textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
-                )
-            }
-            .buttonStyle(WidgetButtonStyle())
-            .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-            .widgetPopup(
-                isPresented: $showPopover,
-                activation: activation,
-                hoverState: hoverState
-            ) {
+        } ?? ["used_gb": "--", "total_gb": "--", "usage": "--"]
+
+        WidgetActionButton(action: { interaction.activate(activation) }) {
+            FormattedWidgetLabel(
+                format: widgetFormat ?? "󰘚 {used_gb} / {total_gb} GB",
+                values: values,
+                iconColor: theme?.iconForeground ?? Color(hex: config.iconColor),
+                textColor: theme?.foreground ?? Color(hex: config.textColor)
+            )
+        }
+        .widgetInteraction(controller: interaction, activation: activation) { _ in
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Memory Details")
                         .font(.headline)
                         .foregroundColor(Color(hex: colors.textPrimary))
 
                     VStack(alignment: .leading, spacing: 5) {
-                        memoryDetailRow(label: "Used", value: "\(values["used_gb"] ?? "--") GB", colors: colors)
-                        memoryDetailRow(label: "Maximum", value: "\(values["total_gb"] ?? "--") GB", colors: colors)
-                        memoryDetailRow(label: "Usage", value: "\(values["usage"] ?? "--")%", colors: colors)
+                        memoryDetailRow(
+                            label: "Used", value: "\(values["used_gb"] ?? "--") GB", colors: colors)
+                        memoryDetailRow(
+                            label: "Maximum", value: "\(values["total_gb"] ?? "--") GB",
+                            colors: colors)
+                        memoryDetailRow(
+                            label: "Usage", value: "\(values["usage"] ?? "--")%", colors: colors)
                     }
                     .font(.system(size: 12, design: .monospaced))
 
@@ -48,10 +47,9 @@ struct MemoryWidget: View {
                 }
                 .padding()
                 .frame(width: 300, alignment: .leading)
-            }
         }
     }
-    
+
     private func formatBytes(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useKB, .useBytes]
@@ -100,7 +98,9 @@ struct MemoryWidget: View {
         .font(.system(size: 12, design: .monospaced))
     }
 
-    private func memoryDetailRow(label: String, value: String, colors: GlobalColorsConfig) -> some View {
+    private func memoryDetailRow(label: String, value: String, colors: GlobalColorsConfig)
+        -> some View
+    {
         HStack {
             Text(label)
                 .foregroundColor(Color(hex: colors.textSecondary))
@@ -124,5 +124,5 @@ struct MemoryWidget: View {
         ]
     }
 
-    private var activation: KamidanaActivation { widgetActivation ?? .hover }
+    private var activation: KamidanaActivation { widgetActivation ?? .click }
 }

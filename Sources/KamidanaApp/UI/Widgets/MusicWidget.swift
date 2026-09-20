@@ -45,11 +45,10 @@ struct MusicWidget: View {
     @EnvironmentObject private var musicManager: MusicPlayingManager
     @Environment(\.kamidanaWidgetActivation) private var widgetActivation
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
-    @Environment(\.kamidanaPopupStyle) private var popupStyle
-    @Environment(\.kamidanaWidgetMotion) private var motion
+    @Environment(\.popupTheme) private var popupTheme
+    @Environment(\.kamidanaWidgetAnimation) private var animation
 
-    @State private var isActionPresented = false
-    @State private var pendingCloseID: UUID?
+    @StateObject private var interaction = WidgetInteractionController()
 
     let config: MusicWidgetConfig
 
@@ -64,20 +63,18 @@ struct MusicWidget: View {
     @ViewBuilder
     private var standaloneContent: some View {
         ZStack {
-            Button(action: presentAction) {
+            WidgetActionButton(action: { interaction.activate(activation) }) {
                 MusicNormalContent(
                     config: config,
                     format: widgetFormat ?? config.normalFormat,
                     artworkSize: 22
                 )
             }
-            .buttonStyle(WidgetButtonStyle())
             .onHover(perform: handleHover)
-            .opacity(isActionPresented ? 0 : 1)
-            .allowsHitTesting(!isActionPresented)
+            .opacity(interaction.isPresented ? 0 : 1)
         }
         .overlay(alignment: actionAlignment) {
-            if isActionPresented {
+            if interaction.isPresented {
                 MusicFormatView(
                     format: config.formatOnAction,
                     config: config,
@@ -86,14 +83,14 @@ struct MusicWidget: View {
                     artworkSpinDuration: config.actionArtworkSpinDuration
                 )
                 .fixedSize(horizontal: true, vertical: false)
-                .environment(\.kamidanaV1Style, popupStyle)
-                .SmoothUIModule()
+                .environment(\.theme, popupTheme)
+                .SmoothUIModule(theme: popupTheme)
                 .transition(actionTransition)
-                .onHover(perform: handleHover)
+                .onHover { handlePopupHover($0) }
                 .zIndex(1)
             }
         }
-        .zIndex(isActionPresented ? 100 : 0)
+        .zIndex(interaction.isPresented ? 100 : 0)
         .onReceive(
             NSWorkspace.shared.notificationCenter.publisher(
                 for: NSWorkspace.didActivateApplicationNotification
@@ -105,7 +102,7 @@ struct MusicWidget: View {
             {
                 return
             }
-            isActionPresented = false
+            interaction.reset()
         }
     }
 
@@ -147,11 +144,11 @@ struct MusicWidget: View {
     }
 
     private var activation: KamidanaActivation {
-        widgetActivation ?? .hover
+        widgetActivation ?? .click
     }
 
     private var actionTransition: AnyTransition {
-        guard motion == .dynamic else { return .identity }
+        guard animation == .dynamic else { return .identity }
         let edge: Edge = config.extend == .right ? .leading : .trailing
         return .move(edge: edge).combined(with: .opacity)
     }
@@ -160,47 +157,26 @@ struct MusicWidget: View {
         config.extend == .right ? .leading : .trailing
     }
 
-    private func presentAction() {
-        guard activation == .click else { return }
-        updateActionPresentation(true)
-    }
-
-    private func updateActionPresentation(_ isPresented: Bool) {
-        if motion == .dynamic {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isActionPresented = isPresented
-            }
-        } else {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                isActionPresented = isPresented
-            }
-        }
-    }
-
-    private func closeAction() {
-        updateActionPresentation(false)
-    }
-
-    private func presentHoveredAction() {
-        guard activation == .hover else { return }
-        updateActionPresentation(true)
-    }
-
     private func handleHover(_ isHovered: Bool) {
-        if isHovered {
-            pendingCloseID = nil
-            presentHoveredAction()
-            return
-        }
+        interaction.updateAnchorHover(
+            isHovered,
+            activation: activation,
+            settleDelay: popupTheme?.motion.hoverSettleDelay
+                ?? Theme.Motion.standard.hoverSettleDelay,
+            dismissDelay: popupTheme?.motion.popupDismissDelay
+                ?? Theme.Motion.standard.popupDismissDelay
+        )
+    }
 
-        let closeID = UUID()
-        pendingCloseID = closeID
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            guard pendingCloseID == closeID else { return }
-            closeAction()
-        }
+    private func handlePopupHover(_ isHovered: Bool) {
+        interaction.updatePopupHover(
+            isHovered,
+            activation: activation,
+            settleDelay: popupTheme?.motion.hoverSettleDelay
+                ?? Theme.Motion.standard.hoverSettleDelay,
+            dismissDelay: popupTheme?.motion.popupDismissDelay
+                ?? Theme.Motion.standard.popupDismissDelay
+        )
     }
 }
 
@@ -228,7 +204,7 @@ private enum MusicSliderLayout {
 
 private struct MusicFormatView: View {
     @EnvironmentObject private var musicManager: MusicPlayingManager
-    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.theme) private var theme
 
     let format: String
     let config: MusicWidgetConfig
@@ -245,8 +221,8 @@ private struct MusicFormatView: View {
                     FormattedWidgetLabel(
                         format: value,
                         values: formatValues,
-                        iconColor: Color(hex: v1Style?.iconColor ?? config.defaultIconColor),
-                        textColor: Color(hex: v1Style?.color ?? colors.textPrimary),
+                        iconColor: theme?.iconForeground ?? Color(hex: config.defaultIconColor),
+                        textColor: theme?.foreground ?? Color(hex: colors.textPrimary),
                         iconSize: sliderLayout == .center ? 22 : 20
                     )
                 case .artwork:

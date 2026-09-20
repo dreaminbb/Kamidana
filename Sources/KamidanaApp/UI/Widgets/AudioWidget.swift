@@ -2,33 +2,26 @@ import SwiftUI
 
 struct AudioWidget: View {
     @EnvironmentObject private var audioVM: AudioViewModel
-    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.theme) private var theme
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @Environment(\.kamidanaWidgetActivation) private var widgetActivation
 
     let config: AudioWidgetConfig
 
-    @State private var showPopover = false
-    @State private var hoverState = WidgetPopoverHoverState()
+    @StateObject private var interaction = WidgetInteractionController()
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
 
-        Button(action: { if activation == .click { showPopover.toggle() } }) {
+        WidgetActionButton(action: { interaction.activate(activation) }) {
             FormattedWidgetLabel(
                 format: widgetFormat ?? "{icon} {volume}%",
                 values: compactValues,
-                iconColor: Color(hex: compactIconColor),
-                textColor: Color(hex: v1Style?.color ?? colors.textPrimary)
+                iconColor: compactIconColor,
+                textColor: theme?.foreground ?? Color(hex: colors.textPrimary)
             )
         }
-        .buttonStyle(WidgetButtonStyle())
-        .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-        .widgetPopup(
-            isPresented: $showPopover,
-            activation: activation,
-            hoverState: hoverState
-        ) {
+        .widgetInteraction(controller: interaction, activation: activation) { _ in
             popoverContent(colors: colors)
         }
     }
@@ -110,9 +103,12 @@ struct AudioWidget: View {
         colors: GlobalColorsConfig
     ) -> some View {
         let rowHeight: CGFloat = 30
-        let listHeight = devices.count >= 4
+        let listHeight =
+            devices.count >= 4
             ? 120
-            : max(rowHeight, CGFloat(devices.count) * rowHeight + CGFloat(max(0, devices.count - 1)) * 6)
+            : max(
+                rowHeight,
+                CGFloat(devices.count) * rowHeight + CGFloat(max(0, devices.count - 1)) * 6)
 
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .firstTextBaseline) {
@@ -168,7 +164,9 @@ struct AudioWidget: View {
                                 }
                                 .padding(.vertical, 5)
                                 .padding(.horizontal, 8)
-                                .frame(maxWidth: .infinity, minHeight: rowHeight, alignment: .leading)
+                                .frame(
+                                    maxWidth: .infinity, minHeight: rowHeight, alignment: .leading
+                                )
                                 .background(Color(hex: colors.surface))
                                 .cornerRadius(6)
                                 .contentShape(Rectangle())
@@ -205,13 +203,13 @@ struct AudioWidget: View {
         ]
     }
 
-    private var compactIconColor: String {
-        if let color = v1Style?.iconColor { return color }
+    private var compactIconColor: Color {
+        if let color = theme?.iconForeground { return color }
         if config.showsOutputManagement {
-            return audioVM.isOutputMuted ? config.mutedColor : config.activeColor
+            return Color(hex: audioVM.isOutputMuted ? config.mutedColor : config.activeColor)
         }
-        return audioVM.isInputMuted ? config.mutedColor : config.micActiveColor
+        return Color(hex: audioVM.isInputMuted ? config.mutedColor : config.micActiveColor)
     }
 
-    private var activation: KamidanaActivation { widgetActivation ?? .hover }
+    private var activation: KamidanaActivation { widgetActivation ?? .click }
 }

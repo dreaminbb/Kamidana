@@ -28,6 +28,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
           color: "#333333"
     left:
       background_mode: per_widget
+      animation: static
       style:
         spacing: 4
       popup_style:
@@ -46,7 +47,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
                 icon_color: "#aaaaaa"
         - id: network-main
           type: network
-          motion: static
+          animation: static
           format: "{connection_icon} {upload} {upload_icon} {download} {download_icon}"
           popup_style:
             corner_radius: 18
@@ -67,6 +68,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
           type: btop
           compact_format: "btop"
     right:
+      animation: static
       widgets:
         - id: cpu-main
           type: cpu
@@ -81,7 +83,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
   func testDecodesValidRepresentativeConfiguration() throws {
     let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: validYAML)
-    XCTAssertEqual(configuration.left.widgets[1].motion, .static)
+    XCTAssertEqual(configuration.left.widgets[1].animation, .static)
     XCTAssertEqual(configuration.global.backgroundMode, .perSection)
     XCTAssertTrue(configuration.global.hideInFullscreen)
     XCTAssertTrue(configuration.global.launchAtLogin)
@@ -90,6 +92,8 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(configuration.global.popupStyle?.cornerRadius, 14)
     XCTAssertEqual(configuration.global.popupStyle?.border?.width, 2)
     XCTAssertEqual(configuration.left.backgroundMode, .perWidget)
+    XCTAssertEqual(configuration.left.animation, .static)
+    XCTAssertEqual(configuration.right.animation, .static)
     XCTAssertEqual(configuration.left.popupStyle?.cornerRadius, 16)
     XCTAssertEqual(configuration.left.widgets[1].popupStyle?.cornerRadius, 18)
      XCTAssertEqual(configuration.center.centerDefault, "music-main")

@@ -18,105 +18,151 @@ extension EnvironmentValues {
 }
 
 struct SmoothUIModuleModifier: ViewModifier {
-  @Environment(\.widgetStyle) var style: WidgetStyleConfig
-  @Environment(\.kamidanaV1Style) var v1Style: KamidanaStyle?
-  @Environment(\.showsKamidanaWidgetSurface) var showsWidgetSurface: Bool
-  @Environment(\.isInsideWidgetFolder) var isInsideWidgetFolder: Bool
-  @State private var isHovered = false
+  let isPressed: Bool
 
   func body(content: Content) -> some View {
-    let colors = ConfigManager.shared.currentConfig.colors
-    let baseStyle = v1Style
-    let effectiveStyle = baseStyle.map {
-      isHovered
-        ? KamidanaConfigurationV1Adapter.style($0, applyingState: "hover")
-        : $0
-    }
-    let padding = baseStyle?.padding
-    let leadingPadding =
-      (padding?.leading ?? style.paddingHorizontal)
-      + WidgetSurfaceMetrics.additionalHorizontalPadding
-    let trailingPadding =
-      (padding?.trailing ?? style.paddingHorizontal)
-      + WidgetSurfaceMetrics.additionalHorizontalPadding
-    let topPadding = padding?.top ?? style.paddingTop
-    let bottomPadding = padding?.bottom ?? style.paddingBottom
-    let cornerRadius = baseStyle?.cornerRadius ?? style.cornerRadius
-    let background =
-      effectiveStyle?.background
-      ?? (isHovered ? colors.surfaceHighlight : colors.background)
-    let foreground = effectiveStyle?.color
-    let opacity =
-      effectiveStyle?.opacity
-      ?? (isHovered ? style.hoverBackgroundColorOpacity : style.backgroundColorOpacity)
-    let borderColor =
-      effectiveStyle?.border?.color
-      ?? (isHovered ? colors.surfaceBorder : colors.surface)
-    let borderWidth = effectiveStyle?.border?.width ?? 1
-    let material: AnyShapeStyle = {
-      switch effectiveStyle?.material {
-      case .some(.none): return AnyShapeStyle(Color.clear)
-      case .thin: return AnyShapeStyle(.thinMaterial)
-      case .regular: return AnyShapeStyle(.regularMaterial)
-      case .thick: return AnyShapeStyle(.thickMaterial)
-      case .chrome: return AnyShapeStyle(.bar)
-      case .some(.ultraThin): return AnyShapeStyle(.ultraThinMaterial)
-      case nil: return AnyShapeStyle(.ultraThinMaterial)
-      }
-    }()
-    let transition: Animation? = {
-      switch effectiveStyle?.animation?.preset {
-      case .linear: return .linear(duration: effectiveStyle?.animation?.durationSeconds ?? 0.2)
-      case .easeInOut:
-        return .easeInOut(duration: effectiveStyle?.animation?.durationSeconds ?? 0.2)
-      case .spring:
-        return .spring(
-          response: effectiveStyle?.animation?.response ?? 0.5,
-          dampingFraction: effectiveStyle?.animation?.damping ?? 0.7,
-          blendDuration: effectiveStyle?.animation?.blendDuration ?? 0
-        )
-      case .some(.none): return nil
-      case nil: return .easeInOut(duration: 0.2)
-      }
-    }()
-    let styledContent =
-      content
-      .foregroundColor(foreground.map(Color.init(hex:)) ?? Color(hex: colors.textPrimary))
+    content.modifier(WidgetInteractionModifier(isPressed: isPressed))
+  }
+}
 
-    if isInsideWidgetFolder || !showsWidgetSurface {
+private struct WidgetInteractionAppearance {
+  var background: Color?
+  var foreground: Color?
+  var border: KamidanaBorder?
+  var shadow: KamidanaShadow?
+  var opacity: Double
+  var scale: CGFloat
+}
+
+private struct WidgetInteractionModifier: ViewModifier {
+  @Environment(\.theme) private var theme: Theme?
+  @Environment(\.widgetSeverity) private var severity
+  @Environment(\.kamidanaWidgetActivation) private var widgetActivation
+  @Environment(\.showsKamidanaWidgetSurface) private var showsWidgetSurface
+  @Environment(\.isInsideWidgetFolder) private var isInsideWidgetFolder
+  @State private var interactionState = WidgetInteractionState.idle
+  @State private var hoverTracker = WidgetHoverTracker()
+
+  let isPressed: Bool
+
+  private var resolvedState: WidgetInteractionState {
+    if isPressed { return .pressed }
+    return widgetActivation == .click ? .idle : interactionState
+  }
+
+  func body(content: Content) -> some View {
+    let appearance = appearance(for: resolvedState)
+    let severityColor = severity == .normal
+      ? nil
+      : theme?.severityColors.color(for: severity)
+    let foreground = severityColor ?? appearance.foreground ?? theme?.foreground ?? .primary
+    let baseCornerRadius = theme?.cornerRadius ?? 0
+    let motion = theme?.motion ?? .standard
+    let stateAnimation = motion.animation(for: resolvedState).resolvedAnimation()
+    let colorAnimation = motion.colorChange.resolvedAnimation()
+    let styledContent = content
+      .foregroundColor(foreground)
+      .opacity(appearance.opacity)
+
+    guard !isInsideWidgetFolder, showsWidgetSurface else {
       return AnyView(styledContent)
     }
 
+    let leadingPadding = (theme?.padding.leading ?? 0) + WidgetSurfaceMetrics.additionalHorizontalPadding
+    let trailingPadding = (theme?.padding.trailing ?? 0) + WidgetSurfaceMetrics.additionalHorizontalPadding
+    let topPadding = theme?.padding.top ?? 0
+    let bottomPadding = theme?.padding.bottom ?? 0
+    let background = appearance.background ?? theme?.background ?? .clear
+    let border = appearance.border ?? theme?.border ?? KamidanaBorder(width: 0, color: nil)
+    let borderColor = border.color.map(Color.init(hex:)) ?? .clear
+    let material = materialStyle(for: theme?.material)
+    let shadow = appearance.shadow ?? theme?.shadow
+    let hitShape = RoundedRectangle(cornerRadius: baseCornerRadius)
+
+    let visualContent = styledContent
+      .padding(.leading, leadingPadding)
+      .padding(.trailing, trailingPadding)
+      .padding(.top, topPadding)
+      .padding(.bottom, bottomPadding)
+      .background(background)
+      .background(material)
+      .cornerRadius(baseCornerRadius)
+      .overlay(
+        RoundedRectangle(cornerRadius: baseCornerRadius)
+          .stroke(borderColor, lineWidth: border.width)
+      )
+      .scaleEffect(appearance.scale)
+      .shadow(
+        color: shadow?.color.map(Color.init(hex:)) ?? .clear,
+        radius: shadow?.radius ?? 0,
+        x: shadow?.x ?? 0,
+        y: shadow?.y ?? 0
+      )
+
     return AnyView(
-      styledContent
-        .padding(.leading, leadingPadding)
-        .padding(.trailing, trailingPadding)
-        // Keep top at 6px and thicken bottom by 3px (total 9px)
-        .padding(.top, topPadding)
-        .padding(.bottom, bottomPadding)
-        // On hover use surfaceHighlight, normally use semi-transparent background
-        .background(Color(hex: background).opacity(opacity))
-        // Layer UltraThinMaterial for a glass-like blur effect
-        .background(material)
-        .cornerRadius(cornerRadius)
-        .overlay(
-          RoundedRectangle(cornerRadius: cornerRadius)
-            // Highlight border subtly on hover
-            .stroke(Color(hex: borderColor), lineWidth: borderWidth)
-        )
-        // Hover animation
-        .animation(transition, value: isHovered)
-        .shadow(
-          color: Color(hex: effectiveStyle?.shadow?.color ?? colors.background)
-            .opacity(effectiveStyle?.shadow?.opacity ?? 0),
-          radius: effectiveStyle?.shadow?.radius ?? 0,
-          x: effectiveStyle?.shadow?.x ?? 0,
-          y: effectiveStyle?.shadow?.y ?? 0
-        )
-        .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .onHover { hovering in
-          isHovered = hovering
-        })
+      visualContent
+        // Keep the interaction layer out of layout measurement. A sibling
+        // Color.clear in a ZStack can consume the HStack proposal in per-widget mode.
+        .overlay {
+          Color.clear
+            .contentShape(.interaction, hitShape)
+            .onHover { hovering in
+              guard widgetActivation != .click else {
+                hoverTracker.reset()
+                return
+              }
+              hoverTracker.update(
+                hovering,
+                delay: motion.hoverSettleDelay
+              ) { interactionState = $0 ? .hover : .idle }
+            }
+        }
+      .animation(stateAnimation, value: resolvedState)
+      .animation(colorAnimation, value: severity)
+    )
+  }
+
+  private func appearance(for state: WidgetInteractionState) -> WidgetInteractionAppearance {
+    switch state {
+    case .idle:
+      return WidgetInteractionAppearance(
+        background: theme?.background,
+        foreground: theme?.foreground,
+        border: theme?.border,
+        shadow: theme?.shadow,
+        opacity: 1,
+        scale: 1
+      )
+    case .hover:
+      return WidgetInteractionAppearance(
+        background: theme?.hoverTheme?.background,
+        foreground: theme?.hoverTheme?.foreground,
+        border: theme?.hoverTheme?.border,
+        shadow: theme?.hoverTheme?.shadow,
+        opacity: theme?.hoverTheme?.opacity ?? 1,
+        scale: theme?.hoverTheme?.scale ?? 1
+      )
+    case .pressed:
+      return WidgetInteractionAppearance(
+        background: theme?.pressedTheme?.background,
+        foreground: theme?.pressedTheme?.foreground,
+        border: theme?.pressedTheme?.border,
+        shadow: theme?.pressedTheme?.shadow,
+        opacity: theme?.pressedTheme?.opacity ?? 1,
+        scale: theme?.pressedTheme?.scale ?? 1
+      )
+    }
+  }
+
+  private func materialStyle(for material: KamidanaMaterial?) -> AnyShapeStyle {
+    switch material {
+    case .some(.none): return AnyShapeStyle(Color.clear)
+    case .thin: return AnyShapeStyle(.thinMaterial)
+    case .regular: return AnyShapeStyle(.regularMaterial)
+    case .thick: return AnyShapeStyle(.thickMaterial)
+    case .chrome: return AnyShapeStyle(.bar)
+    case .some(.ultraThin), nil: return AnyShapeStyle(.ultraThinMaterial)
+    }
   }
 }
 
@@ -227,17 +273,16 @@ struct KamidanaSectionSurfaceModifier: ViewModifier {
 }
 
 struct KamidanaPopupSurfaceModifier: ViewModifier {
-  @Environment(\.kamidanaPopupStyle) private var style
+  @Environment(\.popupTheme) private var popupTheme: Theme?
 
   func body(content: Content) -> some View {
-    let colors = ConfigManager.shared.currentConfig.colors
-    let cornerRadius = style?.cornerRadius ?? 12
-    let background = style?.background ?? colors.background
-    let opacity = style?.opacity ?? 0.96
-    let borderColor = style?.border?.color ?? colors.surfaceBorder
-    let borderWidth = style?.border?.width ?? 1
+    let cornerRadius = popupTheme?.cornerRadius ?? 12
+    let background = popupTheme?.background ?? .clear
+    let foreground = popupTheme?.foreground ?? .primary
+    let borderColor = popupTheme?.border.color.map(Color.init(hex:)) ?? .clear
+    let borderWidth = popupTheme?.border.width ?? 1
     let material: AnyShapeStyle = {
-      switch style?.material {
+      switch popupTheme?.material {
       case .some(.none): return AnyShapeStyle(Color.clear)
       case .thin: return AnyShapeStyle(.thinMaterial)
       case .regular: return AnyShapeStyle(.regularMaterial)
@@ -248,187 +293,39 @@ struct KamidanaPopupSurfaceModifier: ViewModifier {
     }()
 
     content
-      .foregroundColor(style?.color.map(Color.init(hex:)) ?? Color(hex: colors.textPrimary))
-      .background(
-        RoundedRectangle(cornerRadius: cornerRadius)
-          .fill(Color(hex: background).opacity(opacity))
-      )
-      .background(
-        RoundedRectangle(cornerRadius: cornerRadius)
-          .fill(material)
-      )
+      .foregroundColor(foreground)
+      .background(background)
+      .background(material)
       .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
       .overlay(
         RoundedRectangle(cornerRadius: cornerRadius)
-          .stroke(Color(hex: borderColor), lineWidth: borderWidth)
+          .stroke(borderColor, lineWidth: borderWidth)
       )
       .shadow(
-        color: Color(hex: style?.shadow?.color ?? colors.background)
-          .opacity(style?.shadow?.opacity ?? 0.28),
-        radius: style?.shadow?.radius ?? 12,
-        x: style?.shadow?.x ?? 0,
-        y: style?.shadow?.y ?? 6
+        color: popupTheme?.shadow?.color.map(Color.init(hex:)) ?? .clear,
+        radius: popupTheme?.shadow?.radius ?? 12,
+        x: popupTheme?.shadow?.x ?? 0,
+        y: popupTheme?.shadow?.y ?? 6
       )
-      .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
-  }
-}
-
-private struct WidgetPopupModifier<PopupContent: View>: ViewModifier {
-  @Binding var isPresented: Bool
-  let activation: KamidanaActivation
-  let hoverState: WidgetPopoverHoverState
-  let popupContent: () -> PopupContent
-
-  @Environment(\.kamidanaWidgetMotion) private var motion
-  @Environment(\.kamidanaPopupHorizontalAlignment) private var horizontalAlignment
-
-  func body(content: Content) -> some View {
-    content
-      .zIndex(isPresented ? 1_000 : 0)
-      .overlay(alignment: horizontalAlignment.swiftUIAlignment) {
-        if isPresented {
-          popupContent()
-            .modifier(KamidanaPopupSurfaceModifier())
-            .offset(y: 40)
-            .transition(popupTransition)
-            .onHover {
-              hoverState.updatePopoverHover(
-                $0,
-                isPresented: $isPresented,
-                activation: activation
-              )
-            }
-            .zIndex(1_000)
-        }
-      }
-      .animation(popupAnimation, value: isPresented)
-      .onReceive(
-        NSWorkspace.shared.notificationCenter.publisher(
-          for: NSWorkspace.didActivateApplicationNotification
-        )
-      ) { notification in
-        guard
-          let application = notification.userInfo?[NSWorkspace.applicationUserInfoKey]
-            as? NSRunningApplication,
-          application.bundleIdentifier != Bundle.main.bundleIdentifier
-        else { return }
-        hoverState.reset()
-        isPresented = false
-      }
-  }
-
-  private var popupAnimation: Animation? {
-    guard motion == .dynamic else { return nil }
-    return .spring(response: 0.3, dampingFraction: 0.84)
-  }
-
-  private var popupTransition: AnyTransition {
-    guard motion == .dynamic else { return .identity }
-    return .move(edge: .top).combined(with: .opacity)
+      .contentShape(.interaction, RoundedRectangle(cornerRadius: cornerRadius))
   }
 }
 
 struct WidgetButtonStyle: ButtonStyle {
   func makeBody(configuration: Configuration) -> some View {
     configuration.label
-      .SmoothUIModule()
-      .contentShape(Rectangle())
-      .opacity(configuration.isPressed ? 0.88 : 1)
-  }
-}
-
-final class WidgetPopoverHoverState {
-  private var isAnchorHovered = false
-  private var isPopoverHovered = false
-  private var pendingCloseID: UUID?
-
-  static func shouldRemainPresented(anchorHovered: Bool, popoverHovered: Bool) -> Bool {
-    anchorHovered || popoverHovered
-  }
-
-  func updateAnchorHover(
-    _ isHovered: Bool,
-    isPresented: Binding<Bool>,
-    activation: KamidanaActivation
-  ) {
-    guard activation == .hover else { return }
-    isAnchorHovered = isHovered
-    updatePresentation(isPresented: isPresented)
-  }
-
-  func updatePopoverHover(
-    _ isHovered: Bool,
-    isPresented: Binding<Bool>,
-    activation: KamidanaActivation
-  ) {
-    guard activation == .hover else { return }
-    isPopoverHovered = isHovered
-    updatePresentation(isPresented: isPresented)
-  }
-
-  func reset() {
-    isAnchorHovered = false
-    isPopoverHovered = false
-    pendingCloseID = nil
-  }
-
-  private func updatePresentation(isPresented: Binding<Bool>) {
-    guard !Self.shouldRemainPresented(
-      anchorHovered: isAnchorHovered,
-      popoverHovered: isPopoverHovered
-    ) else {
-      pendingCloseID = nil
-      isPresented.wrappedValue = true
-      return
-    }
-
-    let closeID = UUID()
-    pendingCloseID = closeID
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-      guard self?.pendingCloseID == closeID,
-            let self,
-            !Self.shouldRemainPresented(
-              anchorHovered: self.isAnchorHovered,
-              popoverHovered: self.isPopoverHovered
-            ) else { return }
-      isPresented.wrappedValue = false
-    }
+      .modifier(SmoothUIModuleModifier(isPressed: configuration.isPressed))
   }
 }
 
 extension View {
   func SmoothUIModule() -> some View {
-    self.modifier(SmoothUIModuleModifier())
+    self.modifier(SmoothUIModuleModifier(isPressed: false))
   }
 
-  func widgetPopoverActivation(
-    _ isPresented: Binding<Bool>,
-    activation: KamidanaActivation,
-    hoverState: WidgetPopoverHoverState
-  ) -> some View {
-    onHover { isHovered in
-      hoverState.updateAnchorHover(
-        isHovered,
-        isPresented: isPresented,
-        activation: activation
-      )
-    }
-  }
-
-  func widgetPopup<PopupContent: View>(
-    isPresented: Binding<Bool>,
-    activation: KamidanaActivation,
-    hoverState: WidgetPopoverHoverState,
-    @ViewBuilder content: @escaping () -> PopupContent
-  ) -> some View {
-    modifier(
-      WidgetPopupModifier(
-        isPresented: isPresented,
-        activation: activation,
-        hoverState: hoverState,
-        popupContent: content
-      )
-    )
+  func SmoothUIModule(theme: Theme?) -> some View {
+    self.environment(\.theme, theme)
+      .modifier(SmoothUIModuleModifier(isPressed: false))
   }
 
   func kamidanaSectionSurface(

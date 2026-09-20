@@ -18,7 +18,7 @@ public struct CustomWidgetConfig: Codable, Hashable {
 
 /// A v1 custom widget executes a process directly and never invokes a shell.
 public struct CustomWidget: View {
-  @Environment(\.kamidanaV1Style) private var v1Style
+  @Environment(\.theme) private var theme
   @Environment(\.kamidanaWidgetFormat) private var widgetFormat
   public let config: CustomWidgetConfig
   @State private var output = ""
@@ -29,16 +29,15 @@ public struct CustomWidget: View {
   }
 
   public var body: some View {
-    Button(action: runProcess) {
+    WidgetActionButton(action: runProcess) {
       FormattedWidgetLabel(
         format: widgetFormat ?? config.format ?? "{output}",
         values: ["output": output.isEmpty ? config.command : output],
-        iconColor: Color(hex: v1Style?.iconColor ?? "#cdd6f4"),
-        textColor: Color(hex: v1Style?.color ?? "#cdd6f4")
+        iconColor: theme?.iconForeground ?? Color(hex: "#cdd6f4"),
+        textColor: theme?.foreground ?? Color(hex: "#cdd6f4")
       )
       .contentShape(Rectangle())
     }
-    .buttonStyle(WidgetButtonStyle())
     .disabled(isRunning)
     .help(output)
   }

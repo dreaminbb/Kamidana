@@ -11,9 +11,8 @@ struct KamidanaIsland: View {
     let isBuiltInDisplay: Bool
     let builtInTopInset: CGFloat
 
-    @State private var isHovered = false
+    @StateObject private var interaction = WidgetInteractionController()
     @State private var selectedTab: WidgetInstance? = nil
-    @State private var pendingHoverCloseID: UUID?
 
     @State private var islandSize: windowSizeRequirements = windowSizeRequirements(
         width: nil, height: nil)
@@ -41,19 +40,19 @@ struct KamidanaIsland: View {
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        let normalStyle = centerWidgets.first?.v1Style
-        let expandedStyle = centerWidgets.first?.v1PopupStyle ?? normalStyle
-        let effectiveStyle = isHovered ? expandedStyle : normalStyle
-        let background = effectiveStyle?.background ?? colors.background
-        let backgroundOpacity = showsWidgetSurface ? (effectiveStyle?.opacity ?? 0.8) : 0
-        let cornerRadius = effectiveStyle?.cornerRadius ?? (isHovered ? 24 : 16)
-        let borderColor = effectiveStyle?.border?.color ?? colors.surfaceBorder
-        let borderWidth = showsWidgetSurface ? (effectiveStyle?.border?.width ?? 1) : 0
+        let normalTheme = centerWidgets.first?.theme
+        let expandedTheme = centerWidgets.first?.popupTheme ?? normalTheme
+        let effectiveTheme = isHovered ? expandedTheme : normalTheme
+        let interactionMotion = effectiveTheme?.motion ?? .standard
+        let background = showsWidgetSurface ? (effectiveTheme?.background ?? Color(hex: colors.background)) : .clear
+        let cornerRadius = effectiveTheme?.cornerRadius ?? (isHovered ? 24 : 16)
+        let borderColor = effectiveTheme?.border.color.map(Color.init(hex:)) ?? Color(hex: colors.surfaceBorder)
+        let borderWidth = showsWidgetSurface ? (effectiveTheme?.border.width ?? 1) : 0
         let expandedSize = expandedIslandSize()
         let verticalOffset = builtInVerticalOffset
         let material: AnyShapeStyle = {
             guard showsWidgetSurface else { return AnyShapeStyle(Color.clear) }
-            switch effectiveStyle?.material {
+            switch effectiveTheme?.material {
             case .some(.none): return AnyShapeStyle(Color.clear)
             case .thin: return AnyShapeStyle(.thinMaterial)
             case .regular: return AnyShapeStyle(.regularMaterial)
@@ -71,8 +70,8 @@ struct KamidanaIsland: View {
                     HStack(spacing: 12) {
                         ForEach(centerWidgets, id: \.id) { tab in
                             Button(action: {
-                                if (tab.v1Motion ?? .dynamic) == .dynamic {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                if (tab.v1Animation ?? .dynamic) == .dynamic {
+                                         withAnimation(interactionMotion.colorChange.resolvedAnimation()) {
                                         selectedTab = tab
                                     }
                                 } else {
@@ -107,11 +106,11 @@ struct KamidanaIsland: View {
                         if let selected = selectedTab {
                             if let factory = WidgetRegistry.shared.factory(for: selected.typeID) {
                                 factory.makeView(config: selected.config)
-                                    .environment(\.kamidanaV1Style, selected.v1Style)
-                                    .environment(\.kamidanaPopupStyle, selected.v1PopupStyle)
+                                    .environment(\.theme, selected.theme)
+                                    .environment(\.popupTheme, selected.popupTheme)
                                     .environment(\.kamidanaWidgetFormat, selected.v1Format)
                                     .environment(\.kamidanaWidgetActivation, selected.v1Activate)
-                                    .kamidanaWidgetMotion(selected.v1Motion)
+                                    .kamidanaWidgetAnimation(selected.v1Animation)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                             } else {
                                 EmptyView()
@@ -137,13 +136,13 @@ struct KamidanaIsland: View {
                 width: isHovered ? expandedSize.width : nil,
                 height: isHovered ? expandedSize.height : Self.collapsedHeight
             )
-            .background(Color(hex: background).opacity(backgroundOpacity))
+            .background(background)
             .background(material)
             .cornerRadius(cornerRadius)
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color(hex: borderColor), lineWidth: borderWidth)
-            )
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(borderColor, lineWidth: borderWidth)
+                )
             .offset(y: verticalOffset)
         }
         .frame(
@@ -155,8 +154,12 @@ struct KamidanaIsland: View {
         // This transparent container bridges the camera gap and the shifted expanded panel.
         .contentShape(Rectangle())
         // Spring animation providing smooth expansion
-        .animation(isDynamic ? .spring(response: 0.5, dampingFraction: 0.7) : nil, value: isHovered)
+        .animation(isDynamic ? interactionMotion.expand.resolvedAnimation() : nil, value: isHovered)
         .onHover(perform: updateHover)
+        .onTapGesture {
+            guard activation == .click else { return }
+            _ = interaction.activate(.click)
+        }
         .onAppear {
             if selectedTab == nil {
                 selectedTab = centerWidgets.first
@@ -165,7 +168,11 @@ struct KamidanaIsland: View {
     }
 
     private var isDynamic: Bool {
-        (centerWidgets.first?.v1Motion ?? .dynamic) == .dynamic
+        (centerWidgets.first?.v1Animation ?? .dynamic) == .dynamic
+    }
+
+    private var activation: KamidanaActivation {
+        centerWidgets.first?.v1Activate ?? .hover
     }
 
     private var builtInVerticalOffset: CGFloat {
@@ -174,33 +181,35 @@ struct KamidanaIsland: View {
     }
 
     private func updateHover(_ hovering: Bool) {
-        if hovering {
-            pendingHoverCloseID = nil
-            setHovered(true)
-            return
-        }
-
-        let closeID = UUID()
-        pendingHoverCloseID = closeID
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            guard pendingHoverCloseID == closeID else { return }
-            setHovered(false)
-        }
+        let motion = centerWidgets.first?.popupTheme?.motion
+            ?? centerWidgets.first?.theme?.motion
+            ?? .standard
+        interaction.updateAnchorHover(
+            hovering,
+            activation: activation,
+            settleDelay: motion.hoverSettleDelay,
+            dismissDelay: motion.popupDismissDelay
+        )
     }
 
     private func setHovered(_ hovering: Bool) {
         if isDynamic {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                isHovered = hovering
+            let motion = centerWidgets.first?.popupTheme?.motion
+                ?? centerWidgets.first?.theme?.motion
+                ?? .standard
+            withAnimation(motion.expand.resolvedAnimation()) {
+                interaction.setPresented(hovering)
             }
         } else {
             var transaction = Transaction()
             transaction.disablesAnimations = true
             withTransaction(transaction) {
-                isHovered = hovering
+                interaction.setPresented(hovering)
             }
         }
     }
+
+    private var isHovered: Bool { interaction.isPresented }
 
     private func tabName(for widget: WidgetInstance) -> String {
         return WidgetRegistry.shared.factory(for: widget.typeID)?.getTabName(config: widget.config)
@@ -210,7 +219,7 @@ struct KamidanaIsland: View {
     @ViewBuilder
     private func compactContent(for widget: WidgetInstance) -> some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        let style = widget.v1Style
+        let theme = widget.theme
 
         if widget.typeID == "music" {
             let musicConfig = widget.config as? MusicWidgetConfig ?? MusicWidgetConfig()
@@ -219,21 +228,22 @@ struct KamidanaIsland: View {
                 format: widget.v1Format ?? musicConfig.normalFormat,
                 artworkSize: 24
             )
-            .environment(\.kamidanaV1Style, style)
+            .environment(\.theme, theme)
+            .environment(\.popupTheme, widget.popupTheme)
         } else if widget.typeID == "terminal" {
             FormattedWidgetLabel(
                 format: widget.v1Format ?? "",
                 values: [:],
-                iconColor: Color(hex: style?.iconColor ?? colors.accent),
-                textColor: Color(hex: style?.color ?? colors.textPrimary)
+                iconColor: theme?.iconForeground ?? Color(hex: colors.accent),
+                textColor: theme?.foreground ?? Color(hex: colors.textPrimary)
             )
         } else if let factory = WidgetRegistry.shared.factory(for: widget.typeID) {
             factory.makeView(config: widget.config)
-                .environment(\.kamidanaV1Style, style)
-                .environment(\.kamidanaPopupStyle, widget.v1PopupStyle)
+                .environment(\.theme, theme)
+                .environment(\.popupTheme, widget.popupTheme)
                 .environment(\.kamidanaWidgetFormat, widget.v1Format)
                 .environment(\.kamidanaWidgetActivation, widget.v1Activate)
-                .kamidanaWidgetMotion(widget.v1Motion)
+                .kamidanaWidgetAnimation(widget.v1Animation)
                 .environment(\.showsKamidanaWidgetSurface, false)
         }
     }

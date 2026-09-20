@@ -630,7 +630,7 @@ public struct KamidanaWidget: Decodable, Equatable {
   public var style: KamidanaStyle?
   public var popupStyle: KamidanaStyle?
   public var activate: KamidanaActivation?
-  public var motion: KamidanaMotion?
+  public var animation: KamidanaMotion?
   public var interval: Double?
   public var tooltip: Bool?
   public var tooltipFormat: String?
@@ -664,7 +664,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     style: KamidanaStyle? = nil,
     popupStyle: KamidanaStyle? = nil,
     activate: KamidanaActivation? = nil,
-    motion: KamidanaMotion? = nil,
+    animation: KamidanaMotion? = nil,
     interval: Double? = nil,
     tooltip: Bool? = nil,
     tooltipFormat: String? = nil,
@@ -697,7 +697,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     self.style = style
     self.popupStyle = popupStyle
     self.activate = activate
-    self.motion = motion
+    self.animation = animation
     self.interval = interval
     self.tooltip = tooltip
     self.tooltipFormat = tooltipFormat
@@ -754,7 +754,7 @@ public struct KamidanaWidget: Decodable, Equatable {
       style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style),
       popupStyle: try container.decodeIfPresent(KamidanaStyle.self, forKey: .popupStyle),
       activate: try container.decodeIfPresent(KamidanaActivation.self, forKey: .activate),
-      motion: try container.decodeIfPresent(KamidanaMotion.self, forKey: .motion),
+       animation: try container.decodeIfPresent(KamidanaMotion.self, forKey: .animation),
       interval: try container.decodeIfPresent(Double.self, forKey: .interval),
       tooltip: try container.decodeIfPresent(Bool.self, forKey: .tooltip),
       tooltipFormat: try container.decodeIfPresent(String.self, forKey: .tooltipFormat),
@@ -789,7 +789,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     case direction
     case style
     case popupStyle = "popup_style"
-    case activate, motion, interval, tooltip
+    case activate, animation, interval, tooltip
     case tooltipFormat = "tooltip_format"
     case widgets, children
     case partStyles = "part_styles"
@@ -877,6 +877,7 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
 public struct KamidanaConfigurationV1Section: Decodable, Equatable {
   public var backgroundMode: KamidanaBackgroundMode?
   public var activate: KamidanaActivation?
+  public var animation: KamidanaMotion?
   public var style: KamidanaStyle
   public var popupStyle: KamidanaStyle?
   public var widgets: [KamidanaWidget]
@@ -884,12 +885,14 @@ public struct KamidanaConfigurationV1Section: Decodable, Equatable {
   public init(
     backgroundMode: KamidanaBackgroundMode? = nil,
     activate: KamidanaActivation? = nil,
+    animation: KamidanaMotion? = nil,
     style: KamidanaStyle = KamidanaStyle(),
     popupStyle: KamidanaStyle? = nil,
     widgets: [KamidanaWidget] = []
   ) {
     self.backgroundMode = backgroundMode
     self.activate = activate
+    self.animation = animation
     self.style = style
     self.popupStyle = popupStyle
     self.widgets = widgets
@@ -897,7 +900,7 @@ public struct KamidanaConfigurationV1Section: Decodable, Equatable {
 
   private enum CodingKeys: String, CodingKey, CaseIterable {
     case backgroundMode = "background_mode"
-    case activate, style, widgets
+    case activate, animation, style, widgets
     case popupStyle = "popup_style"
   }
 
@@ -908,6 +911,7 @@ public struct KamidanaConfigurationV1Section: Decodable, Equatable {
       backgroundMode: try container.decodeIfPresent(
         KamidanaBackgroundMode.self, forKey: .backgroundMode),
       activate: try container.decodeIfPresent(KamidanaActivation.self, forKey: .activate),
+      animation: try container.decodeIfPresent(KamidanaMotion.self, forKey: .animation),
       style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style) ?? KamidanaStyle(),
       popupStyle: try container.decodeIfPresent(KamidanaStyle.self, forKey: .popupStyle),
       widgets: try container.decodeIfPresent([KamidanaWidget].self, forKey: .widgets) ?? []

@@ -78,6 +78,18 @@ Each selector must contain `kind` and only the field required by that kind. `nam
 
 `popup_style` may be declared under `global`, a section (`left`, `center`, or `right`), or an individual widget. Values inherit in that order, so a widget only needs to override the fields that differ. Popup positioning remains application-defined: panels have no speech-bubble arrow and are aligned inward automatically for the left and right sections.
 
+## Runtime Explanation
+
+When requested, a running Kamidana process publishes its resolved configuration to `~/.config/kamidana/runtime.json`. The profile is resolved only in response to the CLI action; Kamidana does not continuously generate or reload this diagnostic snapshot. The file includes the process ID, active display profiles, selected screens, effective activation source, animation, styles, popup styles, and nested widget relationships.
+
+Use the CLI to inspect the live snapshot:
+
+```sh
+kamidana explain | jq '.displays["JAPANNEXT MNT"].left.widgets'
+```
+
+The command verifies that the process ID in the snapshot is still running. A stale or missing snapshot is returned as a JSON error object instead of human-readable output so the command remains pipeable through `jq`.
+
 `bar_padding` belongs to `global` and controls the gap between the bar window and the monitor edges. It accepts either a single number or an object with `top`, `bottom`, `leading`, and `trailing`. `top` moves the whole window down from the top edge, `leading` and `trailing` inset the window horizontally, and `bottom` reduces the available vertical extent. When `top` is `0`, the top border is hidden; when `trailing` is `0`, the side borders are hidden.
 
 ```yaml
@@ -119,9 +131,28 @@ left:
 
 Set `border.width` to `0` to disable an outline. The same distinction applies to center: `style` is the collapsed Island surface and `popup_style` is its expanded surface.
 
-## Widget Motion
+## Widget Animation
 
-Every widget accepts `motion`. It controls application-owned expansion and popup transitions without allowing arbitrary UI positioning.
+Sections may define `animation` to apply one animation policy to every widget in that
+section. `static` is the section-wide animation policy and takes precedence over an
+individual widget's `animation` value, which
+makes it possible to disable all interaction and popup movement in a section without
+editing each widget.
+
+```yaml
+left:
+  animation: static
+  widgets: []
+
+right:
+  animation: static
+  widgets: []
+```
+
+When a section does not define `animation`, the widget's `animation` value is used. The
+resolved section policy is also exposed by `kamidana explain`.
+
+Every widget accepts `animation`. It controls application-owned expansion and popup transitions without allowing arbitrary UI positioning.
 
 | Value | Behavior |
 |---|---|
@@ -131,7 +162,7 @@ Every widget accepts `motion`. It controls application-owned expansion and popup
 ```yaml
 - id: system-actions
   type: system-action
-  motion: static
+  animation: static
   icon: "󰀵"
   children:
     - id: sleep
@@ -140,9 +171,9 @@ Every widget accepts `motion`. It controls application-owned expansion and popup
       icon: "󰒲"
 ```
 
-The same setting controls a center-default widget's Island expansion. Each monitor configuration may choose a different value. All popup types use the same motion path; `static` never runs a presentation transition.
+The same setting controls a center-default widget's Island expansion. Each monitor configuration may choose a different value. All popup types use the same animation path; `static` never runs a presentation transition.
 
-`style.animation` remains responsible for surface styling transitions such as hover colors; `motion` controls whether popup and expansion movement occurs. For `activate: hover`, the popup remains open while either the normal widget or the popup itself is hovered, including while the pointer crosses the gap between them.
+`style.animation` remains responsible for surface styling transitions such as hover colors; the widget `animation` setting controls whether popup and expansion movement occurs. For `activate: hover`, the popup remains open while either the normal widget or the popup itself is hovered, including while the pointer crosses the gap between them.
 
 ## NerdFont Icons Configuration
 
@@ -311,7 +342,7 @@ The compact bar does not display codec information automatically. Hovering the w
 - id: volume
   type: volume
   activate: hover
-  motion: dynamic
+   animation: dynamic
   format: "{output_icon} {output_volume}% {input_icon} {input_volume}%"
   output_management: true
   input_management: true

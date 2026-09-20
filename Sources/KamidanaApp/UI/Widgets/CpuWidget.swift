@@ -4,11 +4,10 @@ struct CpuWidget: View {
     static let processListLimit = SystemMatrix.topProcessLimit
 
     @EnvironmentObject var matrix: SystemMatrix
-    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.theme) private var theme
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @Environment(\.kamidanaWidgetActivation) private var widgetActivation
-    @State private var showPopover = false
-    @State private var hoverState = WidgetPopoverHoverState()
+    @StateObject private var interaction = WidgetInteractionController()
     let config: CpuWidgetConfig
 
     var body: some View {
@@ -16,25 +15,19 @@ struct CpuWidget: View {
         let cpu = matrix.data.cpuUsage
         let usage = cpu.map { String(format: "%.1f", $0.total) } ?? "--"
 
-        Button(action: { if activation == .click { showPopover.toggle() } }) {
+        WidgetActionButton(action: { interaction.activate(activation) }) {
             FormattedWidgetLabel(
                 format: widgetFormat ?? "󰍛 {usage}%",
                 values: ["usage": usage],
-                iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? cpu.map {
+                iconColor: theme?.iconForeground ?? cpu.map {
                     getCPUColor($0.total)
                 }
                     ?? Color(hex: colors.textTertiary),
-                textColor: v1Style?.color.map(Color.init(hex:)) ?? cpu.map { getCPUColor($0.total) }
+                textColor: theme?.foreground ?? cpu.map { getCPUColor($0.total) }
                     ?? Color(hex: colors.textTertiary)
             )
         }
-        .buttonStyle(WidgetButtonStyle())
-        .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-        .widgetPopup(
-            isPresented: $showPopover,
-            activation: activation,
-            hoverState: hoverState
-        ) {
+        .widgetInteraction(controller: interaction, activation: activation) { _ in
             popoverContent(colors: colors, cpu: cpu)
         }
     }
@@ -176,7 +169,7 @@ struct CpuWidget: View {
         return cpu.perCore.allSatisfy { $0.isFinite && $0 >= 0 }
     }
 
-    private var activation: KamidanaActivation { widgetActivation ?? .hover }
+    private var activation: KamidanaActivation { widgetActivation ?? .click }
 
     private func getCPUColor(_ usage: Float) -> Color {
         if usage < config.successThreshold { return Color(hex: config.successColor) }

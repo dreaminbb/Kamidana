@@ -2,11 +2,10 @@ import SwiftUI
 
 struct BatteryWidget: View {
     @EnvironmentObject var matrix: SystemMatrix
-    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.theme) private var theme
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @Environment(\.kamidanaWidgetActivation) private var widgetActivation
-    @State private var showPopover = false
-    @State private var hoverState = WidgetPopoverHoverState()
+    @StateObject private var interaction = WidgetInteractionController()
 
     let config: BatteryWidgetConfig
 
@@ -45,7 +44,7 @@ struct BatteryWidget: View {
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
         if let battery = matrix.data.batteryUsage {
-            Button(action: { if activation == .click { showPopover.toggle() } }) {
+            WidgetActionButton(action: { interaction.activate(activation) }) {
                 let statusColor = resolveBatteryIconColor(
                     capacity: battery.currentCapacity,
                     isCharging: battery.isCharging
@@ -61,16 +60,10 @@ struct BatteryWidget: View {
                         "status": battery.isCharging ? "charging" : "discharging",
                     ],
                     iconColor: statusColor,
-                    textColor: v1Style?.color.map(Color.init(hex:)) ?? statusColor
+                    textColor: theme?.foreground ?? statusColor
                 )
             }
-            .buttonStyle(WidgetButtonStyle())
-            .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-            .widgetPopup(
-                isPresented: $showPopover,
-                activation: activation,
-                hoverState: hoverState
-            ) {
+            .widgetInteraction(controller: interaction, activation: activation) { _ in
                 VStack(alignment: .leading, spacing: 12) {
                     Text("System Power & Thermal")
                         .font(.headline)
@@ -157,6 +150,6 @@ struct BatteryWidget: View {
         }
     }
 
-    private var activation: KamidanaActivation { widgetActivation ?? .hover }
+    private var activation: KamidanaActivation { widgetActivation ?? .click }
 
 }

@@ -6,11 +6,10 @@ struct NetworkWidget: View {
 
     @EnvironmentObject var matrix: SystemMatrix
     @EnvironmentObject var netManager: NetworkManager
-    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.theme) private var theme
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @Environment(\.kamidanaWidgetActivation) private var widgetActivation
-    @State private var showPopover = false
-    @State private var hoverState = WidgetPopoverHoverState()
+    @StateObject private var interaction = WidgetInteractionController()
 
     let config: NetworkWidgetConfig
 
@@ -20,7 +19,7 @@ struct NetworkWidget: View {
         let download =
             matrix.data.internetUsage.map { formatBytes($0.downloadBytesPerSecond) } ?? "--"
 
-        Button(action: { if activation == .click { showPopover.toggle() } }) {
+        WidgetActionButton(action: { interaction.activate(activation) }) {
             FormattedWidgetLabel(
                 format: widgetFormat
                     ?? Self.defaultFormat,
@@ -33,25 +32,29 @@ struct NetworkWidget: View {
                     "download": download,
                     "download_icon": config.downloadIcon,
                 ],
-                iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? Color(hex: config.iconColor),
-                textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
+                iconColor: theme?.iconForeground ?? Color(hex: config.iconColor),
+                textColor: theme?.foreground ?? Color(hex: config.textColor)
             )
             .font(.system(size: 14, weight: .semibold, design: .monospaced))
         }
-        .buttonStyle(WidgetButtonStyle())
-        .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-        .widgetPopup(
-            isPresented: $showPopover,
-            activation: activation,
-            hoverState: hoverState
-        ) {
-            popoverContent(colors: colors, upload: upload, download: download)
+        .widgetInteraction(controller: interaction, activation: activation) { presentation in
+            popoverContent(
+                colors: colors,
+                upload: upload,
+                download: download,
+                isPresented: presentation
+            )
                 .onAppear { netManager.refreshNetworkDetails(forcePublicIP: false) }
         }
     }
 
     @ViewBuilder
-    private func popoverContent(colors: GlobalColorsConfig, upload: String, download: String)
+    private func popoverContent(
+        colors: GlobalColorsConfig,
+        upload: String,
+        download: String,
+        isPresented: Binding<Bool>
+    )
         -> some View
     {
         let showsWiFiConnectionControls = netManager.currentConnection != "LAN"
@@ -66,7 +69,7 @@ struct NetworkWidget: View {
 
                     WiFiConnectionView(
                         config: config,
-                        isPresented: $showPopover,
+                        isPresented: isPresented,
                         showsSurface: false
                     )
                     .environmentObject(netManager)
@@ -162,7 +165,7 @@ struct NetworkWidget: View {
         }
     }
 
-    private var activation: KamidanaActivation { widgetActivation ?? .hover }
+    private var activation: KamidanaActivation { widgetActivation ?? .click }
 
     private func formatBytes(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()

@@ -11,8 +11,27 @@ global:
     background: "#1e1e2e"
     color: "#cdd6f4"
     opacity: 0.6
-    # padding: 6
+    padding:
+      top: 6
+      bottom: 9
+      leading: 12
+      trailing: 12
+    spacing: 8
+    corner_radius: 12
     material: ultra_thin
+    animation:
+      preset: ease_in_out
+      duration_seconds: 0.2
+    states:
+      hover:
+        background: "#45475a"
+        opacity: 0.8
+      pressed:
+        opacity: 0.88
+      warning:
+        color: "#fab387"
+      critical:
+        color: "#f38ba8"
     border:
       width: 1
       color: "#585b70"
@@ -20,7 +39,9 @@ global:
     background: "#1e1e2e"
     color: "#cdd6f4"
     opacity: 0.96
-    corner_radius: 0
+    padding: 12
+    spacing: 8
+    corner_radius: 12
     material: ultra_thin
     border:
       width: 1
@@ -34,7 +55,7 @@ external:
       - id: system-actions
         type: system-action
         activate: hover
-        motion: dynamic
+        animation: dynamic
         icon: ""
         folded_icon: "󰀵"
         popup_style:
@@ -75,7 +96,7 @@ external:
               icon_color: "#f5c2e7"
       - id: network
         type: network
-        motion: dynamic
+        animation: dynamic
         format: "{connection_icon} {network_name} 󰕝 {upload}/s 󰓅 {download}/s"
         style:
           color: "#cdd6f4"
@@ -84,7 +105,7 @@ external:
         tooltip_format: "Network"
       - id: volume
         type: volume
-        motion: dynamic
+        animation: dynamic
         format: "󰕾 {volume}%"
         input_management: true
         output_management: true
@@ -99,7 +120,7 @@ external:
     widgets:
       - id: music
         type: music
-        motion: dynamic
+        animation: dynamic
         normal:
           format: "{artwork} {title}"
           format_on_action: "{artwork} {slider}"
@@ -138,7 +159,7 @@ external:
     widgets:
       - id: cpu
         type: cpu
-        motion: dynamic
+        animation: dynamic
         format: "󰍛 {usage}%"
         style:
           color: "#a6e3a1"
@@ -148,35 +169,35 @@ external:
         interval: 2
       - id: gpu
         type: gpu
-        motion: dynamic
+        animation: dynamic
         format: "󰢮 {usage}%"
         style:
           color: "#89b4fa"
           icon_color: "#89b4fa"
       - id: memory
         type: memory
-        motion: dynamic
+        animation: dynamic
         format: " {used_gb} GB"
         style:
           color: "#cba6f7"
           icon_color: "#cba6f7"
       - id: disk
         type: disk
-        motion: dynamic
+        animation: dynamic
         format: "󰋊 {used}"
         style:
           color: "#fab387"
           icon_color: "#fab387"
       - id: bluetooth
         type: bluetooth
-        motion: dynamic
+        animation: dynamic
         format: "󰂯 {device}"
         style:
           color: "#cdd6f4"
           icon_color: "#89b4fa"
       - id: battery
         type: battery
-        motion: dynamic
+        animation: dynamic
         icon:
           charging_right_now: "󰂄"
           100_capacity: "󰁹"
@@ -207,7 +228,7 @@ built_in:
     widgets:
       - id: system-actions
         type: system-action
-        motion: dynamic
+        animation: dynamic
         icon: ""
         folded_icon: "󰀵"
         popup_style:
@@ -249,7 +270,7 @@ built_in:
 
       - id: network
         type: network
-        motion: dynamic
+        animation: dynamic
         format: "{connection_icon} {network_name}"
         style:
           color: "#cdd6f4"
@@ -259,7 +280,7 @@ built_in:
 
       - id: volume
         type: volume
-        motion: dynamic
+        animation: dynamic
         format: "󰕾 {volume}%"
         input_management: true
         output_management: true
@@ -274,7 +295,7 @@ built_in:
     widgets:
       - id: music
         type: music
-        motion: dynamic
+        animation: dynamic
         normal:
           format: "{artwork} {title}"
           format_on_action: "{artwork} {slider}"
@@ -304,7 +325,7 @@ built_in:
     widgets:
       - id: cpu
         type: cpu
-        motion: dynamic
+        animation: dynamic
         format: "󰍛 {usage}%"
         style:
           color: "#a6e3a1"
@@ -314,14 +335,14 @@ built_in:
         interval: 2
       - id: memory
         type: memory
-        motion: dynamic
+        animation: dynamic
         format: " {used_gb} GB"
         style:
           color: "#cba6f7"
           icon_color: "#cba6f7"
       - id: compact-widgets
         type: widget-folder
-        motion: dynamic
+        animation: dynamic
         direction: left
         icon: ":"
         folded_icon: "<:"
@@ -330,28 +351,28 @@ built_in:
         widgets:
           - id: gpu
             type: gpu
-            motion: dynamic
+            animation: dynamic
             format: "󰢮 {usage}%"
             style:
               color: "#89b4fa"
               icon_color: "#89b4fa"
           - id: disk
             type: disk
-            motion: dynamic
+            animation: dynamic
             format: "󰋊 {used}"
             style:
               color: "#fab387"
               icon_color: "#fab387"
           - id: bluetooth
             type: bluetooth
-            motion: dynamic
+            animation: dynamic
             format: "󰂯 {device}"
             style:
               color: "#cdd6f4"
               icon_color: "#89b4fa"
       - id: battery
         type: battery
-        motion: dynamic
+        animation: dynamic
         format: "󰁹 {capacity}%"
         style:
           color: "#cdd6f4"

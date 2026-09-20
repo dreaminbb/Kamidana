@@ -3,21 +3,17 @@ import SwiftUI
 
 struct BluetoothWidget: View {
     @EnvironmentObject var bluetooth: BluetoothManager
-    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.theme) private var theme
     @Environment(\.kamidanaWidgetFormat) private var widgetFormat
     @Environment(\.kamidanaWidgetActivation) private var widgetActivation
-    @State private var showPopover = false
-    @State private var hoverState = WidgetPopoverHoverState()
+    @StateObject private var interaction = WidgetInteractionController()
 
     let config: BluetoothWidgetConfig
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        Button(action: {
-            if activation == .click {
-                showPopover.toggle()
-            }
-            if activation == .click && showPopover {
+        WidgetActionButton(action: {
+            if interaction.activate(activation) {
                 bluetooth.refreshPairedDevices()
             }
         }) {
@@ -35,23 +31,17 @@ struct BluetoothWidget: View {
                     "device": deviceValues.deviceCount,
                     "device_name": deviceValues.deviceName,
                 ],
-                iconColor: v1Style?.iconColor.map(Color.init(hex:)) ?? statusColor,
-                textColor: v1Style?.color.map(Color.init(hex:)) ?? Color(hex: config.textColor)
+                iconColor: theme?.iconForeground ?? statusColor,
+                textColor: theme?.foreground ?? Color(hex: config.textColor)
             )
         }
-        .buttonStyle(WidgetButtonStyle())
         .focusable(false)
         .onHover { hover in
             if hover {
                 bluetooth.refreshPairedDevices()
             }
         }
-        .widgetPopoverActivation($showPopover, activation: activation, hoverState: hoverState)
-        .widgetPopup(
-            isPresented: $showPopover,
-            activation: activation,
-            hoverState: hoverState
-        ) {
+        .widgetInteraction(controller: interaction, activation: activation) { _ in
             let connectedDevices = Self.connectedDevices(bluetooth.pairedDevices)
             VStack(alignment: .leading, spacing: 10) {
 
@@ -83,7 +73,7 @@ struct BluetoothWidget: View {
         }
     }
 
-    private var activation: KamidanaActivation { widgetActivation ?? .hover }
+    private var activation: KamidanaActivation { widgetActivation ?? .click }
 
     static func connectedDeviceFormatValues(
         _ devices: [BluetoothDeviceInfo]
@@ -115,7 +105,8 @@ struct DeviceRow: View {
 
     var body: some View {
         let colors = ConfigManager.shared.currentConfig.colors
-        VStack(alignment: .leading, spacing: 7) {
+        WidgetActionButton(action: { _ = bluetooth.openBluetoothSettings() }) {
+            VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
                 NerdFontIcon(info.isConnected ? "󰂱" : "󰂯", size: 16)
                     .foregroundColor(
@@ -152,23 +143,21 @@ struct DeviceRow: View {
                 )
             }
             .font(.system(size: 11, design: .monospaced))
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(
+                isHovered
+                    ? Color(hex: colors.surfaceHighlight).opacity(0.8)
+                    : (info.isConnected
+                        ? Color(hex: colors.surfaceHighlight).opacity(0.4)
+                        : Color(hex: colors.surface).opacity(0.3))
+            )
+            .cornerRadius(6)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 8)
-        .background(
-            isHovered
-                ? Color(hex: colors.surfaceHighlight).opacity(0.8)
-                : (info.isConnected
-                    ? Color(hex: colors.surfaceHighlight).opacity(0.4)
-                    : Color(hex: colors.surface).opacity(0.3))
-        )
-        .cornerRadius(6)
-        .contentShape(Rectangle())
         .onHover { hover in
             isHovered = hover
-        }
-        .onTapGesture {
-            bluetooth.openBluetoothSettings()
         }
         .animation(.easeInOut(duration: 0.15), value: isHovered)
     }

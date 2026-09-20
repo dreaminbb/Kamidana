@@ -1,14 +1,12 @@
 import SwiftUI
 
 struct SystemActionWidget: View {
-    @Environment(\.kamidanaV1Style) private var v1Style
+    @Environment(\.theme) private var theme
     let systemController = SystemController()
     let config: SystemActionWidgetConfig
     
     var body: some View {
-        Button(action: {
-            performAction()
-        }) {
+        WidgetActionButton(action: performAction) {
             HStack(spacing: 8) {
                 NerdFontIcon(config.icon)
                     .foregroundColor(Color(hex: config.iconColor))
@@ -17,13 +15,12 @@ struct SystemActionWidget: View {
                 if let name = config.name, !name.isEmpty {
                     let colors = ConfigManager.shared.currentConfig.colors
                     Text(name)
-                        .foregroundColor(Color(hex: v1Style?.color ?? colors.textPrimary))
+                        .foregroundColor(theme?.foreground ?? Color(hex: colors.textPrimary))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
-        .buttonStyle(WidgetButtonStyle())
     }
     
     private func performAction() {

@@ -139,7 +139,7 @@ These are the complete stored fields of `KamidanaWidget` (`V1:626-811`).
 | `style` / Style? | nil | Global -> section -> parent folder -> widget inheritance |
 | `popup_style` / Style? | nil | Independent popup inheritance chain |
 | `activate` / enum? | nil; `hover`/`click` | Information/audio/Bluetooth/Music default hover; folders default click; center host and horizontal hover path do not honor it |
-| `motion` / enum? | nil -> `dynamic`; `static` supported | Runtime environment and per-widget transactions; artwork rotation is a separate configured behavior |
+| `animation` / enum? | nil -> `dynamic`; `static` supported | Runtime environment and per-widget transactions; artwork rotation is a separate configured behavior |
 | `interval` / Double? | nil; supplied value must be finite and > 0 | Validated only; no adapter/manager consumer |
 | `tooltip` / Bool? | nil; only CPU/GPU/memory/network | Validated only; false does not disable the details popup |
 | `tooltip_format` / String? | nil; nonempty required when tooltip true | Validated only; never rendered |

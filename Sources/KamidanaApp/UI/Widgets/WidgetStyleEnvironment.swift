@@ -1,22 +1,11 @@
 import SwiftUI
 
-struct WidgetStyleKey: EnvironmentKey {
-    static let defaultValue: WidgetStyleConfig = .defaultNormal
+private struct ThemeEnvironmentKey: EnvironmentKey {
+    static let defaultValue: Theme? = nil
 }
 
-extension EnvironmentValues {
-    var widgetStyle: WidgetStyleConfig {
-        get { self[WidgetStyleKey.self] }
-        set { self[WidgetStyleKey.self] = newValue }
-    }
-}
-
-private struct KamidanaV1StyleKey: EnvironmentKey {
-  static let defaultValue: KamidanaStyle? = nil
-}
-
-private struct KamidanaPopupStyleKey: EnvironmentKey {
-  static let defaultValue: KamidanaStyle? = nil
+private struct PopupThemeEnvironmentKey: EnvironmentKey {
+    static let defaultValue: Theme? = nil
 }
 
 private struct KamidanaWidgetSurfaceVisibilityKey: EnvironmentKey {
@@ -31,7 +20,7 @@ private struct KamidanaWidgetActivationKey: EnvironmentKey {
   static let defaultValue: KamidanaActivation? = nil
 }
 
-private struct KamidanaWidgetMotionKey: EnvironmentKey {
+private struct KamidanaWidgetAnimationKey: EnvironmentKey {
   static let defaultValue = KamidanaMotion.dynamic
 }
 
@@ -54,14 +43,14 @@ private struct KamidanaPopupHorizontalAlignmentKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-  var kamidanaV1Style: KamidanaStyle? {
-    get { self[KamidanaV1StyleKey.self] }
-    set { self[KamidanaV1StyleKey.self] = newValue }
+  var theme: Theme? {
+    get { self[ThemeEnvironmentKey.self] }
+    set { self[ThemeEnvironmentKey.self] = newValue }
   }
 
-  var kamidanaPopupStyle: KamidanaStyle? {
-    get { self[KamidanaPopupStyleKey.self] }
-    set { self[KamidanaPopupStyleKey.self] = newValue }
+  var popupTheme: Theme? {
+    get { self[PopupThemeEnvironmentKey.self] }
+    set { self[PopupThemeEnvironmentKey.self] = newValue }
   }
 
   var showsKamidanaWidgetSurface: Bool {
@@ -79,11 +68,10 @@ extension EnvironmentValues {
     set { self[KamidanaWidgetActivationKey.self] = newValue }
   }
 
-  var kamidanaWidgetMotion: KamidanaMotion {
-    get { self[KamidanaWidgetMotionKey.self] }
-    set { self[KamidanaWidgetMotionKey.self] = newValue }
+  var kamidanaWidgetAnimation: KamidanaMotion {
+    get { self[KamidanaWidgetAnimationKey.self] }
+    set { self[KamidanaWidgetAnimationKey.self] = newValue }
   }
-
 
   var kamidanaPopupHorizontalAlignment: KamidanaPopupHorizontalAlignment {
     get { self[KamidanaPopupHorizontalAlignmentKey.self] }
@@ -92,11 +80,11 @@ extension EnvironmentValues {
 }
 
 extension View {
-  func kamidanaWidgetMotion(_ motion: KamidanaMotion?) -> some View {
-    let resolvedMotion = motion ?? .dynamic
-    return environment(\.kamidanaWidgetMotion, resolvedMotion)
+  func kamidanaWidgetAnimation(_ animation: KamidanaMotion?) -> some View {
+    let resolvedAnimation = animation ?? .dynamic
+    return environment(\.kamidanaWidgetAnimation, resolvedAnimation)
       .transaction { transaction in
-        if resolvedMotion == .static {
+        if resolvedAnimation == .static {
           transaction.animation = nil
           transaction.disablesAnimations = true
         }

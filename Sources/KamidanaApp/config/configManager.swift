@@ -167,17 +167,21 @@ public struct WidgetInstance: Hashable, Decodable {
     public let v1PopupStyle: KamidanaStyle?
     public let v1Format: String?
     public let v1Activate: KamidanaActivation?
-    public let v1Motion: KamidanaMotion?
+    public let v1Animation: KamidanaMotion?
+    public let theme: Theme?
+    public let popupTheme: Theme?
 
     public init(
-        id: String? = nil,
         typeID: String,
         config: AnyHashable,
+        id: String? = nil,
         v1Style: KamidanaStyle? = nil,
         v1PopupStyle: KamidanaStyle? = nil,
         v1Format: String? = nil,
         v1Activate: KamidanaActivation? = nil,
-        v1Motion: KamidanaMotion? = nil
+        v1Animation: KamidanaMotion? = nil,
+        theme: Theme? = nil,
+        popupTheme: Theme? = nil
     ) {
         self.id = id ?? UUID().uuidString
         self.typeID = typeID
@@ -186,7 +190,9 @@ public struct WidgetInstance: Hashable, Decodable {
         self.v1PopupStyle = v1PopupStyle
         self.v1Format = v1Format
         self.v1Activate = v1Activate
-        self.v1Motion = v1Motion
+        self.v1Animation = v1Animation
+        self.theme = theme
+        self.popupTheme = popupTheme
     }
 
     public static func == (lhs: WidgetInstance, rhs: WidgetInstance) -> Bool {
@@ -194,7 +200,9 @@ public struct WidgetInstance: Hashable, Decodable {
             && lhs.v1PopupStyle == rhs.v1PopupStyle
             && lhs.v1Format == rhs.v1Format
             && lhs.v1Activate == rhs.v1Activate
-            && lhs.v1Motion == rhs.v1Motion
+            && lhs.v1Animation == rhs.v1Animation
+            && lhs.theme == rhs.theme
+            && lhs.popupTheme == rhs.popupTheme
     }
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
@@ -204,7 +212,9 @@ public struct WidgetInstance: Hashable, Decodable {
         hasher.combine(v1PopupStyle)
         hasher.combine(v1Format)
         hasher.combine(v1Activate)
-        hasher.combine(v1Motion)
+        hasher.combine(v1Animation)
+        hasher.combine(theme?.background)
+        hasher.combine(popupTheme?.background)
     }
 
     public init(from decoder: Decoder) throws {
@@ -229,9 +239,9 @@ public struct WidgetInstance: Hashable, Decodable {
         }
 
         self.init(
-            id: nil,
             typeID: key.stringValue,
-            config: try factory.decodeConfiguration(from: container.superDecoder(forKey: key))
+            config: try factory.decodeConfiguration(from: container.superDecoder(forKey: key)),
+            id: nil
         )
     }
 }
@@ -636,6 +646,7 @@ public class ConfigManager {
 
     public static let MAIN_CONFIG_FILE_NAME = "config.yaml"
     public static let BUILT_IN_CONFIG_FILE_NAME = "built_in_monitor.yaml"
+    public static let RUNTIME_EXPLANATION_FILE_NAME = "runtime.json"
     public static let CONFIG_PARENT_DIR_NAME = ".config"
     public static let CONFIG_DIR_NAME = "kamidana"
 
@@ -1047,6 +1058,262 @@ public class ConfigManager {
             regularConfiguration: regularConfiguration,
             builtInConfiguration: builtInConfiguration
         )
+    }
+
+    public func publishRuntimeExplanation(requestID: String? = nil) {
+        let explanation = makeRuntimeExplanation(requestID: requestID)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+
+        do {
+            let directoryURL = Self.resolveConfigDirectory()
+            try FileManager.default.createDirectory(
+                at: directoryURL,
+                withIntermediateDirectories: true
+            )
+            let data = try encoder.encode(explanation)
+            try data.write(
+                to: Self.resolveRuntimeExplanationFileURL(),
+                options: [.atomic]
+            )
+        } catch {
+            print("[Config Warning] Failed to publish runtime explanation: \(error)")
+        }
+    }
+
+    public static func resolveConfigDirectory(
+        homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
+    ) -> URL {
+        homeDirectory
+            .appendingPathComponent(CONFIG_PARENT_DIR_NAME)
+            .appendingPathComponent(CONFIG_DIR_NAME)
+    }
+
+    public static func resolveRuntimeExplanationFileURL(
+        homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
+    ) -> URL {
+        resolveConfigDirectory(homeDirectory: homeDirectory)
+            .appendingPathComponent(RUNTIME_EXPLANATION_FILE_NAME)
+    }
+
+    private func makeRuntimeExplanation(requestID: String?) -> KamidanaRuntimeConfiguration {
+        let displays: [String: KamidanaRuntimeDisplay]
+        let source: String
+
+        if let profiles = monitorProfiles {
+            source = "monitor_profiles"
+            displays = profiles.displays.mapValues(runtimeDisplay)
+        } else {
+            source = "legacy_profiles"
+            var legacyDisplays: [String: KamidanaRuntimeDisplay] = [:]
+            if let regularV1Config {
+                legacyDisplays["external"] = runtimeDisplay(regularV1Config)
+            }
+            if let builtInV1Config {
+                legacyDisplays["built_in"] = runtimeDisplay(builtInV1Config)
+            }
+            displays = legacyDisplays
+        }
+
+        let activeScreens = NSScreen.screens.map { screen in
+            let displayID = DisplayDetector.displayID(for: screen)
+            let isBuiltIn = DisplayDetector.isBuiltIn(screen: screen)
+            return KamidanaRuntimeScreen(
+                name: screen.localizedName,
+                displayID: displayID,
+                isBuiltIn: isBuiltIn,
+                profile: profileName(
+                    for: screen,
+                    displayIDs: displays.keys,
+                    displayID: displayID,
+                    isBuiltIn: isBuiltIn
+                )
+            )
+        }
+
+        let formatter = ISO8601DateFormatter()
+        return KamidanaRuntimeConfiguration(
+            pid: ProcessInfo.processInfo.processIdentifier,
+            process: ProcessInfo.processInfo.processName,
+            generatedAt: formatter.string(from: Date()),
+            requestID: requestID,
+            configPath: resolveConfigFileURL().path,
+            source: source,
+            displays: displays,
+            activeScreens: activeScreens
+        )
+    }
+
+    private func runtimeDisplay(
+        _ configuration: KamidanaConfigurationV1
+    ) -> KamidanaRuntimeDisplay {
+        let globalStyle = configuration.global.style
+        let globalPopupStyle = configuration.global.popupStyle ?? KamidanaStyle()
+        return KamidanaRuntimeDisplay(
+            centerDefault: configuration.center.centerDefault,
+            left: runtimeSection(
+                configuration.left,
+                sectionName: "left",
+                globalStyle: globalStyle,
+                globalPopupStyle: globalPopupStyle
+            ),
+            center: runtimeSection(
+                configuration.center,
+                sectionName: "center",
+                globalStyle: globalStyle,
+                globalPopupStyle: globalPopupStyle
+            ),
+            right: runtimeSection(
+                configuration.right,
+                sectionName: "right",
+                globalStyle: globalStyle,
+                globalPopupStyle: globalPopupStyle
+            )
+        )
+    }
+
+    private func runtimeSection(
+        _ section: KamidanaConfigurationV1Section,
+        sectionName: String,
+        globalStyle: KamidanaStyle,
+        globalPopupStyle: KamidanaStyle
+    ) -> KamidanaRuntimeSection {
+        let style = KamidanaConfigurationV1Adapter.mergedStyle(globalStyle, section.style)
+        let popupStyle = KamidanaConfigurationV1Adapter.mergedStyle(
+            globalPopupStyle,
+            section.popupStyle ?? KamidanaStyle()
+        )
+        return KamidanaRuntimeSection(
+            activation: section.activate,
+            animation: section.animation,
+            widgets: section.widgets.enumerated().map { index, widget in
+                runtimeWidget(
+                    widget,
+                    path: "\(sectionName).widgets[\(index)]",
+                    inheritedActivation: section.activate,
+                    inheritedActivationSource: section.activate == nil ? "default" : "section",
+                    inheritedAnimation: section.animation,
+                    inheritedStyle: style,
+                    inheritedPopupStyle: popupStyle
+                )
+            }
+        )
+    }
+
+    private func runtimeSection(
+        _ section: KamidanaConfigurationV1Center,
+        sectionName: String,
+        globalStyle: KamidanaStyle,
+        globalPopupStyle: KamidanaStyle
+    ) -> KamidanaRuntimeSection {
+        let style = KamidanaConfigurationV1Adapter.mergedStyle(globalStyle, section.style)
+        let popupStyle = KamidanaConfigurationV1Adapter.mergedStyle(
+            globalPopupStyle,
+            section.popupStyle ?? KamidanaStyle()
+        )
+        return KamidanaRuntimeSection(
+            activation: section.activate,
+            animation: nil,
+            widgets: section.widgets.enumerated().map { index, widget in
+                runtimeWidget(
+                    widget,
+                    path: "\(sectionName).widgets[\(index)]",
+                    inheritedActivation: section.activate,
+                    inheritedActivationSource: section.activate == nil ? "default" : "section",
+                    inheritedAnimation: nil,
+                    inheritedStyle: style,
+                    inheritedPopupStyle: popupStyle
+                )
+            }
+        )
+    }
+
+    private func runtimeWidget(
+        _ widget: KamidanaWidget,
+        path: String,
+        inheritedActivation: KamidanaActivation?,
+        inheritedActivationSource: String,
+        inheritedAnimation: KamidanaMotion?,
+        inheritedStyle: KamidanaStyle,
+        inheritedPopupStyle: KamidanaStyle
+    ) -> KamidanaRuntimeWidget {
+        let style = KamidanaConfigurationV1Adapter.mergedStyle(
+            inheritedStyle,
+            widget.style ?? KamidanaStyle()
+        )
+        let popupStyle = KamidanaConfigurationV1Adapter.mergedStyle(
+            inheritedPopupStyle,
+            widget.popupStyle ?? KamidanaStyle()
+        )
+        let activation = widget.activate ?? inheritedActivation ?? .hover
+        let activationSource = widget.activate == nil
+            ? inheritedActivationSource
+            : "widget"
+
+        var children = widget.widgets.enumerated().map { index, child in
+            runtimeWidget(
+                child,
+                path: "\(path).children[\(index)]",
+                inheritedActivation: activation,
+                inheritedActivationSource: activationSource,
+                inheritedAnimation: inheritedAnimation,
+                inheritedStyle: style,
+                inheritedPopupStyle: popupStyle
+            )
+        }
+        if widget.kind == .systemAction {
+            children = widget.actionChildren.enumerated().map { index, child in
+                KamidanaRuntimeWidget(
+                    id: child.id,
+                    type: "system-action-child",
+                    path: "\(path).children[\(index)]",
+                    activation: activation,
+                    activationSource: activationSource,
+                    animation: inheritedAnimation ?? widget.animation ?? .dynamic,
+                    style: KamidanaConfigurationV1Adapter.mergedStyle(style, child.style),
+                    popupStyle: popupStyle,
+                    action: child.action.rawValue,
+                    format: child.format,
+                    icon: child.icon
+                )
+            }
+        }
+
+        return KamidanaRuntimeWidget(
+            id: widget.id,
+            type: widget.kind.rawValue,
+            path: path,
+            activation: activation,
+            activationSource: activationSource,
+            animation: inheritedAnimation ?? widget.animation ?? .dynamic,
+            style: style,
+            popupStyle: popupStyle,
+            children: children
+        )
+    }
+
+    private func profileName(
+        for screen: NSScreen,
+        displayIDs: Dictionary<String, KamidanaRuntimeDisplay>.Keys,
+        displayID: CGDirectDisplayID?,
+        isBuiltIn: Bool
+    ) -> String? {
+        if let displayID, displayIDs.contains(String(displayID)) {
+            return String(displayID)
+        }
+        if displayIDs.contains(screen.localizedName) {
+            return screen.localizedName
+        }
+        if isBuiltIn, displayIDs.contains("built_in") {
+            return "built_in"
+        }
+        if !isBuiltIn, displayIDs.contains("external") {
+            return "external"
+        }
+        if displayIDs.contains("default_layout") {
+            return "default_layout"
+        }
+        return displayIDs.first
     }
 
     private func applyDecodedConfigurations(

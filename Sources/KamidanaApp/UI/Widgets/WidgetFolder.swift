@@ -1,45 +1,32 @@
 import SwiftUI
 
 struct WidgetFolder: View {
-  @Environment(\.kamidanaWidgetMotion) private var motion
+  @Environment(\.kamidanaWidgetAnimation) private var animation
   @Environment(\.kamidanaWidgetActivation) private var widgetActivation
-  @Environment(\.kamidanaV1Style) private var v1Style
-  @Environment(\.kamidanaPopupStyle) private var popupStyle
+  @Environment(\.theme) private var theme
+  @Environment(\.popupTheme) private var popupTheme
   let config: WidgetFolderConfig
   private let verticalContentWidth: CGFloat = 220
 
   @State private var isExpandedInline: Bool = false
-  @State private var showPopover = false
-  @State private var hoverState = WidgetPopoverHoverState()
+  @StateObject private var interaction = WidgetInteractionController()
 
   var body: some View {
-    let isExpanded = config.direction == "below" ? showPopover : isExpandedInline
+    let isExpanded = config.direction == "below" ? interaction.isPresented : isExpandedInline
     let fallbackIcon = config.icon ?? "󰉋"
     let foldedIcon = config.iconFolded ?? fallbackIcon
     let folderIcon = isExpanded ? fallbackIcon : foldedIcon
-    let iconColor = Color(hex: config.iconColor)
+    let iconColor = theme?.iconForeground ?? Color(hex: config.iconColor)
 
     Group {
       if config.direction == "below" {
-        Button(action: {
-          if activation == .click { toggleExpansion($showPopover) }
-        }) {
+        WidgetActionButton(action: { interaction.activate(activation) }) {
           HStack(spacing: 4) {
             NerdFontIcon(folderIcon).foregroundColor(iconColor)
             if let name = config.name { Text(name).foregroundColor(iconColor) }
           }
         }
-        .buttonStyle(WidgetButtonStyle())
-        .widgetPopoverActivation(
-          $showPopover,
-          activation: activation,
-          hoverState: hoverState
-        )
-        .widgetPopup(
-          isPresented: $showPopover,
-          activation: activation,
-          hoverState: hoverState
-        ) {
+        .widgetInteraction(controller: interaction, activation: activation) { _ in
           VStack(alignment: .leading, spacing: 8) {
             if let name = config.name {
               Text(name)
@@ -60,13 +47,12 @@ struct WidgetFolder: View {
               .transition(expansionTransition(edge: .trailing))
           }
 
-          Button(action: { toggleExpansion($isExpandedInline) }) {
+          WidgetActionButton(action: { toggleExpansion($isExpandedInline) }) {
             HStack(spacing: 4) {
               NerdFontIcon(folderIcon).foregroundColor(iconColor)
               if let name = config.name { Text(name).foregroundColor(iconColor) }
             }
           }
-          .buttonStyle(.plain)
 
           if config.direction == "right" && isExpanded {
             nestedWidgets()
@@ -74,8 +60,8 @@ struct WidgetFolder: View {
           }
         }
         .environment(\.isInsideWidgetFolder, true)
-        .environment(\.kamidanaV1Style, isExpandedInline ? popupStyle ?? v1Style : v1Style)
-        .SmoothUIModule()
+        .environment(\.theme, isExpandedInline ? popupTheme ?? theme : theme)
+        .SmoothUIModule(theme: isExpandedInline ? popupTheme ?? theme : theme)
       }
     }
   }
@@ -86,20 +72,20 @@ struct WidgetFolder: View {
       if let factory = WidgetRegistry.shared.factory(for: instance.typeID) {
         if fillWidth {
           factory.makeView(config: instance.config)
-            .environment(\.kamidanaV1Style, instance.v1Style)
-            .environment(\.kamidanaPopupStyle, instance.v1PopupStyle)
+            .environment(\.theme, instance.theme)
+            .environment(\.popupTheme, instance.popupTheme)
             .environment(\.kamidanaWidgetFormat, instance.v1Format)
             .environment(\.kamidanaWidgetActivation, instance.v1Activate)
-            .kamidanaWidgetMotion(instance.v1Motion)
+            .kamidanaWidgetAnimation(instance.v1Animation)
             .environment(\.isInsideWidgetFolder, true)
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
           factory.makeView(config: instance.config)
-            .environment(\.kamidanaV1Style, instance.v1Style)
-            .environment(\.kamidanaPopupStyle, instance.v1PopupStyle)
+            .environment(\.theme, instance.theme)
+            .environment(\.popupTheme, instance.popupTheme)
             .environment(\.kamidanaWidgetFormat, instance.v1Format)
             .environment(\.kamidanaWidgetActivation, instance.v1Activate)
-            .kamidanaWidgetMotion(instance.v1Motion)
+              .kamidanaWidgetAnimation(instance.v1Animation)
             .environment(\.isInsideWidgetFolder, true)
         }
       }
@@ -111,8 +97,8 @@ struct WidgetFolder: View {
   }
 
   private func toggleExpansion(_ isExpanded: Binding<Bool>) {
-    if motion == .dynamic {
-      withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+    if animation == .dynamic {
+      withAnimation((theme?.motion ?? .standard).expand.resolvedAnimation()) {
         isExpanded.wrappedValue.toggle()
       }
     } else {
@@ -125,7 +111,7 @@ struct WidgetFolder: View {
   }
 
   private func expansionTransition(edge: Edge) -> AnyTransition {
-    guard motion == .dynamic else { return .identity }
+    guard animation == .dynamic else { return .identity }
     return .move(edge: edge).combined(with: .opacity)
   }
 }
