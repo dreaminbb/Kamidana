@@ -28,6 +28,38 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertNotNil(theme.hoverTheme?.background)
   }
 
+  func testAdapterPreservesWeatherConfigurationWithoutFetchingData() throws {
+    let yaml = """
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      right:
+        widgets:
+          - id: weather
+            type: weather
+            format: "{weather} {temperature} {chance_of_rain}"
+            polling: 60
+            icon:
+              - sun: "sun-icon"
+            color:
+              - sun: "#fab387"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let weather = try XCTUnwrap(runtime.externalDisplay.right.first)
+    let weatherConfig = try XCTUnwrap(weather.config as? WeatherWidgetConfig)
+
+    XCTAssertEqual(weather.typeID, "weather")
+    XCTAssertEqual(weatherConfig.format, "{weather} {temperature} {chance_of_rain}")
+    XCTAssertEqual(weatherConfig.polling, 60)
+    XCTAssertEqual(weatherConfig.icons.first?.sun, "sun-icon")
+    XCTAssertEqual(weatherConfig.colors.first?.sun, "#fab387")
+  }
+
   func testAdapterPreservesSectionAndWidgetStyleAndCenterDefaultOrder() throws {
     let yaml = """
       global:

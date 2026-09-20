@@ -120,6 +120,40 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(configuration.center.widgets.first?.height, 700)
   }
 
+  func testDecodesWeatherConfiguration() throws {
+    let yaml = """
+      left:
+        widgets: []
+      center:
+        center_default: weather-center
+        widgets:
+          - id: weather-center
+            type: weather
+            format: "{weather} {temperature} {chance_of_rain}"
+      right:
+        widgets:
+          - id: weather
+            type: weather
+            format: "{weather} {temperature} {chance_of_rain}"
+            polling: 60
+            icon:
+              - sun: "sun-icon"
+              - thunder_rain: "storm-icon"
+            color:
+              - sun: "#fab387"
+              - snow: "#b4befe"
+      """
+
+    let widget = try KamidanaConfigurationV1Decoder.decode(yaml: yaml).right.widgets[0]
+    XCTAssertEqual(widget.kind, .weather)
+    XCTAssertEqual(widget.format, "{weather} {temperature} {chance_of_rain}")
+    XCTAssertEqual(widget.polling, 60)
+    XCTAssertEqual(widget.weatherIcons.first?.sun, "sun-icon")
+    XCTAssertEqual(widget.weatherIcons.last?.thunderRain, "storm-icon")
+    XCTAssertEqual(widget.weatherColors.first?.sun, "#fab387")
+    XCTAssertEqual(widget.weatherColors.last?.snow, "#b4befe")
+  }
+
   func testRejectsInvalidPopupStyleNumericValue() {
     let yaml = validYAML.replacingOccurrences(
       of: "      popup_style:\n        corner_radius: 18\n",
@@ -560,7 +594,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
       Set(KamidanaWidgetKind.allCases.map(\.rawValue)),
       Set([
         "music", "volume", "cpu", "gpu", "memory", "network", "disk", "battery", "clock",
-        "bluetooth", "custom", "widget-folder", "system-action", "btop",
+        "bluetooth", "weather", "custom", "widget-folder", "system-action", "btop",
       ])
     )
   }

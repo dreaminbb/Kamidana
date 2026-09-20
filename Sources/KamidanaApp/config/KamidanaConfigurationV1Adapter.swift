@@ -393,6 +393,21 @@ public enum KamidanaConfigurationV1Adapter {
             v1Style: style, v1PopupStyle: popupStyle,
             v1Format: displayFormat,
              v1Activate: activation, v1Animation: animation,
+             theme: resolvedTheme, popupTheme: resolvedPopupTheme)
+
+        case .weather:
+          return WidgetInstance(
+            typeID: "weather",
+            config: WeatherWidgetConfig(
+              format: displayFormat,
+              polling: widget.polling,
+              icons: widget.weatherIcons,
+              colors: widget.weatherColors
+            ),
+            id: widget.id,
+            v1Style: style, v1PopupStyle: popupStyle,
+            v1Format: displayFormat,
+            v1Activate: activation, v1Animation: animation,
             theme: resolvedTheme, popupTheme: resolvedPopupTheme)
 
         case .bluetooth:

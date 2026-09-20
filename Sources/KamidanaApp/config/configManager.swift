@@ -84,6 +84,25 @@ public struct ClockWidgetConfig: Codable {
     public var textColor: String = "#cdd6f4"
 }
 
+public struct WeatherWidgetConfig: Codable, Hashable {
+    public var format: String?
+    public var polling: Double?
+    public var icons: [KamidanaWeatherIconConfig]
+    public var colors: [KamidanaWeatherColorConfig]
+
+    public init(
+        format: String? = nil,
+        polling: Double? = nil,
+        icons: [KamidanaWeatherIconConfig] = [],
+        colors: [KamidanaWeatherColorConfig] = []
+    ) {
+        self.format = format
+        self.polling = polling
+        self.icons = icons
+        self.colors = colors
+    }
+}
+
 public struct AudioWidgetConfig: Codable {
     public var speakerIcon: String = ""  // speakerWave
     public var speakerMutedIcon: String = "󰟎"  // speakerSlash? Actually speaker is 󰕮
@@ -196,7 +215,8 @@ public struct WidgetInstance: Hashable, Decodable {
     }
 
     public static func == (lhs: WidgetInstance, rhs: WidgetInstance) -> Bool {
-        lhs.id == rhs.id && lhs.typeID == rhs.typeID && lhs.config == rhs.config && lhs.v1Style == rhs.v1Style
+        lhs.id == rhs.id && lhs.typeID == rhs.typeID && lhs.config == rhs.config
+            && lhs.v1Style == rhs.v1Style
             && lhs.v1PopupStyle == rhs.v1PopupStyle
             && lhs.v1Format == rhs.v1Format
             && lhs.v1Activate == rhs.v1Activate
@@ -1246,7 +1266,8 @@ public class ConfigManager {
             widget.popupStyle ?? KamidanaStyle()
         )
         let activation = widget.activate ?? inheritedActivation ?? .hover
-        let activationSource = widget.activate == nil
+        let activationSource =
+            widget.activate == nil
             ? inheritedActivationSource
             : "widget"
 
