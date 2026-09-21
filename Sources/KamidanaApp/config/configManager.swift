@@ -90,23 +90,26 @@ public struct WeatherWidgetConfig: Codable, Hashable {
     public var icons: [KamidanaWeatherIconConfig]
     public var colors: [KamidanaWeatherColorConfig]
     public var display: WeatherDisplayConfig
+    public var lang: String
 
     public init(
         format: String? = nil,
         polling: Double? = nil,
         icons: [KamidanaWeatherIconConfig] = [],
         colors: [KamidanaWeatherColorConfig] = [],
-        display: WeatherDisplayConfig = WeatherDisplayConfig()
+        display: WeatherDisplayConfig = WeatherDisplayConfig(),
+        lang: String = "en"
     ) {
         self.format = format
         self.polling = polling
         self.icons = icons
         self.colors = colors
         self.display = display
+        self.lang = lang
     }
 
     private enum CodingKeys: String, CodingKey {
-        case format, polling, icons, colors, display
+        case format, polling, icons, colors, display, lang
     }
 
     public init(from decoder: Decoder) throws {
@@ -116,7 +119,8 @@ public struct WeatherWidgetConfig: Codable, Hashable {
             polling: try container.decodeIfPresent(Double.self, forKey: .polling),
             icons: try container.decodeIfPresent([KamidanaWeatherIconConfig].self, forKey: .icons) ?? [],
             colors: try container.decodeIfPresent([KamidanaWeatherColorConfig].self, forKey: .colors) ?? [],
-            display: try container.decodeIfPresent(WeatherDisplayConfig.self, forKey: .display) ?? WeatherDisplayConfig()
+            display: try container.decodeIfPresent(WeatherDisplayConfig.self, forKey: .display) ?? WeatherDisplayConfig(),
+            lang: try container.decodeIfPresent(String.self, forKey: .lang) ?? "en"
         )
     }
 }
@@ -1418,6 +1422,7 @@ public class ConfigManager {
                 let baseGlobal = global ?? KamidanaConfigurationV1Global()
                 let configuration = KamidanaConfigurationV1(
                     global: KamidanaConfigurationV1Global(
+                        lang: baseGlobal.lang,
                         backgroundMode: baseGlobal.backgroundMode,
                         hideInFullscreen: baseGlobal.hideInFullscreen,
                         launchAtLogin: baseGlobal.launchAtLogin,

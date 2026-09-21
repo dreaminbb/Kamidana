@@ -91,19 +91,20 @@ final class WeatherWidgetTests: XCTestCase {
     }
 
     func testURLSafelyEncodesLocationAndUsesHourlyForecasts() throws {
-        let url = try XCTUnwrap(WeatherClient.url(location: "New York?test=1&x=2"))
+        let url = try XCTUnwrap(WeatherClient.url(location: "New York?test=1&x=2", lang: "fr"))
         let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
         XCTAssertEqual(components.host, "wttr.in")
         XCTAssertEqual(components.path, "/New York?test=1&x=2")
         XCTAssertEqual(components.queryItems?.count, 2)
         XCTAssertEqual(components.queryItems?.first?.value, "j1")
+        XCTAssertEqual(components.queryItems?.last?.value, "fr")
     }
 
     @MainActor
     func testRefreshRetainsPreviousDataOnFailureAndRecovers() async throws {
         let info = try WeatherClient.decode(Data(json.utf8))
         var count = 0
-        let manager = WeatherManager { _ in
+        let manager = WeatherManager { _, _ in
             count += 1
             return count == 2 ? .failure(.networkError("Offline")) : .success(info)
         }
@@ -121,7 +122,7 @@ final class WeatherWidgetTests: XCTestCase {
     func testCancellationStopsPollingWithoutPublishingFailure() async {
         let started = expectation(description: "Request started")
         var count = 0
-        let manager = WeatherManager { _ in
+        let manager = WeatherManager { _, _ in
             count += 1
             started.fulfill()
             do { try await Task.sleep(nanoseconds: 60_000_000_000) } catch {}

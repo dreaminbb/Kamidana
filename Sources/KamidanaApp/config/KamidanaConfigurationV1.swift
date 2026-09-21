@@ -915,6 +915,7 @@ public struct KamidanaWidget: Decodable, Equatable {
 }
 
 public struct KamidanaConfigurationV1Global: Decodable, Equatable {
+    public var lang: String
     public var backgroundMode: KamidanaBackgroundMode
     public var hideInFullscreen: Bool
     public var launchAtLogin: Bool
@@ -924,6 +925,7 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
     public var barPadding: KamidanaInsets
 
     public init(
+        lang: String = "en",
         backgroundMode: KamidanaBackgroundMode = .singleBar,
         hideInFullscreen: Bool = false,
         launchAtLogin: Bool = false,
@@ -932,6 +934,7 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
         popupStyle: KamidanaStyle? = nil,
         barPadding: KamidanaInsets = KamidanaInsets()
     ) {
+        self.lang = lang
         self.backgroundMode = backgroundMode
         self.hideInFullscreen = hideInFullscreen
         self.launchAtLogin = launchAtLogin
@@ -942,6 +945,7 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
+        case lang
         case backgroundMode = "background_mode"
         case hideInFullscreen = "hide_in_fullscreen"
         case launchAtLogin = "launch_at_login"
@@ -967,6 +971,7 @@ public struct KamidanaConfigurationV1Global: Decodable, Equatable {
             try target.validate(path: "global.display_targets[\(index)]")
         }
         self.init(
+            lang: try container.decodeIfPresent(String.self, forKey: .lang) ?? "en",
             backgroundMode: try container.decodeIfPresent(
                 KamidanaBackgroundMode.self, forKey: .backgroundMode) ?? .singleBar,
             hideInFullscreen: try container.decodeIfPresent(Bool.self, forKey: .hideInFullscreen)
@@ -1129,6 +1134,10 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
     }
 
     private func validateGlobal(_ global: KamidanaConfigurationV1Global) throws {
+        guard !global.lang.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw KamidanaConfigurationV1Error.invalidDisplayTarget(
+                path: "global.lang", reason: "lang must be non-empty")
+        }
         try validateStyle(global.style, path: "global.style")
         try global.popupStyle.map { try validateStyle($0, path: "global.popup_style") }
         try validateInsets(global.barPadding, path: "global.bar_padding")

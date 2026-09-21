@@ -27,17 +27,20 @@ public enum WeatherValue: String, CaseIterable {
 
 /// Per-value presentation shared by the compact label and weather details.
 public struct WeatherDisplayConfig: Codable, Hashable {
+    public var lang: String
     public var temperatureUnit: WeatherTemperatureUnit
     public var location: String
     public var formats: [String: String]
     public var colors: [String: String]
 
     public init(
+        lang: String = "en",
         temperatureUnit: WeatherTemperatureUnit = .celsius,
         location: String = "",
         formats: [String: String] = [:],
         colors: [String: String] = [:]
     ) {
+        self.lang = lang
         self.temperatureUnit = temperatureUnit
         self.location = location
         self.formats = formats
@@ -45,6 +48,7 @@ public struct WeatherDisplayConfig: Codable, Hashable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case lang
         case temperatureUnit = "temperature_unit"
         case location, formats, colors
     }
@@ -52,6 +56,7 @@ public struct WeatherDisplayConfig: Codable, Hashable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.init(
+            lang: try container.decodeIfPresent(String.self, forKey: .lang) ?? "en",
             temperatureUnit: try container.decodeIfPresent(WeatherTemperatureUnit.self, forKey: .temperatureUnit) ?? .celsius,
             location: try container.decodeIfPresent(String.self, forKey: .location) ?? "",
             formats: try container.decodeIfPresent([String: String].self, forKey: .formats) ?? [:],
@@ -60,6 +65,9 @@ public struct WeatherDisplayConfig: Codable, Hashable {
     }
 
     func validate(path: String) throws {
+        guard !lang.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw KamidanaConfigurationV1Error.invalidWidget(path: path, reason: "lang must be non-empty")
+        }
         for key in Set(formats.keys).union(colors.keys) where WeatherValue(rawValue: key) == nil {
             throw KamidanaConfigurationV1Error.invalidWidget(path: path, reason: "Unknown weather value '\(key)'")
         }

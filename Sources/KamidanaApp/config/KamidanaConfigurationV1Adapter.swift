@@ -12,6 +12,7 @@ public enum KamidanaConfigurationV1Adapter {
 
     var external = makeLayout(
       globalStyle: globalStyle,
+      language: configuration.global.lang,
       left: configuration.left.widgets,
       leftStyle: configuration.left.style,
        leftPopupStyle: configuration.left.popupStyle,
@@ -34,6 +35,7 @@ public enum KamidanaConfigurationV1Adapter {
     config.externalDisplay = external
     var builtIn = makeLayout(
       globalStyle: globalStyle,
+      language: configuration.global.lang,
       left: configuration.left.widgets,
       leftStyle: configuration.left.style,
        leftPopupStyle: configuration.left.popupStyle,
@@ -60,6 +62,7 @@ public enum KamidanaConfigurationV1Adapter {
 
   private static func makeLayout(
     globalStyle: KamidanaStyle,
+    language: String,
     left: [KamidanaWidget],
     leftStyle: KamidanaStyle,
     leftPopupStyle: KamidanaStyle?,
@@ -88,13 +91,14 @@ public enum KamidanaConfigurationV1Adapter {
     return DisplayLayoutConfig(
       style: layoutStyle,
       left: left.compactMap {
-        makeWidget(
+          makeWidget(
           $0,
           sectionStyle: mergedStyle(globalStyle, leftStyle),
           sectionPopupStyle: mergedStyle(globalPopupStyle, leftPopupStyle ?? KamidanaStyle()),
           displayFormat: $0.format,
            activation: $0.activate ?? leftActivation,
            inheritedAnimation: leftAnimation,
+           language: language,
           musicPlacement: .standalone,
           defaultMusicExtend: .right,
           colors: colors,
@@ -102,12 +106,13 @@ public enum KamidanaConfigurationV1Adapter {
         )
       },
       center: orderedCenter.compactMap {
-        makeWidget(
+          makeWidget(
           $0,
           sectionStyle: mergedStyle(globalStyle, centerStyle),
           sectionPopupStyle: mergedStyle(globalPopupStyle, centerPopupStyle ?? KamidanaStyle()),
           displayFormat: $0.compactFormat ?? $0.normal?.format ?? $0.format,
-          activation: $0.activate ?? centerActivation,
+           activation: $0.activate ?? centerActivation,
+           language: language,
           musicPlacement: .center,
           defaultMusicExtend: .right,
           colors: colors,
@@ -115,13 +120,14 @@ public enum KamidanaConfigurationV1Adapter {
         )
       },
       right: right.compactMap {
-        makeWidget(
+          makeWidget(
           $0,
           sectionStyle: mergedStyle(globalStyle, rightStyle),
           sectionPopupStyle: mergedStyle(globalPopupStyle, rightPopupStyle ?? KamidanaStyle()),
           displayFormat: $0.format,
            activation: $0.activate ?? rightActivation,
            inheritedAnimation: rightAnimation,
+           language: language,
           musicPlacement: .standalone,
           defaultMusicExtend: .left,
           colors: colors,
@@ -138,6 +144,7 @@ public enum KamidanaConfigurationV1Adapter {
     displayFormat: String? = nil,
     activation: KamidanaActivation? = nil,
     inheritedAnimation: KamidanaMotion? = nil,
+    language: String,
     musicPlacement: MusicWidgetPlacement = .standalone,
     defaultMusicExtend: KamidanaMusicExtendDirection = .right,
     colors: GlobalColorsConfig,
@@ -195,6 +202,7 @@ public enum KamidanaConfigurationV1Adapter {
               displayFormat: $0.format,
                activation: $0.activate ?? activation,
                inheritedAnimation: animation,
+               language: language,
               musicPlacement: musicPlacement,
               defaultMusicExtend: defaultMusicExtend,
               colors: colors,
@@ -404,6 +412,7 @@ public enum KamidanaConfigurationV1Adapter {
               icons: widget.weatherIcons,
               colors: widget.weatherColors,
               display: widget.weatherDisplay ?? WeatherDisplayConfig()
+              , lang: language
             ),
             id: widget.id,
             v1Style: style, v1PopupStyle: popupStyle,
