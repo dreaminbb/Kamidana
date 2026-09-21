@@ -121,6 +121,12 @@ public class WidgetRegistry {
         tabNameMaker: { _ in "Clock" }
       ))
     register(
+      factory: GenericWidgetFactory<WeatherWidgetConfig, WeatherWidget>(
+        typeID: "weather",
+        viewMaker: { config in WeatherWidget(config: config) },
+        tabNameMaker: { _ in "Weather" }
+      ))
+    register(
       factory: GenericWidgetFactory<WidgetFolderConfig, WidgetFolder>(
         typeID: "widgetFolder",
         viewMaker: { config in WidgetFolder(config: config) },

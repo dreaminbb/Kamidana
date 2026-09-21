@@ -15,6 +15,7 @@ enum WeatherData {
 enum WeatherError: Error, LocalizedError {
     case scriptFailed(String)
     case networkError(String)
+    case decodingError(String)
 
     var errorDescription: String? {
         switch self {
@@ -22,6 +23,8 @@ enum WeatherError: Error, LocalizedError {
             return msg
 
         case .networkError(let msg):
+            return msg
+        case .decodingError(let msg):
             return msg
         }
     }
@@ -144,6 +147,7 @@ struct Weather: Codable {
     let sunHour: String
     let totalSnowCM: String
     let uvIndex: String
+    let hourly: [WeatherHour]?
 
     enum CodingKeys: String, CodingKey {
         case astronomy = "astronomy"
@@ -157,7 +161,12 @@ struct Weather: Codable {
         case sunHour = "sunHour"
         case totalSnowCM = "totalSnow_cm"
         case uvIndex = "uvIndex"
+        case hourly
     }
+}
+
+struct WeatherHour: Codable {
+    let chanceofrain: String?
 }
 
 // MARK: - Astronomy
@@ -179,58 +188,111 @@ struct Astronomy: Codable {
     }
 }
 
-class WeatherManager: ObservableObject {
-
-    let waatherProviderURLFormat: String = "format=j2"
-    // format: %l: location, %c: condition, %t: temperature, %f: feels like temperature, %h: humidity, %w: wind, %p: precipitation, %P: pressure, %m: moon phase, %M: moon age, %u: uv, %S raising sun, %S: sunset time, %s: day length
-
-    var location: String = "Tokyo"  // Default use IP-based location, but when user selects a location from search region, this will be set to that location.
-    var userSelectedLocation: String = ""  // This will be set when user selects a location from search region.
-    var lang = "en"  // use can't change this value, because all structures are defined in English, so if you change this value to "ja", the JSONDecoder will fail to decode the response.
-
-    public func resolveWeatherProviderURL() -> String {
-        if !userSelectedLocation.isEmpty {
-            location = userSelectedLocation
-        }
-        return "https://wttr.in/\(location)?\(waatherProviderURLFormat)&lang=\(lang)"
+enum WeatherClient {
+    static func url(location: String) -> URL? {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "wttr.in"
+        components.path = "/\(location)"
+        // j1 includes hourly rain probabilities; j2 omits hourly forecasts.
+        components.queryItems = [
+            URLQueryItem(name: "format", value: "j1"),
+            URLQueryItem(name: "lang", value: "en"),
+        ]
+        return components.url
     }
 
-    private func jsonDecodResponseData(_ data: Data) -> WeatherInfo? {
-        let decoder = JSONDecoder()
-        do {
-            let weatherResponse = try decoder.decode(WeatherInfo.self, from: data)
-            return weatherResponse
-        } catch {
-            print("JSONデコードエラー: \(error)")
-            return nil
+    static func decode(_ data: Data) throws -> WeatherInfo {
+        // Explicit CodingKeys must be used with the default key decoding strategy.
+        let info = try JSONDecoder().decode(WeatherInfo.self, from: data)
+        guard !info.currentCondition.isEmpty else {
+            throw WeatherError.decodingError("The weather response contains no current conditions.")
         }
+        return info
     }
 
-    public func fetchWeatherData() async -> Result<WeatherInfo, WeatherError> {
-
-        guard let url = URL(string: self.resolveWeatherProviderURL()) else {
-            return .failure(.networkError("Invalid URL"))
+    static func fetch(location: String) async -> Result<WeatherInfo, WeatherError> {
+        guard let url = url(location: location) else {
+            return .failure(.networkError("Invalid weather URL."))
         }
-
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-
-            guard let httpResponse = response as? HTTPURLResponse,
-                httpResponse.statusCode == 200
-            else {
-                print("サーバーエラー")
-                return .failure(.networkError("Server error"))
+            let (data, response) = try await URLSession.shared.data(for: URLRequest(url: url, timeoutInterval: 20))
+            guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+                return .failure(.networkError("The weather service is unavailable."))
             }
-
-            guard let decodedResponse = jsonDecodResponseData(data) else {
-                return .failure(.networkError("Invalid weather response"))
+            do {
+                return .success(try decode(data))
+            } catch {
+                return .failure(.decodingError("Invalid weather response: \(error)"))
             }
-            print("通信成功: \(decodedResponse)")
-            return .success(decodedResponse)
-
         } catch {
-            print("通信失敗: \(error.localizedDescription)")
             return .failure(.networkError(error.localizedDescription))
+        }
+    }
+}
+
+@MainActor
+final class WeatherManager: ObservableObject {
+    @Published private(set) var info: WeatherInfo?
+    @Published private(set) var isLoading = false
+    @Published private(set) var error: WeatherError?
+
+    var location = ""
+    var userSelectedLocation = ""
+    private let fetch: (String) async -> Result<WeatherInfo, WeatherError>
+    private var activeRequestID: UUID?
+
+    init(fetch: @escaping (String) async -> Result<WeatherInfo, WeatherError> = WeatherClient.fetch) {
+        self.fetch = fetch
+    }
+
+    func resolveWeatherProviderURL() -> String {
+        WeatherClient.url(location: userSelectedLocation.isEmpty ? location : userSelectedLocation)?.absoluteString ?? ""
+    }
+
+    func fetchWeatherData() async -> Result<WeatherInfo, WeatherError> {
+        await fetch(userSelectedLocation.isEmpty ? location : userSelectedLocation)
+    }
+
+    func refresh() async {
+        let requestID = UUID()
+        activeRequestID = requestID
+        isLoading = true
+        defer {
+            if activeRequestID == requestID { isLoading = false }
+        }
+        let response = await fetchWeatherData()
+        guard !Task.isCancelled, activeRequestID == requestID else { return }
+        switch response {
+        case .success(let info):
+            guard !info.currentCondition.isEmpty else {
+                error = .decodingError("The weather response contains no current conditions.")
+                return
+            }
+            self.info = info
+            error = nil
+        case .failure(let error):
+            // Keep the last successful snapshot visible when a refresh fails.
+            self.error = error
+        }
+    }
+
+    /// Owned by SwiftUI's task lifecycle; disappears and config reloads cancel polling.
+    func monitor(config: WeatherWidgetConfig) async {
+        if location != config.display.location {
+            info = nil
+            error = nil
+        }
+        location = config.display.location
+        let interval = config.polling ?? 60
+        let seconds = interval.isFinite && interval > 0 ? min(interval, 86_400 * 365) : 60
+        while !Task.isCancelled {
+            await refresh()
+            do {
+                try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            } catch {
+                return
+            }
         }
     }
 }

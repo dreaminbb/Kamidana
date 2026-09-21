@@ -89,17 +89,35 @@ public struct WeatherWidgetConfig: Codable, Hashable {
     public var polling: Double?
     public var icons: [KamidanaWeatherIconConfig]
     public var colors: [KamidanaWeatherColorConfig]
+    public var display: WeatherDisplayConfig
 
     public init(
         format: String? = nil,
         polling: Double? = nil,
         icons: [KamidanaWeatherIconConfig] = [],
-        colors: [KamidanaWeatherColorConfig] = []
+        colors: [KamidanaWeatherColorConfig] = [],
+        display: WeatherDisplayConfig = WeatherDisplayConfig()
     ) {
         self.format = format
         self.polling = polling
         self.icons = icons
         self.colors = colors
+        self.display = display
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case format, polling, icons, colors, display
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            format: try container.decodeIfPresent(String.self, forKey: .format),
+            polling: try container.decodeIfPresent(Double.self, forKey: .polling),
+            icons: try container.decodeIfPresent([KamidanaWeatherIconConfig].self, forKey: .icons) ?? [],
+            colors: try container.decodeIfPresent([KamidanaWeatherColorConfig].self, forKey: .colors) ?? [],
+            display: try container.decodeIfPresent(WeatherDisplayConfig.self, forKey: .display) ?? WeatherDisplayConfig()
+        )
     }
 }
 
@@ -1265,7 +1283,7 @@ public class ConfigManager {
             inheritedPopupStyle,
             widget.popupStyle ?? KamidanaStyle()
         )
-        let activation = widget.activate ?? inheritedActivation ?? .hover
+        let activation = widget.activate ?? inheritedActivation ?? (widget.kind == .weather ? .click : .hover)
         let activationSource =
             widget.activate == nil
             ? inheritedActivationSource

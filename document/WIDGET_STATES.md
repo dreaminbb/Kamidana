@@ -22,6 +22,7 @@ This document tracks the application-defined UI states required by the customiza
 | Battery | charging, discharging, details | battery unavailable, missing power data, missing thermal data |
 | Clock | date and time | invalid format fallback, wake refresh failure |
 | Custom | idle, running, command failure | empty output, explicit completion state |
+| Weather | loading, current readings, unknown condition, unavailable data, stale snapshot after refresh failure, click-open details; visual acceptance pending | real-display acceptance |
 
 ## Center Widgets
 

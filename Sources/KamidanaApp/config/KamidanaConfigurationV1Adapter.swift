@@ -402,12 +402,13 @@ public enum KamidanaConfigurationV1Adapter {
               format: displayFormat,
               polling: widget.polling,
               icons: widget.weatherIcons,
-              colors: widget.weatherColors
+              colors: widget.weatherColors,
+              display: widget.weatherDisplay ?? WeatherDisplayConfig()
             ),
             id: widget.id,
             v1Style: style, v1PopupStyle: popupStyle,
             v1Format: displayFormat,
-            v1Activate: activation, v1Animation: animation,
+            v1Activate: activation ?? .click, v1Animation: animation,
             theme: resolvedTheme, popupTheme: resolvedPopupTheme)
 
         case .bluetooth:

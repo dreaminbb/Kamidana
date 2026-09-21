@@ -157,6 +157,34 @@ external:
     style:
       spacing: 25
     widgets:
+      - id: weather
+        type: weather
+        activate: click
+        polling: 60
+        format: "{weather} {temperature}"
+        weather_display:
+          temperature_unit: C
+          location: ""
+          formats:
+            temperature: "{value} {unit}"
+            feels_like: "{value} {unit}"
+            humidity: "{value}%"
+            wind_speed: "{value} km/h"
+            pressure: "{value} hPa"
+          colors:
+            temperature: "#fab387"
+            humidity: "#89b4fa"
+        icon:
+          - sun: ""
+          - cloud: ""
+          - rain: ""
+          - thunder_rain: ""
+          - snow: "󰜗"
+        color:
+          - sun: "#fab387"
+          - cloud: "#bac2de"
+          - rain: "#89b4fa"
+          - snow: "#b4befe"
       - id: cpu
         type: cpu
         animation: dynamic

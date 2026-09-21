@@ -208,6 +208,90 @@ NerdFont icons are no longer configured via `nerdfont.toml`. Instead, they are d
 
 You can override any of these icons in your `config.yaml` by specifying the character string directly in the respective widget's configuration.
 
+### Weather Widget
+
+The weather widget uses wttr.in and opens its details on click by default. The
+header shows the condition icon above the city, with temperature and feels-like
+temperature to the right. Humidity, wind speed, pressure, and the description
+appear below. `activate`, `animation`, `style`, and `popup_style` use the shared
+widget configuration path. A below-opening folder cannot contain weather.
+
+```yaml
+- id: weather
+  type: weather
+  activate: click
+  polling: 60
+  format: "{weather} {temperature} {humidity}"
+  weather_display:
+    temperature_unit: C
+    location: "Tokyo"
+    formats:
+      temperature: "{value} {unit}"
+      feels_like: "{value} {unit}"
+      humidity: "{value}%"
+      wind_speed: "{value} km/h"
+      pressure: "{value} hPa"
+      description: "{value}"
+    colors:
+      temperature: "#fab387"
+      feels_like: "#bac2de"
+      humidity: "#89b4fa"
+  icon:
+    - sun: ""
+    - cloud: ""
+    - rain: ""
+    - thunder_rain: ""
+    - snow: "󰜗"
+  color:
+    - sun: "#fab387"
+    - cloud: "#bac2de"
+    - rain: "#89b4fa"
+    - snow: "#b4befe"
+```
+
+`polling` is a positive, finite number of seconds and defaults to 60. The widget
+fetches immediately and cancels polling when removed or reconfigured. An empty
+or omitted `weather_display.location` uses the provider's IP-based location.
+`temperature_unit` accepts `C` (default, Celsius) or `K` (Kelvin); both temperature
+and feels-like values are converted. Celsius uses one decimal place and Kelvin
+uses two. Changing a unit label in a format does not convert measurements.
+
+| Placeholder / value key | Meaning | Default value format |
+|---|---|---|
+| `temperature` | Air temperature | `{value} {unit}` |
+| `weather` | Nerd Font icon selected from the weather code | `{value}` |
+| `humidity` | Relative humidity | `{value}%` |
+| `feels_like` | Apparent temperature | `{value} {unit}` |
+| `wind_speed` | Wind speed in km/h | `{value} km/h` |
+| `pressure` | Pressure in hPa | `{value} hPa` |
+| `description` | Provider's English condition description | `{value}` |
+| `city` | Nearest area's city name | `{value}` |
+| `chance_of_rain` | Maximum hourly rain probability in the first forecast day | `{value}%` |
+
+Wrap a value key in braces in `format` (or `compact_format` for center). All values
+update even while the panel is closed. `weather_display.formats` customizes each
+value using `{value}` and `{unit}`. These value formats and colors are shared by
+the compact label and the corresponding details fields. `weather_display.colors`
+accepts `#RRGGBB` or `#AARRGGBB` for the value keys above. Omitted colors use the
+resolved normal/popup theme.
+
+The existing `icon` and `color` lists select appearance by condition. The last
+entry defining that condition wins. Thunder uses the rain color; an explicit
+`weather_display.colors.weather` overrides the condition color. Unknown codes
+use a question-mark Nerd Font icon instead of guessing a condition. Missing
+measurements display `--`. While updating, the panel shows a loading indicator;
+on refresh failure, previous data stays visible with a stale-data message.
+
+The client uses `format=j1` for rain probabilities; responses without hourly
+forecasts remain decodable and show `--` for rain probability. Explicit JSON
+`CodingKeys` handle the provider's mixed-case and snake_case keys with the default
+decoder strategy. Automated weather tests use offline fixtures. To run the live
+provider check, use:
+
+```sh
+KAMIDANA_RUN_WEATHER_INTEGRATION_TESTS=1 swift test --filter WeatherTest/testfetchWeatherData
+```
+
 ### Terminal Widget
 
 The `btop` widget accepts `width` and `height` in points. Both values must be

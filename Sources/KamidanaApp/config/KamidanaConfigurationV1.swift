@@ -706,6 +706,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     public var polling: Double?
     public var weatherIcons: [KamidanaWeatherIconConfig]
     public var weatherColors: [KamidanaWeatherColorConfig]
+    public var weatherDisplay: WeatherDisplayConfig?
     public var foldedIcon: String?
     public var direction: KamidanaWidgetFolderDirection?
     public var style: KamidanaStyle?
@@ -743,6 +744,7 @@ public struct KamidanaWidget: Decodable, Equatable {
         polling: Double? = nil,
         weatherIcons: [KamidanaWeatherIconConfig] = [],
         weatherColors: [KamidanaWeatherColorConfig] = [],
+        weatherDisplay: WeatherDisplayConfig? = nil,
         foldedIcon: String? = nil,
         direction: KamidanaWidgetFolderDirection? = nil,
         style: KamidanaStyle? = nil,
@@ -779,6 +781,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     self.polling = polling
     self.weatherIcons = weatherIcons
     self.weatherColors = weatherColors
+    self.weatherDisplay = weatherDisplay
     self.foldedIcon = foldedIcon
         self.direction = direction
         self.style = style
@@ -848,6 +851,7 @@ public struct KamidanaWidget: Decodable, Equatable {
             polling: try container.decodeIfPresent(Double.self, forKey: .polling),
             weatherIcons: weatherIcons,
             weatherColors: weatherColors,
+            weatherDisplay: try container.decodeIfPresent(WeatherDisplayConfig.self, forKey: .weatherDisplay),
             foldedIcon: try container.decodeIfPresent(String.self, forKey: .foldedIcon),
             direction: kind == .widgetFolder ? direction ?? .below : direction,
             style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style),
@@ -892,6 +896,7 @@ public struct KamidanaWidget: Decodable, Equatable {
         case style
         case popupStyle = "popup_style"
         case activate, animation, interval, polling, tooltip
+        case weatherDisplay = "weather_display"
         case tooltipFormat = "tooltip_format"
         case widgets, children, color
         case partStyles = "part_styles"
@@ -1328,13 +1333,15 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
         }
 
         if widget.kind != .weather
-            && (widget.polling != nil || !widget.weatherIcons.isEmpty || !widget.weatherColors.isEmpty)
+            && (widget.polling != nil || !widget.weatherIcons.isEmpty || !widget.weatherColors.isEmpty || widget.weatherDisplay != nil)
         {
             throw KamidanaConfigurationV1Error.invalidWidget(
                 path: path,
-                reason: "polling, icon weather map, and color weather map are valid only for weather"
+                reason: "polling, weather icon/color maps, and weather_display are valid only for weather"
             )
         }
+
+        try widget.weatherDisplay?.validate(path: "\(path).weather_display")
 
         let hasMusicConfiguration =
             widget.formatOnAction != nil
@@ -1396,7 +1403,7 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
     }
 
     private func isExpandingWidget(_ widget: KamidanaWidget) -> Bool {
-        if [.music, .volume, .network, .bluetooth, .widgetFolder, .systemAction].contains(
+        if [.music, .volume, .network, .bluetooth, .weather, .widgetFolder, .systemAction].contains(
             widget.kind)
         {
             return true
