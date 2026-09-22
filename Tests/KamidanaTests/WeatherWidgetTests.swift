@@ -24,7 +24,7 @@ final class WeatherWidgetTests: XCTestCase {
         "avgtempC": "0", "avgtempF": "32", "date": "2026-09-21",
         "maxtempC": "5", "maxtempF": "41", "mintempC": "-2", "mintempF": "28",
         "sunHour": "8", "totalSnow_cm": "0", "uvIndex": "2",
-        "hourly": [{"chanceofrain": "10"}, {"chanceofrain": "70"}]
+         "hourly": [{"chanceofrain": "10", "weatherCode": "113", "weatherDesc": [{"value": "Sunny"}]}, {"chanceofrain": "70"}]
       }]
     }
     """#
@@ -52,7 +52,16 @@ final class WeatherWidgetTests: XCTestCase {
         XCTAssertEqual(celsius.value(.windSpeed), "12 km/h")
         XCTAssertEqual(celsius.value(.pressure), "1013 hPa")
         XCTAssertEqual(celsius.value(.description), "Sunny")
+        let searchedLocation = WeatherPresentation(
+            info: info,
+            config: WeatherWidgetConfig(),
+            locationOverride: "Paris"
+        )
+        XCTAssertEqual(searchedLocation.value(.city), "Paris")
         XCTAssertEqual(celsius.value(.chanceOfRain), "70%")
+        XCTAssertEqual(celsius.forecast.count, 1)
+        XCTAssertEqual(celsius.forecast.first?.precipitationChance, "70")
+        XCTAssertEqual(celsius.forecast.first?.description, "Sunny")
         let kelvin = WeatherPresentation(info: info, config: WeatherWidgetConfig(
             display: WeatherDisplayConfig(temperatureUnit: .kelvin)))
         XCTAssertEqual(kelvin.value(.temperature), "271.15 K")
@@ -98,6 +107,18 @@ final class WeatherWidgetTests: XCTestCase {
         XCTAssertEqual(components.queryItems?.count, 2)
         XCTAssertEqual(components.queryItems?.first?.value, "j1")
         XCTAssertEqual(components.queryItems?.last?.value, "fr")
+    }
+
+    func testDecodesLocationCandidatesWithDisplayDetails() throws {
+        let data = Data(
+            #"{"results":[{"name":"Paris","country":"France","admin1":"Ile-de-France"},{"name":"Paris","country":"United States"}]}"#.utf8
+        )
+
+        let response = try JSONDecoder().decode(LocationResponse.self, from: data)
+
+        XCTAssertEqual(response.results.count, 2)
+        XCTAssertEqual(response.results[0].locationDetail, "Ile-de-France, France")
+        XCTAssertEqual(response.results[1].locationDetail, "United States")
     }
 
     @MainActor

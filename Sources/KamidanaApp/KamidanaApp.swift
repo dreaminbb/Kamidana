@@ -2,6 +2,12 @@ import AppKit
 import CoreWLAN
 import SwiftUI
 
+#if KAMIDANA_PRODUCTION
+private let isProductionBuild = true
+#else
+private let isProductionBuild = false
+#endif
+
 public class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowControllers: [CGDirectDisplayID: StatusBarWindowController] = [:]
     private let launchAtLoginManager = LaunchAtLoginManager()
@@ -19,9 +25,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         WidgetRegistry.shared.registerAllWidgets()
         let isBuiltInDisplay = DisplayDetector.isBuiltInMainDisplay()
         ConfigManager.shared.activateConfiguration(isBuiltIn: isBuiltInDisplay)
-        launchAtLoginManager.synchronize(
-            isEnabled: ConfigManager.shared.globalV1Config.launchAtLogin
-        )
+        if isProductionBuild {
+            launchAtLoginManager.synchronize(
+                isEnabled: ConfigManager.shared.globalV1Config.launchAtLogin
+            )
+        }
         ConfigManager.shared.startWatchingConfig()
 
         updateWindows()
@@ -56,9 +64,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func handleConfigChange() {
-        launchAtLoginManager.synchronize(
-            isEnabled: ConfigManager.shared.globalV1Config.launchAtLogin
-        )
+        if isProductionBuild {
+            launchAtLoginManager.synchronize(
+                isEnabled: ConfigManager.shared.globalV1Config.launchAtLogin
+            )
+        }
         updateWindows()
     }
 

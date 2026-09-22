@@ -54,8 +54,18 @@ struct WeatherPresentation {
     let config: WeatherWidgetConfig
     let condition: WeatherCondition
     let rawValues: [String: String]
+    let forecast: [ForecastDay]
 
-    init(info: WeatherInfo?, config: WeatherWidgetConfig) {
+    struct ForecastDay {
+        let date: String
+        let minimumTemperature: String
+        let maximumTemperature: String
+        let precipitationChance: String
+        let description: String
+        let icon: String
+    }
+
+    init(info: WeatherInfo?, config: WeatherWidgetConfig, locationOverride: String? = nil) {
         self.config = config
         let current = info?.currentCondition.first
         let condition = WeatherCondition(code: current?.weatherCode)
@@ -75,6 +85,27 @@ struct WeatherPresentation {
                   (0...100).contains(value) else { return nil }
             return value
         }.max()
+        let selectedLocation = locationOverride?.trimmingCharacters(in: .whitespacesAndNewlines)
+        forecast = (info?.weather ?? []).prefix(3).map { day in
+            let representativeHour = day.hourly?.first
+            let forecastCondition = WeatherCondition(code: representativeHour?.weatherCode)
+            let forecastIcon = config.icons.reversed().compactMap {
+                forecastCondition.icon(in: $0)
+            }.first ?? forecastCondition.defaultIcon
+            let rain = day.hourly?.compactMap { hour -> Double? in
+                guard let value = hour.chanceofrain.flatMap(Double.init), value.isFinite,
+                      (0...100).contains(value) else { return nil }
+                return value
+            }.max()
+            return ForecastDay(
+                date: day.date,
+                minimumTemperature: temperature(day.mintempC),
+                maximumTemperature: temperature(day.maxtempC),
+                precipitationChance: rain.map { String(format: "%.0f", $0) } ?? "--",
+                description: representativeHour?.weatherDesc?.first?.value ?? "Unavailable",
+                icon: forecastIcon
+            )
+        }
         rawValues = [
             "temperature": temperature(current?.tempC),
             "weather": config.icons.reversed().compactMap { condition.icon(in: $0) }.first ?? condition.defaultIcon,
@@ -83,7 +114,8 @@ struct WeatherPresentation {
             "wind_speed": number(current?.windspeedKmph),
             "pressure": number(current?.pressure),
             "description": current?.weatherDesc.first?.value ?? "Unavailable",
-            "city": info?.nearestArea.first?.areaName.first?.value
+            "city": selectedLocation.flatMap { $0.isEmpty ? nil : $0 }
+                ?? info?.nearestArea.first?.areaName.first?.value
                 ?? (config.display.location.isEmpty ? "Current location" : config.display.location),
             "chance_of_rain": rain.map { String(format: "%.0f", $0) } ?? "--",
         ]

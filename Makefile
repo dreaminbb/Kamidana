@@ -26,7 +26,7 @@ build:
 
 # Build and package the macOS .app bundle for production release
 app:
-	swift build -c release
+	swift build -c release -Xswiftc -DKAMIDANA_PRODUCTION
 	mkdir -p $(MACOS_DIR)
 	cp .build/release/$(BUILD_PRODUCT) $(MACOS_DIR)/$(APP_NAME)
 	cp $(RESOURCES_DIR)/Info.plist $(CONTENTS_DIR)/Info.plist

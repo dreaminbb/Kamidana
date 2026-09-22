@@ -167,6 +167,16 @@ struct Weather: Codable {
 
 struct WeatherHour: Codable {
     let chanceofrain: String?
+    let tempC: String?
+    let weatherCode: String?
+    let weatherDesc: [WeatherDesc]?
+
+    enum CodingKeys: String, CodingKey {
+        case chanceofrain
+        case tempC = "tempC"
+        case weatherCode
+        case weatherDesc
+    }
 }
 
 // MARK: - Astronomy
@@ -202,7 +212,6 @@ enum WeatherClient {
         return components.url
     }
 
-
     static func decode(_ data: Data) throws -> WeatherInfo {
         // Explicit CodingKeys must be used with the default key decoding strategy.
         let info = try JSONDecoder().decode(WeatherInfo.self, from: data)
@@ -217,6 +226,7 @@ enum WeatherClient {
             return .failure(.networkError("Invalid weather URL."))
         }
         do {
+            print("[DEBUG] Weather Widget, weather API URL: \(url.absoluteString)")
             let (data, response) = try await URLSession.shared.data(
                 for: URLRequest(url: url, timeoutInterval: 20))
             guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
@@ -239,18 +249,34 @@ struct LocationResponse: Codable {
 
 struct LocationResult: Codable {
     let name: String
+    let country: String?
+    let admin1: String?
+
+    var locationDetail: String? {
+        let components = [admin1, country].compactMap { $0 }.filter { !$0.isEmpty }
+        return components.isEmpty ? nil : components.joined(separator: ", ")
+    }
 }
 
 enum LocationService {
-    static func fetchLocation(name: String, lang: String) async throws -> String {
+    static func fetchLocations(name: String, lang: String) async throws -> [LocationResult] {
         guard
-            let url = URL(
-                string:
-                    "https://geocoding-api.open-meteo.com/v1/search?name=\(name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? name)&count=5&language=\(lang)&format=json"
-            )
+            var components = URLComponents(string: "https://geocoding-api.open-meteo.com/v1/search")
         else {
             throw WeatherError.networkError("Invalid location URL.")
         }
+        components.queryItems = [
+            URLQueryItem(name: "name", value: name),
+            URLQueryItem(name: "count", value: "5"),
+            URLQueryItem(name: "language", value: lang),
+            URLQueryItem(name: "format", value: "json"),
+        ]
+        guard let url = components.url else {
+            throw WeatherError.networkError("Invalid location URL.")
+        }
+
+        print("[DEBUG] Weather Widget, geolocation API search URL: \(url.absoluteString)")
+
         do {
             let (data, response) = try await URLSession.shared.data(
                 for: URLRequest(url: url, timeoutInterval: 20))
@@ -259,16 +285,25 @@ enum LocationService {
             }
             do {
                 let locationResponse = try JSONDecoder().decode(LocationResponse.self, from: data)
-                guard let firstLocation = locationResponse.results.first else {
-                    throw WeatherError.decodingError("No locations found in the response.")
-                }
-                return firstLocation.name
+                return Array(locationResponse.results.prefix(5))
             } catch {
                 throw WeatherError.decodingError("Invalid location response: \(error)")
             }
+        } catch let error as WeatherError {
+            throw error
         } catch {
+            if Task.isCancelled {
+                throw CancellationError()
+            }
             throw WeatherError.networkError(error.localizedDescription)
         }
+    }
+
+    static func fetchLocation(name: String, lang: String) async throws -> String {
+        guard let firstLocation = try await fetchLocations(name: name, lang: lang).first else {
+            throw WeatherError.decodingError("No locations found in the response.")
+        }
+        return firstLocation.name
     }
 }
 
@@ -280,17 +315,20 @@ final class WeatherManager: ObservableObject {
 
     var location = ""
     var lang = "en"
-    var userSelectedLocation = ""
+    @Published var userSelectedLocation = ""
     private let fetch: (String, String) async -> Result<WeatherInfo, WeatherError>
     private var activeRequestID: UUID?
 
-    init(fetch: @escaping (String, String) async -> Result<WeatherInfo, WeatherError> = WeatherClient.fetch)
-    {
+    init(
+        fetch: @escaping (String, String) async -> Result<WeatherInfo, WeatherError> = WeatherClient
+            .fetch
+    ) {
         self.fetch = fetch
     }
 
     func resolveWeatherProviderURL() -> String {
-        WeatherClient.url(location: userSelectedLocation.isEmpty ? location : userSelectedLocation, lang: lang)?
+        WeatherClient.url(
+            location: userSelectedLocation.isEmpty ? location : userSelectedLocation, lang: lang)?
             .absoluteString ?? ""
     }
 
