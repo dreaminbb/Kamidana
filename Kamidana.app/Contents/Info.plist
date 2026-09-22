@@ -14,6 +14,10 @@
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Kamidana uses AppleScript to retrieve and control music player playback information.</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>Kamidana analyzes system audio to display an audio visualizer.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Kamidana analyzes microphone audio when the audio visualizer uses microphone capture.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Kamidana uses your location to scan and display nearby Wi-Fi networks.</string>
 	<key>NSLocationUsageDescription</key>

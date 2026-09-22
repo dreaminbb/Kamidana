@@ -154,6 +154,150 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(widget.weatherColors.last?.snow, "#b4befe")
   }
 
+  func testDecodesAudioVisualizerConfiguration() throws {
+    let yaml = """
+      left:
+        widgets:
+          - id: visualizer
+            type: audio-visualizer
+            format: "~ {display} ~"
+            gradient_separation: 1
+            capture_scope: system
+            channel_mode: stereo
+            smoothness: 0.5
+            style:
+              outline_color: ""
+              gradient_color_1: "#f38ba8"
+              gradient_color_2: "#a6e3a1"
+              gradient_color_3: "#94e2d5"
+              gradient_color_4: "#89dceb"
+              gradient_color_5: "#89b4fa"
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    let widget = try XCTUnwrap(
+      KamidanaConfigurationV1Decoder.decode(yaml: yaml).left.widgets.first
+    )
+
+    XCTAssertEqual(KamidanaWidgetKind.audioVisualizer.rawValue, "audio-visualizer")
+    XCTAssertEqual(widget.kind, .audioVisualizer)
+    XCTAssertEqual(widget.format, "~ {display} ~")
+    XCTAssertEqual(widget.gradientSeparation, 1)
+    XCTAssertEqual(widget.captureScope, .system)
+    XCTAssertEqual(widget.channelMode, .stereo)
+    XCTAssertEqual(widget.smoothness, 0.5)
+    XCTAssertEqual(widget.style?.outlineColor, "")
+    XCTAssertEqual(widget.style?.gradientColor1, "#f38ba8")
+    XCTAssertEqual(widget.style?.gradientColor2, "#a6e3a1")
+    XCTAssertEqual(widget.style?.gradientColor3, "#94e2d5")
+    XCTAssertEqual(widget.style?.gradientColor4, "#89dceb")
+    XCTAssertEqual(widget.style?.gradientColor5, "#89b4fa")
+  }
+
+  func testRejectsAudioVisualizerFormatWithoutExactlyOneDisplayPlaceholder() {
+    for format in ["No visualizer", "{display} {display}"] {
+      let yaml = """
+        left:
+          widgets:
+            - id: visualizer
+              type: audio-visualizer
+              format: "\(format)"
+        center:
+          center_default: clock
+          widgets:
+            - id: clock
+              type: clock
+              compact_format: "{time}"
+        """
+
+      assertError(
+        yaml,
+        matches: {
+          if case .invalidWidget(_, let reason) = $0 {
+            return reason.contains("exactly one {display}")
+          }
+          return false
+        }
+      )
+    }
+  }
+
+  func testRejectsAudioVisualizerSmoothnessOutsideUnitInterval() {
+    for smoothness in [-0.01, 1.01] {
+      let yaml = """
+        left:
+          widgets:
+            - id: visualizer
+              type: audio-visualizer
+              smoothness: \(smoothness)
+        center:
+          center_default: clock
+          widgets:
+            - id: clock
+              type: clock
+              compact_format: "{time}"
+        """
+
+      assertError(
+        yaml,
+        matches: {
+          if case .invalidWidget(_, let reason) = $0 {
+            return reason.contains("smoothness")
+          }
+          return false
+        }
+      )
+    }
+  }
+
+  func testRejectsAudioVisualizerGradientSeparationAboveTwoOutsideCenter() {
+    for section in ["left", "right"] {
+      let yaml = """
+        \(section):
+          widgets:
+            - id: visualizer
+              type: audio-visualizer
+              gradient_separation: 3
+        center:
+          center_default: clock
+          widgets:
+            - id: clock
+              type: clock
+              compact_format: "{time}"
+        """
+
+      assertError(
+        yaml,
+        matches: {
+          if case .invalidWidget(_, let reason) = $0 {
+            return reason.contains("gradient_separation")
+          }
+          return false
+        }
+      )
+    }
+  }
+
+  func testAcceptsAudioVisualizerGradientSeparationUpToFiveInCenter() throws {
+    let yaml = """
+      center:
+        center_default: visualizer
+        widgets:
+          - id: visualizer
+            type: audio-visualizer
+            compact_format: "{display}"
+            gradient_separation: 5
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    XCTAssertEqual(configuration.center.widgets.first?.gradientSeparation, 5)
+  }
+
   func testRejectsInvalidPopupStyleNumericValue() {
     let yaml = validYAML.replacingOccurrences(
       of: "      popup_style:\n        corner_radius: 18\n",
@@ -595,6 +739,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
       Set([
         "music", "volume", "cpu", "gpu", "memory", "network", "disk", "battery", "clock",
         "bluetooth", "weather", "custom", "widget-folder", "system-action", "btop",
+        "audio-visualizer",
       ])
     )
   }

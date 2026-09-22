@@ -59,6 +59,12 @@ public class WidgetRegistry {
         tabNameMaker: { _ in "Audio" }
       ))
     register(
+      factory: GenericWidgetFactory<AudioVisualizerWidgetConfig, AudioVisualizerWidget>(
+        typeID: "audioVisualizer",
+        viewMaker: { config in AudioVisualizerWidget(config: config) },
+        tabNameMaker: { _ in "Audio Visualizer" }
+      ))
+    register(
       factory: GenericWidgetFactory<MusicWidgetConfig, MusicWidget>(
         typeID: "music",
         viewMaker: { config in MusicWidget(config: config) },

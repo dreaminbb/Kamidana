@@ -303,6 +303,36 @@ public enum KamidanaConfigurationV1Adapter {
              v1Activate: activation, v1Animation: animation,
             theme: resolvedTheme, popupTheme: resolvedPopupTheme)
 
+        case .audioVisualizer:
+          let format = displayFormat ?? "{display}"
+          let gradientColors = [
+            style.gradientColor1,
+            style.gradientColor2,
+            style.gradientColor3,
+            style.gradientColor4,
+            style.gradientColor5,
+          ].compactMap { $0 }
+          return WidgetInstance(
+            typeID: "audioVisualizer",
+            config: AudioVisualizerWidgetConfig(
+              format: format,
+              gradientSeparation: widget.gradientSeparation ?? 1,
+              captureScope: widget.captureScope ?? .system,
+              channelMode: widget.channelMode ?? .stereo,
+              smoothness: widget.smoothness ?? 0.5,
+              outlineColor: style.outlineColor,
+              gradientColors: gradientColors
+            ),
+            id: widget.id,
+            v1Style: style,
+            v1PopupStyle: popupStyle,
+            v1Format: format,
+            v1Activate: activation,
+            v1Animation: animation,
+            theme: resolvedTheme,
+            popupTheme: resolvedPopupTheme
+          )
+
         case .cpu:
           var value = CpuWidgetConfig()
           if let color = style.color { value.dangerColor = color }
@@ -453,6 +483,12 @@ public enum KamidanaConfigurationV1Adapter {
       dischargingColor: child.dischargingColor ?? parent.dischargingColor,
       warningColor: child.warningColor ?? parent.warningColor,
       dangerColor: child.dangerColor ?? parent.dangerColor,
+      outlineColor: child.outlineColor ?? parent.outlineColor,
+      gradientColor1: child.gradientColor1 ?? parent.gradientColor1,
+      gradientColor2: child.gradientColor2 ?? parent.gradientColor2,
+      gradientColor3: child.gradientColor3 ?? parent.gradientColor3,
+      gradientColor4: child.gradientColor4 ?? parent.gradientColor4,
+      gradientColor5: child.gradientColor5 ?? parent.gradientColor5,
       opacity: child.opacity ?? parent.opacity,
       padding: child.padding ?? parent.padding,
       spacing: child.spacing ?? parent.spacing,

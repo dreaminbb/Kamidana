@@ -347,6 +347,12 @@ public struct KamidanaStyle: Codable, Hashable {
     public var dischargingColor: String?
     public var warningColor: String?
     public var dangerColor: String?
+    public var outlineColor: String?
+    public var gradientColor1: String?
+    public var gradientColor2: String?
+    public var gradientColor3: String?
+    public var gradientColor4: String?
+    public var gradientColor5: String?
     public var opacity: Double?
     public var padding: KamidanaInsets?
     public var spacing: Double?
@@ -365,6 +371,12 @@ public struct KamidanaStyle: Codable, Hashable {
         dischargingColor: String? = nil,
         warningColor: String? = nil,
         dangerColor: String? = nil,
+        outlineColor: String? = nil,
+        gradientColor1: String? = nil,
+        gradientColor2: String? = nil,
+        gradientColor3: String? = nil,
+        gradientColor4: String? = nil,
+        gradientColor5: String? = nil,
         opacity: Double? = nil,
         padding: KamidanaInsets? = nil,
         spacing: Double? = nil,
@@ -382,6 +394,12 @@ public struct KamidanaStyle: Codable, Hashable {
         self.dischargingColor = dischargingColor
         self.warningColor = warningColor
         self.dangerColor = dangerColor
+        self.outlineColor = outlineColor
+        self.gradientColor1 = gradientColor1
+        self.gradientColor2 = gradientColor2
+        self.gradientColor3 = gradientColor3
+        self.gradientColor4 = gradientColor4
+        self.gradientColor5 = gradientColor5
         self.opacity = opacity
         self.padding = padding
         self.spacing = spacing
@@ -400,6 +418,12 @@ public struct KamidanaStyle: Codable, Hashable {
         case dischargingColor = "discharging_color"
         case warningColor = "warning_color"
         case dangerColor = "danger_color"
+        case outlineColor = "outline_color"
+        case gradientColor1 = "gradient_color_1"
+        case gradientColor2 = "gradient_color_2"
+        case gradientColor3 = "gradient_color_3"
+        case gradientColor4 = "gradient_color_4"
+        case gradientColor5 = "gradient_color_5"
         case opacity
         case padding, spacing
         case cornerRadius = "corner_radius"
@@ -417,6 +441,12 @@ public struct KamidanaStyle: Codable, Hashable {
             dischargingColor: try container.decodeIfPresent(String.self, forKey: .dischargingColor),
             warningColor: try container.decodeIfPresent(String.self, forKey: .warningColor),
             dangerColor: try container.decodeIfPresent(String.self, forKey: .dangerColor),
+            outlineColor: try container.decodeIfPresent(String.self, forKey: .outlineColor),
+            gradientColor1: try container.decodeIfPresent(String.self, forKey: .gradientColor1),
+            gradientColor2: try container.decodeIfPresent(String.self, forKey: .gradientColor2),
+            gradientColor3: try container.decodeIfPresent(String.self, forKey: .gradientColor3),
+            gradientColor4: try container.decodeIfPresent(String.self, forKey: .gradientColor4),
+            gradientColor5: try container.decodeIfPresent(String.self, forKey: .gradientColor5),
             opacity: try container.decodeIfPresent(Double.self, forKey: .opacity),
             padding: try container.decodeIfPresent(KamidanaInsets.self, forKey: .padding),
             spacing: try container.decodeIfPresent(Double.self, forKey: .spacing),
@@ -431,9 +461,20 @@ public struct KamidanaStyle: Codable, Hashable {
     }
 }
 
+public enum KamidanaAudioVisualizerCaptureScope: String, Codable, Equatable, Hashable {
+    case system
+    case microphone
+}
+
+public enum KamidanaAudioVisualizerChannelMode: String, Codable, Equatable, Hashable {
+    case stereo
+    case mono
+}
+
 public enum KamidanaWidgetKind: String, Codable, Equatable, CaseIterable {
     case music
     case volume
+    case audioVisualizer = "audio-visualizer"
     case cpu
     case gpu
     case memory
@@ -726,6 +767,10 @@ public struct KamidanaWidget: Decodable, Equatable {
     public var height: Double?
     public var inputManagement: Bool?
     public var outputManagement: Bool?
+    public var gradientSeparation: Int?
+    public var captureScope: KamidanaAudioVisualizerCaptureScope?
+    public var channelMode: KamidanaAudioVisualizerChannelMode?
+    public var smoothness: Double?
     public var formatOnAction: String?
     public var sliderChange: String?
     public var sliderPause: String?
@@ -764,6 +809,10 @@ public struct KamidanaWidget: Decodable, Equatable {
         height: Double? = nil,
         inputManagement: Bool? = nil,
         outputManagement: Bool? = nil,
+        gradientSeparation: Int? = nil,
+        captureScope: KamidanaAudioVisualizerCaptureScope? = nil,
+        channelMode: KamidanaAudioVisualizerChannelMode? = nil,
+        smoothness: Double? = nil,
         formatOnAction: String? = nil,
         sliderChange: String? = nil,
         sliderPause: String? = nil,
@@ -801,6 +850,10 @@ public struct KamidanaWidget: Decodable, Equatable {
         self.height = height
         self.inputManagement = inputManagement
         self.outputManagement = outputManagement
+        self.gradientSeparation = gradientSeparation
+        self.captureScope = captureScope
+        self.channelMode = channelMode
+        self.smoothness = smoothness
         self.formatOnAction = formatOnAction
         self.sliderChange = sliderChange
         self.sliderPause = sliderPause
@@ -825,6 +878,13 @@ public struct KamidanaWidget: Decodable, Equatable {
         )
         let inputManagement = try container.decodeIfPresent(Bool.self, forKey: .inputManagement)
         let outputManagement = try container.decodeIfPresent(Bool.self, forKey: .outputManagement)
+        let gradientSeparation = try container.decodeIfPresent(
+            Int.self, forKey: .gradientSeparation)
+        let captureScope = try container.decodeIfPresent(
+            KamidanaAudioVisualizerCaptureScope.self, forKey: .captureScope)
+        let channelMode = try container.decodeIfPresent(
+            KamidanaAudioVisualizerChannelMode.self, forKey: .channelMode)
+        let smoothness = try container.decodeIfPresent(Double.self, forKey: .smoothness)
 
         let regularIcon =
             kind == .battery || kind == .weather
@@ -874,6 +934,14 @@ public struct KamidanaWidget: Decodable, Equatable {
             height: try container.decodeIfPresent(Double.self, forKey: .height),
             inputManagement: kind == .volume ? inputManagement ?? true : inputManagement,
             outputManagement: kind == .volume ? outputManagement ?? true : outputManagement,
+            gradientSeparation: kind == .audioVisualizer
+                ? gradientSeparation ?? 1 : gradientSeparation,
+            captureScope: kind == .audioVisualizer
+                ? captureScope ?? .system : captureScope,
+            channelMode: kind == .audioVisualizer
+                ? channelMode ?? .stereo : channelMode,
+            smoothness: kind == .audioVisualizer
+                ? smoothness ?? 0.5 : smoothness,
             formatOnAction: try container.decodeIfPresent(String.self, forKey: .formatOnAction),
             sliderChange: try container.decodeIfPresent(String.self, forKey: .sliderChange),
             sliderPause: try container.decodeIfPresent(String.self, forKey: .sliderPause),
@@ -903,6 +971,10 @@ public struct KamidanaWidget: Decodable, Equatable {
         case command, arguments, width, height
         case inputManagement = "input_management"
         case outputManagement = "output_management"
+        case gradientSeparation = "gradient_separation"
+        case captureScope = "capture_scope"
+        case channelMode = "channel_mode"
+        case smoothness
         case formatOnAction = "format_on_action"
         case sliderChange = "slider_change"
         case sliderPause = "slider_pause"
@@ -1220,7 +1292,7 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
                 throw KamidanaConfigurationV1Error.btopMustBeInCenter(widget.id)
             }
 
-            try validateKindSpecificFields(widget, path: widgetPath)
+            try validateKindSpecificFields(widget, section: section, path: widgetPath)
 
             let tooltipFieldsArePresent = widget.tooltip != nil || widget.tooltipFormat != nil
             if tooltipFieldsArePresent && ![.cpu, .gpu, .memory, .network].contains(widget.kind) {
@@ -1247,7 +1319,11 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
         }
     }
 
-    private func validateKindSpecificFields(_ widget: KamidanaWidget, path: String) throws {
+    private func validateKindSpecificFields(
+        _ widget: KamidanaWidget,
+        section: String,
+        path: String
+    ) throws {
         if widget.kind != .btop && (widget.width != nil || widget.height != nil) {
             throw KamidanaConfigurationV1Error.invalidWidget(
                 path: path, reason: "width and height are valid only for btop"
@@ -1336,9 +1412,55 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
             && (widget.inputManagement != nil || widget.outputManagement != nil)
         {
             throw KamidanaConfigurationV1Error.invalidWidget(
-                path: path,
-                reason: "input_management and output_management are valid only for volume"
+                path: path, reason: "input_management and output_management are valid only for volume"
             )
+        }
+
+        let hasAudioVisualizerConfiguration =
+            widget.gradientSeparation != nil
+            || widget.captureScope != nil
+            || widget.channelMode != nil
+            || widget.smoothness != nil
+        if widget.kind != .audioVisualizer && hasAudioVisualizerConfiguration {
+            throw KamidanaConfigurationV1Error.invalidWidget(
+                path: path,
+                reason:
+                    "gradient_separation, capture_scope, channel_mode, and smoothness are valid only for audio-visualizer"
+            )
+        }
+
+        if widget.kind == .audioVisualizer {
+            let maximumGradientSeparation = section == "center" ? 5 : 2
+            let gradientSeparation = widget.gradientSeparation ?? 1
+            if gradientSeparation < 1 || gradientSeparation > maximumGradientSeparation {
+                throw KamidanaConfigurationV1Error.invalidWidget(
+                    path: path,
+                    reason:
+                        "gradient_separation must be in 1...\(maximumGradientSeparation) for the \(section) section"
+                )
+            }
+
+            let smoothness = widget.smoothness ?? 0.5
+            if smoothness < 0 || smoothness > 1 || !smoothness.isFinite {
+                throw KamidanaConfigurationV1Error.invalidWidget(
+                    path: path, reason: "smoothness must be in 0...1"
+                )
+            }
+
+            for (name, format) in [
+                ("format", widget.format),
+                ("compact_format", widget.compactFormat),
+            ] {
+                if let format {
+                    let placeholderCount = format.components(separatedBy: "{display}").count - 1
+                    if placeholderCount != 1 {
+                        throw KamidanaConfigurationV1Error.invalidWidget(
+                            path: path,
+                            reason: "\(name) must contain exactly one {display} placeholder"
+                        )
+                    }
+                }
+            }
         }
 
         if widget.kind != .weather

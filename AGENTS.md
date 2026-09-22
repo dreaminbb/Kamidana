@@ -35,6 +35,7 @@
 
 ## Testing Gotchas
 
+- Execution and testing are user responsibilities. AI assistants must not run the application, builds, test commands, linters, or diagnostics; provide the relevant commands for the user instead.
 - Several tests touch macOS APIs, AppleScript, CoreAudio, Bluetooth, or live system state; prefer focused filters when changing pure config/formatting code.
 - Live Spotify playback tests are skipped unless `KAMIDANA_RUN_MUSIC_INTEGRATION_TESTS=1` is set.
 - `Tests/KamidanaTests/musicTest.swift` and audio tests may depend on local permissions/devices and can print noisy output.

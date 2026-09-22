@@ -93,6 +93,11 @@ enum DebugRichConsole {
         print("\(red)[Wi-Fi] Scan failed: \(error)\(reset)")
     }
 
+    static func printAudioVisualizerFailure(_ error: Error) {
+        guard isEnabled else { return }
+        print("\(red)[Audio Visualizer] Capture failed: \(error.localizedDescription)\(reset)")
+    }
+
     static func formatBytes(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useKB, .useBytes]

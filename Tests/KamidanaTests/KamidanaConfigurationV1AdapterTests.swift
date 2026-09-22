@@ -60,6 +60,63 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(weatherConfig.colors.first?.sun, "#fab387")
   }
 
+  func testAdapterBuildsAudioVisualizerConfigurationsWithDefaultAndPreservedValues() throws {
+    let yaml = """
+      left:
+        widgets:
+          - id: default-visualizer
+            type: audio-visualizer
+          - id: configured-visualizer
+            type: audio-visualizer
+            format: "Spectrum: {display}"
+            gradient_separation: 2
+            capture_scope: microphone
+            channel_mode: mono
+            smoothness: 0.85
+            style:
+              outline_color: "#111111"
+              gradient_color_1: "#222222"
+              gradient_color_2: "#333333"
+              gradient_color_3: "#444444"
+              gradient_color_4: "#555555"
+              gradient_color_5: "#666666"
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let defaultVisualizer = try XCTUnwrap(runtime.externalDisplay.left.first)
+    let configuredVisualizer = try XCTUnwrap(runtime.externalDisplay.left.last)
+    let configured = try XCTUnwrap(
+      configuredVisualizer.config as? AudioVisualizerWidgetConfig
+    )
+
+    XCTAssertEqual(defaultVisualizer.typeID, "audioVisualizer")
+    XCTAssertEqual(defaultVisualizer.v1Format, "{display}")
+    XCTAssertEqual(configuredVisualizer.typeID, "audioVisualizer")
+    XCTAssertEqual(configuredVisualizer.v1Format, "Spectrum: {display}")
+    XCTAssertEqual(configured.gradientSeparation, 2)
+    XCTAssertEqual(configured.captureScope, .microphone)
+    XCTAssertEqual(configured.channelMode, .mono)
+    XCTAssertEqual(configured.smoothness, 0.85)
+    XCTAssertEqual(configured.outlineColor, "#111111")
+    XCTAssertEqual(
+      configured.gradientColors,
+      ["#222222", "#333333", "#444444", "#555555", "#666666"]
+    )
+    XCTAssertEqual(configuredVisualizer.v1Style?.outlineColor, "#111111")
+    XCTAssertEqual(configuredVisualizer.v1Style?.gradientColor1, "#222222")
+    XCTAssertEqual(configuredVisualizer.v1Style?.gradientColor2, "#333333")
+    XCTAssertEqual(configuredVisualizer.v1Style?.gradientColor3, "#444444")
+    XCTAssertEqual(configuredVisualizer.v1Style?.gradientColor4, "#555555")
+    XCTAssertEqual(configuredVisualizer.v1Style?.gradientColor5, "#666666")
+  }
+
   func testAdapterPreservesSectionAndWidgetStyleAndCenterDefaultOrder() throws {
     let yaml = """
       global:
