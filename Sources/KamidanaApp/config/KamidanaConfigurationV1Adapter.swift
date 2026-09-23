@@ -278,6 +278,31 @@ public enum KamidanaConfigurationV1Adapter {
             ?? widget.normal?.artworkSpin
             ?? widget.artworkSpin
             ?? 3
+          value.width = widget.width
+          value.height = widget.height
+          if let visualizer = widget.soundVisualizer {
+            let visualizerStyle = visualizer.style
+            value.soundVisualizer = AudioVisualizerWidgetConfig(
+              format: visualizer.format,
+              position: visualizer.position,
+              height: visualizer.height,
+              barWidth: visualizer.barWidth,
+              padding: visualizer.padding,
+              gradientSeparation: visualizer.gradientSeparation,
+              captureScope: visualizer.captureScope,
+              channelMode: visualizer.channelMode,
+              smoothness: visualizer.smoothness,
+              outlineColor: visualizerStyle.outlineColor,
+              gradientColors: [
+                visualizerStyle.gradientColor1,
+                visualizerStyle.gradientColor2,
+                visualizerStyle.gradientColor3,
+                visualizerStyle.gradientColor4,
+                visualizerStyle.gradientColor5,
+              ].compactMap { $0 },
+              separationLength: visualizer.separationLength
+            )
+          }
           value.placement = musicPlacement
           return WidgetInstance(
             typeID: "music",
@@ -316,6 +341,9 @@ public enum KamidanaConfigurationV1Adapter {
             typeID: "audioVisualizer",
             config: AudioVisualizerWidgetConfig(
               format: format,
+              height: Int(widget.height ?? 1),
+              barWidth: widget.barWidth ?? 10,
+              padding: widget.padding ?? KamidanaInsets(),
               gradientSeparation: widget.gradientSeparation ?? 1,
               captureScope: widget.captureScope ?? .system,
               channelMode: widget.channelMode ?? .stereo,

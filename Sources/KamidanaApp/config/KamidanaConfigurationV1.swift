@@ -224,6 +224,29 @@ public struct KamidanaInsets: Codable, Hashable {
             return
         }
 
+        if let values = try? decoder.singleValueContainer().decode([Double].self) {
+            guard values.count == 4 else {
+                throw DecodingError.dataCorrupted(
+                    .init(codingPath: decoder.codingPath, debugDescription: "Padding requires four values")
+                )
+            }
+            self.init(top: values[0], bottom: values[2], leading: values[3], trailing: values[1])
+            return
+        }
+
+        if let text = try? decoder.singleValueContainer().decode(String.self) {
+            let values = text.split(separator: ",").compactMap {
+                Double($0.trimmingCharacters(in: .whitespaces))
+            }
+            guard values.count == 4 else {
+                throw DecodingError.dataCorrupted(
+                    .init(codingPath: decoder.codingPath, debugDescription: "Padding requires four comma-separated values")
+                )
+            }
+            self.init(top: values[0], bottom: values[2], leading: values[3], trailing: values[1])
+            return
+        }
+
         try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.init(
@@ -469,6 +492,90 @@ public enum KamidanaAudioVisualizerCaptureScope: String, Codable, Equatable, Has
 public enum KamidanaAudioVisualizerChannelMode: String, Codable, Equatable, Hashable {
     case stereo
     case mono
+}
+
+public enum KamidanaSoundVisualizerPosition: String, Codable, Equatable, Hashable {
+    case top
+    case bottom
+    case left
+    case right
+}
+
+public struct KamidanaSoundVisualizerConfig: Decodable, Equatable {
+    public var format: String
+    public var position: KamidanaSoundVisualizerPosition
+    public var height: Int
+    public var barWidth: Double
+    public var padding: KamidanaInsets
+    public var gradientSeparation: Int
+    public var captureScope: KamidanaAudioVisualizerCaptureScope
+    public var channelMode: KamidanaAudioVisualizerChannelMode
+    public var smoothness: Double
+    public var separationLength: Int
+    public var style: KamidanaStyle
+
+    public init(
+        format: String = "{display}",
+        position: KamidanaSoundVisualizerPosition = .bottom,
+        height: Int = 1,
+        barWidth: Double = 10,
+        padding: KamidanaInsets = KamidanaInsets(),
+        gradientSeparation: Int = 1,
+        captureScope: KamidanaAudioVisualizerCaptureScope = .system,
+        channelMode: KamidanaAudioVisualizerChannelMode = .stereo,
+        smoothness: Double = 0.5,
+        separationLength: Int = 5,
+        style: KamidanaStyle = KamidanaStyle()
+    ) {
+        self.format = format
+        self.position = position
+        self.height = height
+        self.barWidth = barWidth
+        self.padding = padding
+        self.gradientSeparation = gradientSeparation
+        self.captureScope = captureScope
+        self.channelMode = channelMode
+        self.smoothness = smoothness
+        self.separationLength = separationLength
+        self.style = style
+    }
+
+    private enum CodingKeys: String, CodingKey, CaseIterable {
+        case format, position, height
+        case barWidth = "bar_width"
+        case padding
+        case gradientSeparation = "gradient_separation"
+        case captureScope = "capture_scope"
+        case channelMode = "channel_mode"
+        case smoothness
+        case separationLength = "separation_length"
+        case style
+    }
+
+    public init(from decoder: Decoder) throws {
+        try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            format: try container.decodeIfPresent(String.self, forKey: .format) ?? "{display}",
+            position: try container.decodeIfPresent(
+                KamidanaSoundVisualizerPosition.self, forKey: .position) ?? .bottom,
+            height: try container.decodeIfPresent(Int.self, forKey: .height) ?? 1,
+            barWidth: try container.decodeIfPresent(Double.self, forKey: .barWidth) ?? 10,
+            padding: try container.decodeIfPresent(KamidanaInsets.self, forKey: .padding)
+                ?? KamidanaInsets(),
+            gradientSeparation: try container.decodeIfPresent(Int.self, forKey: .gradientSeparation)
+                ?? 1,
+            captureScope: try container.decodeIfPresent(
+                KamidanaAudioVisualizerCaptureScope.self, forKey: .captureScope) ?? .system,
+            channelMode: try container.decodeIfPresent(
+                KamidanaAudioVisualizerChannelMode.self, forKey: .channelMode) ?? .stereo,
+            smoothness: try container.decodeIfPresent(Double.self, forKey: .smoothness) ?? 0.5,
+            separationLength: try container.decodeIfPresent(Int.self, forKey: .separationLength)
+                ?? 5,
+            style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style)
+                ?? KamidanaStyle()
+        )
+    }
 }
 
 public enum KamidanaWidgetKind: String, Codable, Equatable, CaseIterable {
@@ -765,6 +872,8 @@ public struct KamidanaWidget: Decodable, Equatable {
     public var arguments: [String]
     public var width: Double?
     public var height: Double?
+    public var barWidth: Double?
+    public var padding: KamidanaInsets?
     public var inputManagement: Bool?
     public var outputManagement: Bool?
     public var gradientSeparation: Int?
@@ -780,6 +889,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     public var artworkSpin: Double?
     public var normal: KamidanaMusicNormalState?
     public var onAction: KamidanaMusicActionState?
+    public var soundVisualizer: KamidanaSoundVisualizerConfig?
 
     public init(
         id: String,
@@ -808,6 +918,8 @@ public struct KamidanaWidget: Decodable, Equatable {
         arguments: [String] = [],
         width: Double? = nil,
         height: Double? = nil,
+        barWidth: Double? = nil,
+        padding: KamidanaInsets? = nil,
         inputManagement: Bool? = nil,
         outputManagement: Bool? = nil,
         gradientSeparation: Int? = nil,
@@ -822,18 +934,19 @@ public struct KamidanaWidget: Decodable, Equatable {
         extend: KamidanaMusicExtendDirection? = nil,
         artworkSpin: Double? = nil,
         normal: KamidanaMusicNormalState? = nil,
-        onAction: KamidanaMusicActionState? = nil
+        onAction: KamidanaMusicActionState? = nil,
+        soundVisualizer: KamidanaSoundVisualizerConfig? = nil
     ) {
         self.id = id
         self.kind = kind
-    self.format = format
-    self.compactFormat = compactFormat
-    self.icon = icon
-    self.polling = polling
-    self.weatherIcons = weatherIcons
-    self.weatherColors = weatherColors
-    self.weatherDisplay = weatherDisplay
-    self.foldedIcon = foldedIcon
+        self.format = format
+        self.compactFormat = compactFormat
+        self.icon = icon
+        self.polling = polling
+        self.weatherIcons = weatherIcons
+        self.weatherColors = weatherColors
+        self.weatherDisplay = weatherDisplay
+        self.foldedIcon = foldedIcon
         self.direction = direction
         self.style = style
         self.popupStyle = popupStyle
@@ -850,6 +963,8 @@ public struct KamidanaWidget: Decodable, Equatable {
         self.arguments = arguments
         self.width = width
         self.height = height
+        self.barWidth = barWidth
+        self.padding = padding
         self.inputManagement = inputManagement
         self.outputManagement = outputManagement
         self.gradientSeparation = gradientSeparation
@@ -865,6 +980,7 @@ public struct KamidanaWidget: Decodable, Equatable {
         self.artworkSpin = artworkSpin
         self.normal = normal
         self.onAction = onAction
+        self.soundVisualizer = soundVisualizer
     }
 
     public init(from decoder: Decoder) throws {
@@ -904,8 +1020,9 @@ public struct KamidanaWidget: Decodable, Equatable {
             ? try container.decodeIfPresent(
                 [KamidanaWeatherIconConfig].self, forKey: .icon) ?? []
             : []
-        let weatherColors = try container.decodeIfPresent(
-            [KamidanaWeatherColorConfig].self, forKey: .color) ?? []
+        let weatherColors =
+            try container.decodeIfPresent(
+                [KamidanaWeatherColorConfig].self, forKey: .color) ?? []
 
         self.init(
             id: id,
@@ -916,7 +1033,8 @@ public struct KamidanaWidget: Decodable, Equatable {
             polling: try container.decodeIfPresent(Double.self, forKey: .polling),
             weatherIcons: weatherIcons,
             weatherColors: weatherColors,
-            weatherDisplay: try container.decodeIfPresent(WeatherDisplayConfig.self, forKey: .weatherDisplay),
+            weatherDisplay: try container.decodeIfPresent(
+                WeatherDisplayConfig.self, forKey: .weatherDisplay),
             foldedIcon: try container.decodeIfPresent(String.self, forKey: .foldedIcon),
             direction: kind == .widgetFolder ? direction ?? .below : direction,
             style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style),
@@ -937,6 +1055,8 @@ public struct KamidanaWidget: Decodable, Equatable {
             arguments: try container.decodeIfPresent([String].self, forKey: .arguments) ?? [],
             width: try container.decodeIfPresent(Double.self, forKey: .width),
             height: try container.decodeIfPresent(Double.self, forKey: .height),
+            barWidth: try container.decodeIfPresent(Double.self, forKey: .barWidth),
+            padding: try container.decodeIfPresent(KamidanaInsets.self, forKey: .padding),
             inputManagement: kind == .volume ? inputManagement ?? true : inputManagement,
             outputManagement: kind == .volume ? outputManagement ?? true : outputManagement,
             gradientSeparation: kind == .audioVisualizer
@@ -958,7 +1078,9 @@ public struct KamidanaWidget: Decodable, Equatable {
             artworkSpin: try container.decodeIfPresent(Double.self, forKey: .artworkSpin),
             normal: try container.decodeIfPresent(KamidanaMusicNormalState.self, forKey: .normal),
             onAction: try container.decodeIfPresent(
-                KamidanaMusicActionState.self, forKey: .onAction)
+                KamidanaMusicActionState.self, forKey: .onAction),
+            soundVisualizer: try container.decodeIfPresent(
+                KamidanaSoundVisualizerConfig.self, forKey: .soundVisualizer)
         )
     }
 
@@ -976,6 +1098,8 @@ public struct KamidanaWidget: Decodable, Equatable {
         case widgets, children, color
         case partStyles = "part_styles"
         case command, arguments, width, height
+        case barWidth = "bar_width"
+        case padding
         case inputManagement = "input_management"
         case outputManagement = "output_management"
         case gradientSeparation = "gradient_separation"
@@ -991,6 +1115,7 @@ public struct KamidanaWidget: Decodable, Equatable {
         case artworkSpin = "artwork_spin"
         case normal
         case onAction = "on_action"
+        case soundVisualizer = "sound_visualizer"
     }
 }
 
@@ -1332,9 +1457,22 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
         section: String,
         path: String
     ) throws {
-        if widget.kind != .btop && (widget.width != nil || widget.height != nil) {
+        if widget.kind != .btop && widget.kind != .music && widget.kind != .audioVisualizer
+            && (widget.width != nil || widget.height != nil)
+        {
             throw KamidanaConfigurationV1Error.invalidWidget(
-                path: path, reason: "width and height are valid only for btop"
+                path: path,
+                reason: "width and height are valid only for btop, music, and audio-visualizer"
+            )
+        }
+        if widget.kind != .audioVisualizer && widget.barWidth != nil {
+            throw KamidanaConfigurationV1Error.invalidWidget(
+                path: path, reason: "bar_width is valid only for audio-visualizer"
+            )
+        }
+        if widget.kind != .audioVisualizer && widget.padding != nil {
+            throw KamidanaConfigurationV1Error.invalidWidget(
+                path: path, reason: "padding is valid only for audio-visualizer"
             )
         }
         if widget.kind == .widgetFolder && widget.widgets.isEmpty {
@@ -1420,7 +1558,8 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
             && (widget.inputManagement != nil || widget.outputManagement != nil)
         {
             throw KamidanaConfigurationV1Error.invalidWidget(
-                path: path, reason: "input_management and output_management are valid only for volume"
+                path: path,
+                reason: "input_management and output_management are valid only for volume"
             )
         }
 
@@ -1430,15 +1569,36 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
             || widget.channelMode != nil
             || widget.separationLength != nil
             || widget.smoothness != nil
+            || widget.barWidth != nil
         if widget.kind != .audioVisualizer && hasAudioVisualizerConfiguration {
             throw KamidanaConfigurationV1Error.invalidWidget(
                 path: path,
                 reason:
-                    "gradient_separation, capture_scope, channel_mode, separation_length, and smoothness are valid only for audio-visualizer"
+                    "gradient_separation, capture_scope, channel_mode, separation_length, smoothness, and bar_width are valid only for audio-visualizer"
             )
         }
 
         if widget.kind == .audioVisualizer {
+            if let height = widget.height,
+                height.rounded() != height || height < 1 || height > 100
+            {
+                throw KamidanaConfigurationV1Error.invalidWidget(
+                    path: path, reason: "height must be an integer in 1...100"
+                )
+            }
+            if let barWidth = widget.barWidth, barWidth <= 0 || !barWidth.isFinite {
+                throw KamidanaConfigurationV1Error.invalidWidget(
+                    path: path, reason: "bar_width must be positive"
+                )
+            }
+            if let padding = widget.padding {
+                let values = [padding.top, padding.bottom, padding.leading, padding.trailing]
+                if values.contains(where: { $0 < 0 || !$0.isFinite }) {
+                    throw KamidanaConfigurationV1Error.invalidWidget(
+                        path: path, reason: "padding values must be non-negative"
+                    )
+                }
+            }
             let maximumGradientSeparation = section == "center" ? 5 : 2
             let gradientSeparation = widget.gradientSeparation ?? 1
             if gradientSeparation < 1 || gradientSeparation > maximumGradientSeparation {
@@ -1480,11 +1640,13 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
         }
 
         if widget.kind != .weather
-            && (widget.polling != nil || !widget.weatherIcons.isEmpty || !widget.weatherColors.isEmpty || widget.weatherDisplay != nil)
+            && (widget.polling != nil || !widget.weatherIcons.isEmpty
+                || !widget.weatherColors.isEmpty || widget.weatherDisplay != nil)
         {
             throw KamidanaConfigurationV1Error.invalidWidget(
                 path: path,
-                reason: "polling, weather icon/color maps, and weather_display are valid only for weather"
+                reason:
+                    "polling, weather icon/color maps, and weather_display are valid only for weather"
             )
         }
 
@@ -1499,11 +1661,12 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
             || widget.artworkSpin != nil
             || widget.normal != nil
             || widget.onAction != nil
+            || widget.soundVisualizer != nil
         if widget.kind != .music && hasMusicConfiguration {
             throw KamidanaConfigurationV1Error.invalidWidget(
                 path: path,
                 reason:
-                    "format_on_action, slider colors, extend, artwork_spin, normal, and on_action are valid only for music"
+                    "format_on_action, slider colors, extend, artwork_spin, normal, on_action, and sound_visualizer are valid only for music"
             )
         }
 
@@ -1528,6 +1691,73 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
                 name: "on_action.artwork_spin",
                 path: path
             )
+
+            if let visualizer = widget.soundVisualizer {
+                if visualizer.height < 1 || visualizer.height > 100 {
+                    throw KamidanaConfigurationV1Error.invalidWidget(
+                        path: path,
+                        reason: "sound_visualizer.height must be in 1...100"
+                    )
+                }
+                if visualizer.barWidth <= 0 || !visualizer.barWidth.isFinite {
+                    throw KamidanaConfigurationV1Error.invalidWidget(
+                        path: path,
+                        reason: "sound_visualizer.bar_width must be positive"
+                    )
+                }
+                let paddingValues = [
+                    visualizer.padding.top,
+                    visualizer.padding.bottom,
+                    visualizer.padding.leading,
+                    visualizer.padding.trailing,
+                ]
+                if paddingValues.contains(where: { $0 < 0 || !$0.isFinite }) {
+                    throw KamidanaConfigurationV1Error.invalidWidget(
+                        path: path,
+                        reason: "sound_visualizer.padding values must be non-negative"
+                    )
+                }
+                let maximumGradientSeparation = section == "center" ? 5 : 2
+                if visualizer.gradientSeparation < 1
+                    || visualizer.gradientSeparation > maximumGradientSeparation
+                {
+                    throw KamidanaConfigurationV1Error.invalidWidget(
+                        path: path,
+                        reason:
+                            "sound_visualizer.gradient_separation must be in 1...\(maximumGradientSeparation) for the \(section) section"
+                    )
+                }
+                let maximumSeparationLength = section == "center" ? 30 : 20
+                if visualizer.separationLength < 1
+                    || visualizer.separationLength > maximumSeparationLength
+                {
+                    throw KamidanaConfigurationV1Error.invalidWidget(
+                        path: path,
+                        reason:
+                            "sound_visualizer.separation_length must be in 1...\(maximumSeparationLength)"
+                    )
+                }
+
+                if visualizer.smoothness < 0
+                    || visualizer.smoothness > 1
+                    || !visualizer.smoothness.isFinite
+                {
+                    throw KamidanaConfigurationV1Error.invalidWidget(
+                        path: path,
+                        reason: "sound_visualizer.smoothness must be in 0...1"
+                    )
+                }
+                let placeholderCount =
+                    visualizer.format.components(separatedBy: "{display}").count - 1
+                if placeholderCount != 1 {
+                    throw KamidanaConfigurationV1Error.invalidWidget(
+                        path: path,
+                        reason:
+                            "sound_visualizer.format must contain exactly one {display} placeholder"
+                    )
+                }
+                try validateStyle(visualizer.style, path: "\(path).sound_visualizer.style")
+            }
         }
     }
 

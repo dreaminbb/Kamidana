@@ -109,37 +109,76 @@ struct MusicWidget: View {
     @ViewBuilder
     private var centerActionContent: some View {
         if musicManager.title.isEmpty {
-            MusicNormalContent(
-                config: config,
-                format: config.normalFormat,
-                artworkSize: 48
+            centerContentWithVisualizer(
+                MusicNormalContent(
+                    config: config,
+                    format: config.normalFormat,
+                    artworkSize: 48
+                )
+                .font(.system(size: 18, weight: .semibold, design: .monospaced))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             )
-            .font(.system(size: 18, weight: .semibold, design: .monospaced))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            VStack(spacing: 22) {
-                if let metadataFormat = config.actionMetadataFormat {
+            centerContentWithVisualizer(
+                VStack(spacing: 22) {
+                    if let metadataFormat = config.actionMetadataFormat {
+                        MusicFormatView(
+                            format: metadataFormat,
+                            config: config,
+                            artworkSize: 34,
+                            sliderLayout: .compact,
+                            artworkSpinDuration: config.actionArtworkSpinDuration
+                        )
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                    }
+
                     MusicFormatView(
-                        format: metadataFormat,
+                        format: config.formatOnAction,
                         config: config,
-                        artworkSize: 34,
-                        sliderLayout: .compact,
+                        artworkSize: 150,
+                        sliderLayout: .center,
                         artworkSpinDuration: config.actionArtworkSpinDuration
                     )
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
                 }
+                .padding(.horizontal, 36)
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            )
+        }
+    }
 
-                MusicFormatView(
-                    format: config.formatOnAction,
-                    config: config,
-                    artworkSize: 150,
-                    sliderLayout: .center,
-                    artworkSpinDuration: config.actionArtworkSpinDuration
-                )
+    @ViewBuilder
+    private func centerContentWithVisualizer<Content: View>(_ content: Content) -> some View {
+        if let visualizer = config.soundVisualizer {
+            let display = AudioVisualizerDisplay(
+                config: visualizer,
+                visualizerPosition: visualizer.position
+            )
+
+            switch visualizer.position {
+            case .top:
+                VStack(spacing: 5) {
+                    display
+                    content
+                }
+            case .bottom:
+                VStack(spacing: 5) {
+                    content
+                    display
+                }
+            case .left:
+                HStack(spacing: 5) {
+                    display
+                    content
+                }
+            case .right:
+                HStack(spacing: 5) {
+                    content
+                    display
+                }
             }
-            .padding(.horizontal, 36)
-            .padding(.vertical, 20)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            content
         }
     }
 

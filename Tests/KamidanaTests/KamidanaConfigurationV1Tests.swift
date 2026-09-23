@@ -161,6 +161,9 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
           - id: visualizer
             type: audio-visualizer
             format: "~ {display} ~"
+            height: 4
+            bar_width: 10
+            padding: "1, 2, 3, 4"
             gradient_separation: 1
             capture_scope: system
             channel_mode: stereo
@@ -188,6 +191,12 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(KamidanaWidgetKind.audioVisualizer.rawValue, "audio-visualizer")
     XCTAssertEqual(widget.kind, .audioVisualizer)
     XCTAssertEqual(widget.format, "~ {display} ~")
+    XCTAssertEqual(widget.height, 4)
+    XCTAssertEqual(widget.barWidth, 10)
+    XCTAssertEqual(widget.padding?.top, 1)
+    XCTAssertEqual(widget.padding?.trailing, 2)
+    XCTAssertEqual(widget.padding?.bottom, 3)
+    XCTAssertEqual(widget.padding?.leading, 4)
     XCTAssertEqual(widget.gradientSeparation, 1)
     XCTAssertEqual(widget.captureScope, .system)
     XCTAssertEqual(widget.channelMode, .stereo)
@@ -222,6 +231,34 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
         matches: {
           if case .invalidWidget(_, let reason) = $0 {
             return reason.contains("exactly one {display}")
+          }
+          return false
+        }
+      )
+    }
+  }
+
+  func testRejectsAudioVisualizerHeightOutsideFiveLevels() {
+    for height in [0, 6] {
+      let yaml = """
+        left:
+          widgets:
+            - id: visualizer
+              type: audio-visualizer
+              height: \(height)
+        center:
+          center_default: clock
+          widgets:
+            - id: clock
+              type: clock
+              compact_format: "{time}"
+        """
+
+      assertError(
+        yaml,
+        matches: {
+          if case .invalidWidget(_, let reason) = $0 {
+            return reason.contains("height")
           }
           return false
         }
@@ -326,6 +363,50 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
 
     let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
     XCTAssertEqual(configuration.center.widgets.first?.gradientSeparation, 5)
+  }
+
+  func testDecodesMusicSoundVisualizerConfiguration() throws {
+    let yaml = """
+      center:
+        center_default: music
+        widgets:
+          - id: music
+            type: music
+            normal:
+              format: "{artwork} {title}"
+            sound_visualizer:
+              format: "{display}"
+              position: top
+              height: 3
+              bar_width: 12
+              padding: [1, 2, 3, 4]
+              gradient_separation: 5
+              capture_scope: system
+              channel_mode: stereo
+              smoothness: 0.3
+              separation_length: 10
+              style:
+                gradient_color_1: "#f38ba8"
+                gradient_color_5: "#89b4fa"
+      """
+
+    let widget = try XCTUnwrap(
+      KamidanaConfigurationV1Decoder.decode(yaml: yaml).center.widgets.first
+    )
+    let visualizer = try XCTUnwrap(widget.soundVisualizer)
+
+    XCTAssertEqual(visualizer.position, .top)
+    XCTAssertEqual(visualizer.height, 3)
+    XCTAssertEqual(visualizer.barWidth, 12)
+    XCTAssertEqual(visualizer.padding.top, 1)
+    XCTAssertEqual(visualizer.padding.trailing, 2)
+    XCTAssertEqual(visualizer.padding.bottom, 3)
+    XCTAssertEqual(visualizer.padding.leading, 4)
+    XCTAssertEqual(visualizer.gradientSeparation, 5)
+    XCTAssertEqual(visualizer.separationLength, 10)
+    XCTAssertEqual(visualizer.smoothness, 0.3)
+    XCTAssertEqual(visualizer.style.gradientColor1, "#f38ba8")
+    XCTAssertEqual(visualizer.style.gradientColor5, "#89b4fa")
   }
 
   func testRejectsInvalidPopupStyleNumericValue() {

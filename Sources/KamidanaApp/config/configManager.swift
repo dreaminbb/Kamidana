@@ -175,6 +175,9 @@ public struct MusicWidgetConfig: Codable {
     public var artworkSpinDuration: Double = 3
     public var actionArtworkSpinDuration: Double = 3
     public var placement: MusicWidgetPlacement = .standalone
+    public var soundVisualizer: AudioVisualizerWidgetConfig? = nil
+    public var width: Double? = nil
+    public var height: Double? = nil
 }
 
 public struct TerminalWidgetConfig: Codable, Hashable {

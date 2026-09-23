@@ -73,4 +73,10 @@ final class AudioVisualizerWidgetTests: XCTestCase {
 
         XCTAssertNotNil(WidgetRegistry.shared.factory(for: "audioVisualizer"))
     }
+
+    func testConfigResolvesFiveLevelBarHeight() {
+        XCTAssertEqual(AudioVisualizerWidgetConfig(height: 1).resolvedBarHeight, 1)
+        XCTAssertEqual(AudioVisualizerWidgetConfig(height: 5).resolvedBarHeight, 5)
+        XCTAssertEqual(AudioVisualizerWidgetConfig(height: 8).resolvedBarHeight, 5)
+    }
 }

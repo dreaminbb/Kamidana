@@ -142,6 +142,9 @@ The widget must be added through the normal configuration flow:
 - id: audio-visualizer
   type: audio-visualizer
   format: "~ {display} ~"
+  height: 3
+  bar_width: 10
+  padding: "4, 8, 4, 8"
   gradient_separation: 1
   capture_scope: system
   channel_mode: stereo
@@ -156,7 +159,12 @@ The widget must be added through the normal configuration flow:
     gradient_color_5: "#89b4fa"
 ```
 
-- `format` uses `{display}` for the fixed five-bar visualizer output.
+- `format` uses `{display}` for the rendered bar canvas.
+- `height` controls the maximum bar height in rendering units and accepts `1...5`.
+- `bar_width` controls each Canvas bar width in points and must be positive.
+- `padding` is ordered as `top, right, bottom, left` and is applied between the
+  visualizer and its surrounding Island wall. It accepts a comma-separated
+  string or a four-value YAML array.
 - `gradient_separation` selects how many configured gradient colors are used. It accepts
   `1...2` in left and right sections and `1...5` in the center section.
 - `capture_scope` accepts `system` or `microphone`. System capture requires macOS 14.2 or
@@ -184,9 +192,43 @@ Reasons:
 - Independent ownership makes future ScreenCaptureKit fallback support and
   output-device recovery easier to test.
 
-An optional Music Island presentation can consume the same published analysis
-state later. That should be a presentation adapter, not a second capture
+The Music Island presentation consumes the same visualizer configuration and
+capture lifecycle. It is a presentation adapter, not a second capture
 pipeline.
+
+### Music Island Sound Visualizer
+
+The center Music widget may embed the same visualizer using `sound_visualizer`.
+It shares the independent audio capture lifecycle with the standalone widget.
+
+```yaml
+- id: music
+  type: music
+  width: 1000
+  height: 800
+  sound_visualizer:
+    format: "{display}"
+    position: bottom
+    height: 3
+    bar_width: 10
+    padding: "4, 8, 4, 8"
+    gradient_separation: 1
+    capture_scope: system
+    channel_mode: stereo
+    separation_length: 10
+    smoothness: 0.3
+    style:
+      gradient_color_1: "#f38ba8"
+      gradient_color_2: "#a6e3a1"
+```
+
+`position` accepts `top`, `bottom`, `left`, or `right`. `height` controls how
+many times each Unicode bar is repeated vertically and accepts `1...5`. The
+Music Island visualizer accepts `separation_length` values from `1...30`;
+standalone visualizers remain limited to `1...20`. It is rendered inside the
+Music Island without creating a second capture service.
+
+Music `width` and `height` control the expanded Music Island size in points.
 
 ## Recommended Rollout
 

@@ -69,6 +69,9 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
           - id: configured-visualizer
             type: audio-visualizer
             format: "Spectrum: {display}"
+            height: 4
+            bar_width: 10
+            padding: "1, 2, 3, 4"
             gradient_separation: 2
             capture_scope: microphone
             channel_mode: mono
@@ -101,6 +104,12 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(defaultVisualizer.v1Format, "{display}")
     XCTAssertEqual(configuredVisualizer.typeID, "audioVisualizer")
     XCTAssertEqual(configuredVisualizer.v1Format, "Spectrum: {display}")
+    XCTAssertEqual(configured.height, 4)
+    XCTAssertEqual(configured.barWidth, 10)
+    XCTAssertEqual(configured.padding.top, 1)
+    XCTAssertEqual(configured.padding.trailing, 2)
+    XCTAssertEqual(configured.padding.bottom, 3)
+    XCTAssertEqual(configured.padding.leading, 4)
     XCTAssertEqual(configured.gradientSeparation, 2)
     XCTAssertEqual(configured.captureScope, .microphone)
     XCTAssertEqual(configured.channelMode, .mono)
@@ -117,6 +126,51 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(configuredVisualizer.v1Style?.gradientColor3, "#444444")
     XCTAssertEqual(configuredVisualizer.v1Style?.gradientColor4, "#555555")
     XCTAssertEqual(configuredVisualizer.v1Style?.gradientColor5, "#666666")
+  }
+
+  func testAdapterEmbedsSoundVisualizerInCenterMusic() throws {
+    let yaml = """
+      center:
+        center_default: music
+        widgets:
+          - id: music
+            type: music
+            width: 1000
+            height: 800
+            sound_visualizer:
+              format: "{display}"
+              position: right
+              height: 3
+              bar_width: 12
+              padding: "1, 2, 3, 4"
+              capture_scope: microphone
+              channel_mode: mono
+              separation_length: 30
+              style:
+                outline_color: "#111111"
+                gradient_color_1: "#222222"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let music = try XCTUnwrap(runtime.externalDisplay.center.first)
+    let musicConfig = try XCTUnwrap(music.config as? MusicWidgetConfig)
+    let visualizer = try XCTUnwrap(musicConfig.soundVisualizer)
+
+    XCTAssertEqual(musicConfig.width, 1000)
+    XCTAssertEqual(musicConfig.height, 800)
+    XCTAssertEqual(visualizer.position, .right)
+    XCTAssertEqual(visualizer.height, 3)
+    XCTAssertEqual(visualizer.barWidth, 12)
+    XCTAssertEqual(visualizer.padding.top, 1)
+    XCTAssertEqual(visualizer.padding.trailing, 2)
+    XCTAssertEqual(visualizer.padding.bottom, 3)
+    XCTAssertEqual(visualizer.padding.leading, 4)
+    XCTAssertEqual(visualizer.captureScope, .microphone)
+    XCTAssertEqual(visualizer.channelMode, .mono)
+    XCTAssertEqual(visualizer.separationLength, 30)
+    XCTAssertEqual(visualizer.outlineColor, "#111111")
+    XCTAssertEqual(visualizer.gradientColors, ["#222222"])
   }
 
   func testAdapterPreservesSectionAndWidgetStyleAndCenterDefaultOrder() throws {

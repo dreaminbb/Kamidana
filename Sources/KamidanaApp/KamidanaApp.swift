@@ -3,9 +3,9 @@ import CoreWLAN
 import SwiftUI
 
 #if KAMIDANA_PRODUCTION
-private let isProductionBuild = true
+    private let isProductionBuild = true
 #else
-private let isProductionBuild = false
+    private let isProductionBuild = false
 #endif
 
 public class AppDelegate: NSObject, NSApplicationDelegate {
@@ -82,7 +82,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 if let existing = self.windowControllers[display.id] {
                     existing.updateConfiguration()
                 } else {
-                    let controller = StatusBarWindowController(displayID: display.id, barHeight: self.barHeight)
+                    let controller = StatusBarWindowController(
+                        displayID: display.id, barHeight: self.barHeight)
                     self.windowControllers[display.id] = controller
                     controller.showWindow()
                 }
@@ -219,7 +220,11 @@ class StatusBarWindowController {
     }
 
     func updateWindowPosition() {
-        guard let screen = NSScreen.screens.first(where: { DisplayDetector.displayID(for: $0) == displayID }) else { return }
+        guard
+            let screen = NSScreen.screens.first(where: {
+                DisplayDetector.displayID(for: $0) == displayID
+            })
+        else { return }
         let screenRect = screen.frame
         let barPadding = ConfigManager.shared.globalV1Config.barPadding
 
@@ -277,7 +282,8 @@ struct StatusBarView: View {
     let displayID: CGDirectDisplayID
 
     private var currentScreen: NSScreen {
-        NSScreen.screens.first(where: { DisplayDetector.displayID(for: $0) == displayID }) ?? NSScreen.main!
+        NSScreen.screens.first(where: { DisplayDetector.displayID(for: $0) == displayID })
+            ?? NSScreen.main!
     }
 
     var body: some View {
@@ -372,7 +378,7 @@ struct StatusBarView: View {
         .environmentObject(bluetooth)
         .environmentObject(musicManager)
         .font(.system(size: isBuiltInDisplay ? 13 : 14, weight: .semibold, design: .monospaced))
-        .frame(maxWidth: .infinity, maxHeight: 600, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color.clear)
         .ignoresSafeArea(.all)
         .onAppear {

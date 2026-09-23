@@ -30,6 +30,15 @@ struct KamidanaIsland: View {
                     height: CGFloat(terminal?.height ?? 400) + 80
                 )
             }
+            if tab.typeID == "music" {
+                let music = tab.config as? MusicWidgetConfig
+                if music?.width != nil || music?.height != nil {
+                    return CGSize(
+                        width: CGFloat(music?.width ?? Self.defaultHoveredSize.width) + 24,
+                        height: CGFloat(music?.height ?? Self.defaultHoveredSize.height) + 80
+                    )
+                }
+            }
         }
 
         // Use `??` operator to provide fallback defaults cleanly when nil
