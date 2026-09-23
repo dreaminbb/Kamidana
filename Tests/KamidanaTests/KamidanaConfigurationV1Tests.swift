@@ -164,6 +164,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
             gradient_separation: 1
             capture_scope: system
             channel_mode: stereo
+            separation_length: 12
             smoothness: 0.5
             style:
               outline_color: ""
@@ -190,6 +191,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(widget.gradientSeparation, 1)
     XCTAssertEqual(widget.captureScope, .system)
     XCTAssertEqual(widget.channelMode, .stereo)
+    XCTAssertEqual(widget.separationLength, 12)
     XCTAssertEqual(widget.smoothness, 0.5)
     XCTAssertEqual(widget.style?.outlineColor, "")
     XCTAssertEqual(widget.style?.gradientColor1, "#f38ba8")
@@ -220,6 +222,34 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
         matches: {
           if case .invalidWidget(_, let reason) = $0 {
             return reason.contains("exactly one {display}")
+          }
+          return false
+        }
+      )
+    }
+  }
+
+  func testRejectsAudioVisualizerSeparationLengthOutsideSupportedRange() {
+    for separationLength in [0, 21] {
+      let yaml = """
+        left:
+          widgets:
+            - id: visualizer
+              type: audio-visualizer
+              separation_length: \(separationLength)
+        center:
+          center_default: clock
+          widgets:
+            - id: clock
+              type: clock
+              compact_format: "{time}"
+        """
+
+      assertError(
+        yaml,
+        matches: {
+          if case .invalidWidget(_, let reason) = $0 {
+            return reason.contains("separation_length")
           }
           return false
         }

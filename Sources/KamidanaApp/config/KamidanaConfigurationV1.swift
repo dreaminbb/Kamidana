@@ -770,6 +770,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     public var gradientSeparation: Int?
     public var captureScope: KamidanaAudioVisualizerCaptureScope?
     public var channelMode: KamidanaAudioVisualizerChannelMode?
+    public var separationLength: Int?
     public var smoothness: Double?
     public var formatOnAction: String?
     public var sliderChange: String?
@@ -812,6 +813,7 @@ public struct KamidanaWidget: Decodable, Equatable {
         gradientSeparation: Int? = nil,
         captureScope: KamidanaAudioVisualizerCaptureScope? = nil,
         channelMode: KamidanaAudioVisualizerChannelMode? = nil,
+        separationLength: Int? = nil,
         smoothness: Double? = nil,
         formatOnAction: String? = nil,
         sliderChange: String? = nil,
@@ -853,6 +855,7 @@ public struct KamidanaWidget: Decodable, Equatable {
         self.gradientSeparation = gradientSeparation
         self.captureScope = captureScope
         self.channelMode = channelMode
+        self.separationLength = separationLength
         self.smoothness = smoothness
         self.formatOnAction = formatOnAction
         self.sliderChange = sliderChange
@@ -884,6 +887,8 @@ public struct KamidanaWidget: Decodable, Equatable {
             KamidanaAudioVisualizerCaptureScope.self, forKey: .captureScope)
         let channelMode = try container.decodeIfPresent(
             KamidanaAudioVisualizerChannelMode.self, forKey: .channelMode)
+        let separationLength = try container.decodeIfPresent(
+            Int.self, forKey: .separationLength)
         let smoothness = try container.decodeIfPresent(Double.self, forKey: .smoothness)
 
         let regularIcon =
@@ -940,6 +945,8 @@ public struct KamidanaWidget: Decodable, Equatable {
                 ? captureScope ?? .system : captureScope,
             channelMode: kind == .audioVisualizer
                 ? channelMode ?? .stereo : channelMode,
+            separationLength: kind == .audioVisualizer
+                ? separationLength ?? 5 : separationLength,
             smoothness: kind == .audioVisualizer
                 ? smoothness ?? 0.5 : smoothness,
             formatOnAction: try container.decodeIfPresent(String.self, forKey: .formatOnAction),
@@ -974,6 +981,7 @@ public struct KamidanaWidget: Decodable, Equatable {
         case gradientSeparation = "gradient_separation"
         case captureScope = "capture_scope"
         case channelMode = "channel_mode"
+        case separationLength = "separation_length"
         case smoothness
         case formatOnAction = "format_on_action"
         case sliderChange = "slider_change"
@@ -1420,12 +1428,13 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
             widget.gradientSeparation != nil
             || widget.captureScope != nil
             || widget.channelMode != nil
+            || widget.separationLength != nil
             || widget.smoothness != nil
         if widget.kind != .audioVisualizer && hasAudioVisualizerConfiguration {
             throw KamidanaConfigurationV1Error.invalidWidget(
                 path: path,
                 reason:
-                    "gradient_separation, capture_scope, channel_mode, and smoothness are valid only for audio-visualizer"
+                    "gradient_separation, capture_scope, channel_mode, separation_length, and smoothness are valid only for audio-visualizer"
             )
         }
 
@@ -1437,6 +1446,13 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
                     path: path,
                     reason:
                         "gradient_separation must be in 1...\(maximumGradientSeparation) for the \(section) section"
+                )
+            }
+
+            let separationLength = widget.separationLength ?? 5
+            if separationLength < 1 || separationLength > 20 {
+                throw KamidanaConfigurationV1Error.invalidWidget(
+                    path: path, reason: "separation_length must be in 1...20"
                 )
             }
 

@@ -145,6 +145,7 @@ The widget must be added through the normal configuration flow:
   gradient_separation: 1
   capture_scope: system
   channel_mode: stereo
+  separation_length: 5
   smoothness: 0.5
   style:
     outline_color: ""
@@ -162,6 +163,7 @@ The widget must be added through the normal configuration flow:
   later; microphone capture uses the current default input device.
 - `channel_mode` accepts `stereo` or `mono`. Mono mode downmixes the available left and
   right channels before level analysis.
+- `separation_length` selects the number of displayed bars and accepts values in `1...20`.
 - `smoothness` accepts values in `0...1`.
 - An empty `outline_color` disables the outline.
 

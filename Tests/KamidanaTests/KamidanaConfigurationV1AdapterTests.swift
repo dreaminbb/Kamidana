@@ -72,6 +72,7 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
             gradient_separation: 2
             capture_scope: microphone
             channel_mode: mono
+            separation_length: 12
             smoothness: 0.85
             style:
               outline_color: "#111111"
@@ -103,6 +104,7 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(configured.gradientSeparation, 2)
     XCTAssertEqual(configured.captureScope, .microphone)
     XCTAssertEqual(configured.channelMode, .mono)
+    XCTAssertEqual(configured.separationLength, 12)
     XCTAssertEqual(configured.smoothness, 0.85)
     XCTAssertEqual(configured.outlineColor, "#111111")
     XCTAssertEqual(

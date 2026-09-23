@@ -8,6 +8,7 @@ public struct AudioVisualizerWidgetConfig: Codable, Hashable {
     public var smoothness: Double
     public var outlineColor: String?
     public var gradientColors: [String]
+    public var separationLength: Int
 
     public init(
         format: String = "{display}",
@@ -16,7 +17,8 @@ public struct AudioVisualizerWidgetConfig: Codable, Hashable {
         channelMode: KamidanaAudioVisualizerChannelMode = .stereo,
         smoothness: Double = 0.5,
         outlineColor: String? = nil,
-        gradientColors: [String] = []
+        gradientColors: [String] = [],
+        separationLength: Int = 5
     ) {
         self.format = format
         self.gradientSeparation = gradientSeparation
@@ -25,6 +27,11 @@ public struct AudioVisualizerWidgetConfig: Codable, Hashable {
         self.smoothness = smoothness
         self.outlineColor = outlineColor
         self.gradientColors = gradientColors
+        self.separationLength = separationLength
+    }
+
+    public var resolvedBarCount: Int {
+        min(20, max(1, separationLength))
     }
 }
 
@@ -48,7 +55,8 @@ struct AudioVisualizerWidget: View {
                 .foregroundColor(theme?.foreground)
 
             HStack(spacing: 1) {
-                ForEach(Array(model.displayCharacters.enumerated()), id: \.offset) { index, character in
+                ForEach(Array(model.displayCharacters.enumerated()), id: \.offset) {
+                    index, character in
                     Text(String(character))
                         .foregroundColor(color(forBarAt: index))
                         .font(.system(size: 20, weight: .semibold, design: .monospaced))
@@ -89,36 +97,38 @@ struct AudioVisualizerWidget: View {
         guard !config.gradientColors.isEmpty else {
             return theme?.foreground ?? .primary
         }
-        let separationCount = min(
+
+        let colorCount = min(
             max(1, config.gradientSeparation),
             config.gradientColors.count
         )
         let colorIndex = min(
-            separationCount - 1,
-            index * separationCount / AudioVisualizerWidgetModel.barCount
+            colorCount - 1,
+            index * colorCount / config.resolvedBarCount
         )
         return Color(hex: config.gradientColors[colorIndex])
     }
 }
 
 final class AudioVisualizerWidgetModel: ObservableObject {
-    static let barCount = 5
     private static let levelCharacters: [Character] = Array("▁▂▃▄▅▆▇█")
 
-    @Published private(set) var levels: [Double] = Array(
-        repeating: 0,
-        count: AudioVisualizerWidgetModel.barCount
-    )
+    @Published private(set) var levels: [Double]
 
     private let config: AudioVisualizerWidgetConfig
     private let controller: AudioVisualizerController
+    private let barCount: Int
     private var isListening = false
 
     init(
         config: AudioVisualizerWidgetConfig,
         controller: AudioVisualizerController? = nil
     ) {
+        let barCount = config.resolvedBarCount
         self.config = config
+        self.barCount = barCount
+        self.levels = Array(repeating: 0, count: barCount)
+
         let captureScope: AudioVisualizerCaptureScope =
             config.captureScope == .system ? .system : .microphone
         let channelMode: AudioVisualizerChannelMode =
@@ -148,7 +158,7 @@ final class AudioVisualizerWidgetModel: ObservableObject {
             let newLevels = Self.normalizedLevels(
                 from: buffer,
                 channelMode: self.config.channelMode,
-                barCount: Self.barCount
+                barCount: self.barCount
             )
             DispatchQueue.main.async { [weak self] in
                 self?.apply(newLevels)

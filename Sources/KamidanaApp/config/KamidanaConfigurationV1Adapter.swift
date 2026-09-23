@@ -321,7 +321,8 @@ public enum KamidanaConfigurationV1Adapter {
               channelMode: widget.channelMode ?? .stereo,
               smoothness: widget.smoothness ?? 0.5,
               outlineColor: style.outlineColor,
-              gradientColors: gradientColors
+              gradientColors: gradientColors,
+              separationLength: widget.separationLength ?? 5
             ),
             id: widget.id,
             v1Style: style,
