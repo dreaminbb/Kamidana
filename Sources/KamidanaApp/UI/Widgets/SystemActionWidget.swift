@@ -32,7 +32,6 @@ struct SystemActionWidget: View {
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .disabled(isForceQuit && !forceQuitManager.canForceQuit)
