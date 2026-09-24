@@ -1,8 +1,6 @@
 import Foundation
 import SwiftUI
 
-// TODO: バーにグラデーションを縦に修正する
-
 public struct AudioVisualizerWidgetConfig: Codable, Hashable {
     public var format: String
     public var position: KamidanaSoundVisualizerPosition
@@ -112,6 +110,7 @@ struct AudioVisualizerDisplay: View {
     let formatOverride: String?
     let showsSurface: Bool
     let visualizerPosition: KamidanaSoundVisualizerPosition?
+    let barHeightAtZeroSound: Double = 0.08
 
     init(
         config: AudioVisualizerWidgetConfig,
@@ -224,7 +223,7 @@ struct AudioVisualizerDisplay: View {
         let outline = outlineColor
 
         for (index, level) in levels.enumerated() {
-            let normalizedLevel = min(1, max(0, level))
+            let normalizedLevel = min(1, max(self.barHeightAtZeroSound, level))
             let color = color(forBarAt: index)
 
             if isVertical {
