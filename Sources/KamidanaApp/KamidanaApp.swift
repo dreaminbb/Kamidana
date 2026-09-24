@@ -63,13 +63,55 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
+    private var restartWorkItem: DispatchWorkItem?
+
     @objc func handleConfigChange() {
         if isProductionBuild {
             launchAtLoginManager.synchronize(
                 isEnabled: ConfigManager.shared.globalV1Config.launchAtLogin
             )
         }
-        updateWindows()
+        
+        restartWorkItem?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            self?.restartApplication()
+        }
+        restartWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: item)
+    }
+
+    private func restartApplication() {
+        let args = ProcessInfo.processInfo.arguments
+        guard let executablePath = args.first else { return }
+
+        if executablePath.hasSuffix("/Kamidana") && executablePath.contains(".app/Contents/MacOS/") {
+            let appBundlePath = URL(fileURLWithPath: executablePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+            
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.createsNewApplicationInstance = true
+            NSWorkspace.shared.openApplication(at: appBundlePath, configuration: configuration) { _, error in
+                if error == nil {
+                    DispatchQueue.main.async {
+                        NSApplication.shared.terminate(nil)
+                    }
+                } else {
+                    print("[LOG] Failed to restart app bundle: \(String(describing: error))")
+                }
+            }
+        } else {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: executablePath)
+            task.arguments = Array(args.dropFirst())
+            do {
+                try task.run()
+                NSApplication.shared.terminate(nil)
+            } catch {
+                print("[LOG] Failed to restart CLI process: \(error)")
+            }
+        }
     }
 
     @objc func updateWindows() {
