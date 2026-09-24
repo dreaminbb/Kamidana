@@ -4,6 +4,17 @@ import XCTest
 @testable import KamidanaApp
 
 final class AudioVisualizerControllerTests: XCTestCase {
+    func testAcceptsInjectedConfiguration() {
+        let configuration = AudioVisualizerController.Configuration(
+            captureScope: .microphone,
+            channelMode: .mono,
+            maxBufferedFrames: 256
+        )
+        let controller = AudioVisualizerController(configuration: configuration)
+
+        XCTAssertEqual(controller.configuration, configuration)
+    }
+
     func testForwardsCapturedPCMDataWhileListening() throws {
         let source = StubAudioVisualizerCaptureSource()
         let controller = AudioVisualizerController(captureSource: source)
@@ -65,7 +76,10 @@ final class AudioVisualizerControllerTests: XCTestCase {
     }
 
     func testCapturesCurrentlyPlayingSystemAudio() throws {
-        guard ProcessInfo.processInfo.environment["KAMIDANA_RUN_AUDIO_CAPTURE_INTEGRATION_TESTS"] == "1" else {
+        guard
+            ProcessInfo.processInfo.environment["KAMIDANA_RUN_AUDIO_CAPTURE_INTEGRATION_TESTS"]
+                == "1"
+        else {
             throw XCTSkip(
                 "Set KAMIDANA_RUN_AUDIO_CAPTURE_INTEGRATION_TESTS=1 and play audio to run this integration test."
             )

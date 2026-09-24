@@ -33,11 +33,48 @@ public enum AudioVisualizerChannelMode: Equatable, Sendable {
     case mono
 }
 
+public enum AudioVisualizerBufferFrequency: String, Codable, Equatable, Hashable, Sendable {
+    case high
+    case normal
+    case low
+
+    public var milliseconds: Int {
+        switch self {
+        case .high: return 16
+        case .normal: return 30
+        case .low: return 60
+        }
+    }
+}
+
+public enum AudioVisualizerSmoothness: String, Codable, Equatable, Hashable, Sendable {
+    case high
+    case normal
+    case low
+
+    public var retainedWeight: Double {
+        switch self {
+        case .high: return 0.95
+        case .normal: return 0.475
+        case .low: return 0.0
+        }
+    }
+
+    public var bufferFrequency: AudioVisualizerBufferFrequency {
+        switch self {
+        case .high: return .high
+        case .normal: return .normal
+        case .low: return .low
+        }
+    }
+}
+
 public enum AudioVisualizerError: Error, Equatable, LocalizedError, Sendable {
     case unsupportedOperatingSystem
     case coreAudio(operation: String, status: OSStatus)
     case unexpected(message: String)
-    case unsupportedStreamFormat(formatID: AudioFormatID, flags: AudioFormatFlags, bitsPerChannel: UInt32)
+    case unsupportedStreamFormat(
+        formatID: AudioFormatID, flags: AudioFormatFlags, bitsPerChannel: UInt32)
 
     public var errorDescription: String? {
         switch self {
@@ -48,7 +85,8 @@ public enum AudioVisualizerError: Error, Equatable, LocalizedError, Sendable {
         case .unexpected(let message):
             return "Audio capture failed: \(message)"
         case .unsupportedStreamFormat(let formatID, let flags, let bitsPerChannel):
-            return "Unsupported audio stream format: formatID=\(formatID), flags=\(flags), bitsPerChannel=\(bitsPerChannel)."
+            return
+                "Unsupported audio stream format: formatID=\(formatID), flags=\(flags), bitsPerChannel=\(bitsPerChannel)."
         }
     }
 }
@@ -61,6 +99,25 @@ protocol AudioVisualizerCaptureSource: AnyObject {
 }
 
 public final class AudioVisualizerController {
+    public struct Configuration: Equatable, Sendable {
+        public var captureScope: AudioVisualizerCaptureScope
+        public var channelMode: AudioVisualizerChannelMode
+        public var maxBufferedFrames: Int
+        public var bufferFrequency: AudioVisualizerBufferFrequency
+
+        public init(
+            captureScope: AudioVisualizerCaptureScope = .system,
+            channelMode: AudioVisualizerChannelMode = .stereo,
+            maxBufferedFrames: Int = 16_384,
+            bufferFrequency: AudioVisualizerBufferFrequency = .normal
+        ) {
+            self.captureScope = captureScope
+            self.channelMode = channelMode
+            self.maxBufferedFrames = max(1, maxBufferedFrames)
+            self.bufferFrequency = bufferFrequency
+        }
+    }
+
     public enum State: Equatable, Sendable {
         case stopped
         case starting
@@ -70,6 +127,7 @@ public final class AudioVisualizerController {
 
     public var onAudioData: ((AudioVisualizerPCMBuffer) -> Void)?
     public var onStateChanged: ((State) -> Void)?
+    public let configuration: Configuration
 
     public private(set) var state: State = .stopped {
         didSet {
@@ -86,7 +144,7 @@ public final class AudioVisualizerController {
         maxBufferedFrames: Int = 16_384
     ) {
         self.init(
-            captureSource: AudioVisualizerCaptureSourceFactory.make(
+            configuration: Configuration(
                 captureScope: captureScope,
                 channelMode: channelMode,
                 maxBufferedFrames: maxBufferedFrames
@@ -94,7 +152,24 @@ public final class AudioVisualizerController {
         )
     }
 
-    init(captureSource: AudioVisualizerCaptureSource) {
+    public convenience init(configuration: Configuration) {
+        self.init(
+            captureSource: AudioVisualizerCaptureSourceFactory.make(
+                captureScope: configuration.captureScope,
+                channelMode: configuration.channelMode,
+                maxBufferedFrames: configuration.maxBufferedFrames,
+                bufferFrequency: configuration.bufferFrequency
+            ),
+            configuration: configuration,
+
+        )
+    }
+
+    init(
+        captureSource: AudioVisualizerCaptureSource,
+        configuration: Configuration = Configuration()
+    ) {
+        self.configuration = configuration
         self.captureSource = captureSource
         captureSource.onAudioData = { [weak self] buffer in
             guard self?.state == .listening else { return }
@@ -141,19 +216,22 @@ private enum AudioVisualizerCaptureSourceFactory {
     static func make(
         captureScope: AudioVisualizerCaptureScope,
         channelMode: AudioVisualizerChannelMode,
-        maxBufferedFrames: Int
+        maxBufferedFrames: Int,
+        bufferFrequency: AudioVisualizerBufferFrequency
     ) -> AudioVisualizerCaptureSource {
         switch captureScope {
         case .system:
             if #available(macOS 14.2, *) {
                 return CoreAudioProcessTapCaptureSource(
                     channelMode: channelMode,
-                    maxBufferedFrames: maxBufferedFrames
+                    maxBufferedFrames: maxBufferedFrames,
+                    bufferFrequency: bufferFrequency
                 )
             }
             return UnavailableAudioVisualizerCaptureSource()
         case .microphone:
-            return MicrophoneAudioCaptureSource(maxBufferedFrames: maxBufferedFrames)
+            return MicrophoneAudioCaptureSource(
+                maxBufferedFrames: maxBufferedFrames, bufferFrequency: bufferFrequency)
         }
     }
 }
@@ -183,9 +261,15 @@ private final class MicrophoneAudioCaptureSource: AudioVisualizerCaptureSource {
     private var drainTimer: DispatchSourceTimer?
     private var isTapInstalled = false
     private var isRunning = false
+    private let bufferFrequency: AudioVisualizerBufferFrequency
 
-    init(maxBufferedFrames: Int) {
+    init(
+        maxBufferedFrames: Int,
+        bufferFrequency: AudioVisualizerBufferFrequency = .normal
+    ) {
         self.maxBufferedFrames = max(1, maxBufferedFrames)
+        self.bufferFrequency = bufferFrequency
+
     }
 
     func start() throws {
@@ -252,7 +336,7 @@ private final class MicrophoneAudioCaptureSource: AudioVisualizerCaptureSource {
         let timer = DispatchSource.makeTimerSource(queue: analysisQueue)
         timer.schedule(
             deadline: .now(),
-            repeating: .milliseconds(16),
+            repeating: .milliseconds(bufferFrequency.milliseconds),
             leeway: .milliseconds(2)
         )
         timer.setEventHandler { [weak self] in
@@ -330,13 +414,16 @@ private final class CoreAudioProcessTapCaptureSource: AudioVisualizerCaptureSour
     private var sampleRingBuffer: AudioSampleRingBuffer?
     private var drainTimer: DispatchSourceTimer?
     private var isRunning = false
+    private let bufferFrequency: AudioVisualizerBufferFrequency
 
     init(
         channelMode: AudioVisualizerChannelMode,
-        maxBufferedFrames: Int
+        maxBufferedFrames: Int,
+        bufferFrequency: AudioVisualizerBufferFrequency
     ) {
         self.channelMode = channelMode
         self.maxBufferedFrames = max(1, maxBufferedFrames)
+        self.bufferFrequency = bufferFrequency
     }
 
     func start() throws {
@@ -458,7 +545,7 @@ private final class CoreAudioProcessTapCaptureSource: AudioVisualizerCaptureSour
         let timer = DispatchSource.makeTimerSource(queue: analysisQueue)
         timer.schedule(
             deadline: .now(),
-            repeating: .milliseconds(16),
+            repeating: .milliseconds(bufferFrequency.milliseconds),
             leeway: .milliseconds(2)
         )
         timer.setEventHandler { [weak self] in

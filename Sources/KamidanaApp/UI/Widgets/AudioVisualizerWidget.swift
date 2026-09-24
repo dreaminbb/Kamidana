@@ -1,4 +1,7 @@
+import Foundation
 import SwiftUI
+
+// TODO: バーにグラデーションを縦に修正する
 
 public struct AudioVisualizerWidgetConfig: Codable, Hashable {
     public var format: String
@@ -9,7 +12,7 @@ public struct AudioVisualizerWidgetConfig: Codable, Hashable {
     public var gradientSeparation: Int
     public var captureScope: KamidanaAudioVisualizerCaptureScope
     public var channelMode: KamidanaAudioVisualizerChannelMode
-    public var smoothness: Double
+    public var smoothness: AudioVisualizerSmoothness
     public var outlineColor: String?
     public var gradientColors: [String]
     public var separationLength: Int
@@ -23,7 +26,7 @@ public struct AudioVisualizerWidgetConfig: Codable, Hashable {
         gradientSeparation: Int = 1,
         captureScope: KamidanaAudioVisualizerCaptureScope = .system,
         channelMode: KamidanaAudioVisualizerChannelMode = .stereo,
-        smoothness: Double = 0.5,
+        smoothness: AudioVisualizerSmoothness = .normal,
         outlineColor: String? = nil,
         gradientColors: [String] = [],
         separationLength: Int = 5
@@ -69,7 +72,8 @@ public struct AudioVisualizerWidgetConfig: Codable, Hashable {
                 KamidanaAudioVisualizerCaptureScope.self, forKey: .captureScope) ?? .system,
             channelMode: try container.decodeIfPresent(
                 KamidanaAudioVisualizerChannelMode.self, forKey: .channelMode) ?? .stereo,
-            smoothness: try container.decodeIfPresent(Double.self, forKey: .smoothness) ?? 0.5,
+            smoothness: try container.decodeIfPresent(
+                AudioVisualizerSmoothness.self, forKey: .smoothness) ?? .normal,
             outlineColor: try container.decodeIfPresent(String.self, forKey: .outlineColor),
             gradientColors: try container.decodeIfPresent([String].self, forKey: .gradientColors)
                 ?? [],
@@ -220,7 +224,7 @@ struct AudioVisualizerDisplay: View {
         let outline = outlineColor
 
         for (index, level) in levels.enumerated() {
-            let normalizedLevel = min(1, max(0, level * 2))
+            let normalizedLevel = min(1, max(0, level))
             let color = color(forBarAt: index)
 
             if isVertical {
@@ -320,12 +324,14 @@ final class AudioVisualizerWidgetModel: ObservableObject {
             config.captureScope == .system ? .system : .microphone
         let channelMode: AudioVisualizerChannelMode =
             config.channelMode == .stereo ? .stereo : .mono
+        let controllerConfiguration = AudioVisualizerController.Configuration(
+            captureScope: captureScope,
+            channelMode: channelMode,
+            bufferFrequency: config.smoothness.bufferFrequency
+        )
         self.controller =
             controller
-            ?? AudioVisualizerController(
-                captureScope: captureScope,
-                channelMode: channelMode
-            )
+            ?? AudioVisualizerController(configuration: controllerConfiguration)
     }
 
     var levelsSnapshot: [Double] {
@@ -372,48 +378,152 @@ final class AudioVisualizerWidgetModel: ObservableObject {
         }
 
         let selectedChannelCount = min(2, buffer.channelCount)
-
-        return (0..<barCount).map { barIndex in
-            let startFrame = barIndex * buffer.frameCount / barCount
-            let endFrame = (barIndex + 1) * buffer.frameCount / barCount
-            guard startFrame < endFrame else { return 0 }
-
-            var squaredMagnitude = 0.0
-            var sampleCount = 0
-            for frame in startFrame..<endFrame {
-                switch channelMode {
-                case .stereo:
-                    for channel in 0..<selectedChannelCount {
-                        let sampleIndex = frame * buffer.channelCount + channel
-                        guard buffer.samples.indices.contains(sampleIndex) else { continue }
-                        let sample = Double(buffer.samples[sampleIndex])
-                        squaredMagnitude += sample * sample
-                        sampleCount += 1
-                    }
-                case .mono:
-                    var mixedSample = 0.0
-                    var mixedChannelCount = 0
-                    for channel in 0..<selectedChannelCount {
-                        let sampleIndex = frame * buffer.channelCount + channel
-                        guard buffer.samples.indices.contains(sampleIndex) else { continue }
-                        mixedSample += Double(buffer.samples[sampleIndex])
-                        mixedChannelCount += 1
-                    }
-                    guard mixedChannelCount > 0 else { continue }
-                    mixedSample /= Double(mixedChannelCount)
-                    squaredMagnitude += mixedSample * mixedSample
-                    sampleCount += 1
-                }
+        let channelSamples = (0..<selectedChannelCount).map { channel in
+            (0..<buffer.frameCount).map { frame in
+                Double(buffer.samples[frame * buffer.channelCount + channel])
             }
+        }
 
-            guard sampleCount > 0 else { return 0 }
-            let rootMeanSquare = sqrt(squaredMagnitude / Double(sampleCount))
-            return min(1, sqrt(rootMeanSquare))
+        if channelMode == .mono || channelSamples.count == 1 {
+            let mixedSamples = (0..<buffer.frameCount).map { frame in
+                channelSamples.reduce(0) { $0 + $1[frame] }
+                    / Double(channelSamples.count)
+            }
+            return frequencyLevels(
+                from: mixedSamples,
+                sampleRate: buffer.sampleRate,
+                barCount: barCount
+            )
+        }
+
+        let channelLevels = channelSamples.map {
+            frequencyLevels(from: $0, sampleRate: buffer.sampleRate, barCount: barCount)
+        }
+        return (0..<barCount).map { bandIndex in
+            channelLevels.reduce(0) { $0 + $1[bandIndex] }
+                / Double(channelLevels.count)
+        }
+    }
+
+    private static func frequencyLevels(
+        from samples: [Double],
+        sampleRate: Double,
+        barCount: Int
+    ) -> [Double] {
+        guard samples.count >= 2, sampleRate > 0, barCount > 0 else {
+            return Array(repeating: 0, count: max(0, barCount))
+        }
+
+        let fftSize = largestPowerOfTwo(atMost: min(samples.count, 2_048))
+        guard fftSize >= 2 else {
+            return Array(repeating: 0, count: barCount)
+        }
+
+        var real = Array(samples.suffix(fftSize))
+        var imaginary = Array(repeating: 0.0, count: fftSize)
+        applyHannWindow(to: &real)
+        fft(real: &real, imaginary: &imaginary)
+
+        let magnitudes = (1..<(fftSize / 2)).map { index in
+            hypot(real[index], imaginary[index])
+        }
+        guard let peak = magnitudes.max(), peak > 0 else {
+            return Array(repeating: 0, count: barCount)
+        }
+
+        let nyquist = sampleRate / 2
+        let minimumFrequency = min(55.0, nyquist / 2)
+        let maximumFrequency = min(20_000.0, nyquist)
+        guard maximumFrequency > minimumFrequency else {
+            return Array(repeating: 0, count: barCount)
+        }
+
+        let frequencyRatio = maximumFrequency / minimumFrequency
+        return (0..<barCount).map { bandIndex in
+            let lowerRatio = Double(bandIndex) / Double(barCount)
+            let upperRatio = Double(bandIndex + 1) / Double(barCount)
+            let lowerFrequency = minimumFrequency * pow(frequencyRatio, lowerRatio)
+            let upperFrequency = minimumFrequency * pow(frequencyRatio, upperRatio)
+            let lowerBin = max(1, Int(lowerFrequency / sampleRate * Double(fftSize)))
+            let upperBin = min(
+                fftSize / 2,
+                max(lowerBin + 1, Int(ceil(upperFrequency / sampleRate * Double(fftSize))))
+            )
+            guard lowerBin < upperBin else { return 0 }
+
+            let bandMagnitude =
+                magnitudes[(lowerBin - 1)..<(upperBin - 1)].reduce(0, +)
+                / Double(upperBin - lowerBin)
+            return min(1, sqrt(bandMagnitude / peak))
+        }
+    }
+
+    private static func largestPowerOfTwo(atMost value: Int) -> Int {
+        var result = 1
+        while result * 2 <= value {
+            result *= 2
+        }
+        return result
+    }
+
+    private static func applyHannWindow(to samples: inout [Double]) {
+        guard samples.count > 1 else { return }
+        let denominator = Double(samples.count - 1)
+        for index in samples.indices {
+            let phase = Double(index) / denominator
+            samples[index] *= 0.5 * (1 - cos(2 * .pi * phase))
+        }
+    }
+
+    private static func fft(real: inout [Double], imaginary: inout [Double]) {
+        let count = real.count
+        var j = 0
+        for index in 1..<count {
+            var bit = count >> 1
+            while (j & bit) != 0 {
+                j ^= bit
+                bit >>= 1
+            }
+            j ^= bit
+            if index < j {
+                real.swapAt(index, j)
+                imaginary.swapAt(index, j)
+            }
+        }
+
+        var length = 2
+        while length <= count {
+            let angle = -2 * Double.pi / Double(length)
+            let sine = sin(angle)
+            let cosine = cos(angle)
+            var blockStart = 0
+            while blockStart < count {
+                var currentCosine = 1.0
+                var currentSine = 0.0
+                let halfLength = length / 2
+                for offset in 0..<halfLength {
+                    let even = blockStart + offset
+                    let odd = even + halfLength
+                    let transformedReal = currentCosine * real[odd] - currentSine * imaginary[odd]
+                    let transformedImaginary =
+                        currentCosine * imaginary[odd] + currentSine * real[odd]
+                    real[odd] = real[even] - transformedReal
+                    imaginary[odd] = imaginary[even] - transformedImaginary
+                    real[even] += transformedReal
+                    imaginary[even] += transformedImaginary
+
+                    let nextCosine = currentCosine * cosine - currentSine * sine
+                    currentSine = currentCosine * sine + currentSine * cosine
+                    currentCosine = nextCosine
+                }
+                blockStart += length
+            }
+            length *= 2
         }
     }
 
     private func apply(_ newLevels: [Double]) {
-        let retainedWeight = min(0.95, max(0, config.smoothness) * 0.95)
+        let retainedWeight = config.smoothness.retainedWeight
         let incomingWeight = 1 - retainedWeight
         levels = zip(levels, newLevels).map { current, incoming in
             current * retainedWeight + incoming * incomingWeight

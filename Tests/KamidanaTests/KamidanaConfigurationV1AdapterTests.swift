@@ -76,7 +76,7 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
             capture_scope: microphone
             channel_mode: mono
             separation_length: 12
-            smoothness: 0.85
+            smoothness: high
             style:
               outline_color: "#111111"
               gradient_color_1: "#222222"
@@ -114,7 +114,7 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(configured.captureScope, .microphone)
     XCTAssertEqual(configured.channelMode, .mono)
     XCTAssertEqual(configured.separationLength, 12)
-    XCTAssertEqual(configured.smoothness, 0.85)
+    XCTAssertEqual(configured.smoothness, .high)
     XCTAssertEqual(configured.outlineColor, "#111111")
     XCTAssertEqual(
       configured.gradientColors,
@@ -146,6 +146,7 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
               capture_scope: microphone
               channel_mode: mono
               separation_length: 30
+              smoothness: low
               style:
                 outline_color: "#111111"
                 gradient_color_1: "#222222"
@@ -169,6 +170,7 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(visualizer.captureScope, .microphone)
     XCTAssertEqual(visualizer.channelMode, .mono)
     XCTAssertEqual(visualizer.separationLength, 30)
+    XCTAssertEqual(visualizer.smoothness, .low)
     XCTAssertEqual(visualizer.outlineColor, "#111111")
     XCTAssertEqual(visualizer.gradientColors, ["#222222"])
   }

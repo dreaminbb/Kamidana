@@ -227,7 +227,9 @@ public struct KamidanaInsets: Codable, Hashable {
         if let values = try? decoder.singleValueContainer().decode([Double].self) {
             guard values.count == 4 else {
                 throw DecodingError.dataCorrupted(
-                    .init(codingPath: decoder.codingPath, debugDescription: "Padding requires four values")
+                    .init(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Padding requires four values")
                 )
             }
             self.init(top: values[0], bottom: values[2], leading: values[3], trailing: values[1])
@@ -240,7 +242,9 @@ public struct KamidanaInsets: Codable, Hashable {
             }
             guard values.count == 4 else {
                 throw DecodingError.dataCorrupted(
-                    .init(codingPath: decoder.codingPath, debugDescription: "Padding requires four comma-separated values")
+                    .init(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Padding requires four comma-separated values")
                 )
             }
             self.init(top: values[0], bottom: values[2], leading: values[3], trailing: values[1])
@@ -510,7 +514,7 @@ public struct KamidanaSoundVisualizerConfig: Decodable, Equatable {
     public var gradientSeparation: Int
     public var captureScope: KamidanaAudioVisualizerCaptureScope
     public var channelMode: KamidanaAudioVisualizerChannelMode
-    public var smoothness: Double
+    public var smoothness: AudioVisualizerSmoothness
     public var separationLength: Int
     public var style: KamidanaStyle
 
@@ -523,7 +527,7 @@ public struct KamidanaSoundVisualizerConfig: Decodable, Equatable {
         gradientSeparation: Int = 1,
         captureScope: KamidanaAudioVisualizerCaptureScope = .system,
         channelMode: KamidanaAudioVisualizerChannelMode = .stereo,
-        smoothness: Double = 0.5,
+        smoothness: AudioVisualizerSmoothness = .normal,
         separationLength: Int = 5,
         style: KamidanaStyle = KamidanaStyle()
     ) {
@@ -569,7 +573,8 @@ public struct KamidanaSoundVisualizerConfig: Decodable, Equatable {
                 KamidanaAudioVisualizerCaptureScope.self, forKey: .captureScope) ?? .system,
             channelMode: try container.decodeIfPresent(
                 KamidanaAudioVisualizerChannelMode.self, forKey: .channelMode) ?? .stereo,
-            smoothness: try container.decodeIfPresent(Double.self, forKey: .smoothness) ?? 0.5,
+            smoothness: try container.decodeIfPresent(
+                AudioVisualizerSmoothness.self, forKey: .smoothness) ?? .normal,
             separationLength: try container.decodeIfPresent(Int.self, forKey: .separationLength)
                 ?? 5,
             style: try container.decodeIfPresent(KamidanaStyle.self, forKey: .style)
@@ -880,7 +885,7 @@ public struct KamidanaWidget: Decodable, Equatable {
     public var captureScope: KamidanaAudioVisualizerCaptureScope?
     public var channelMode: KamidanaAudioVisualizerChannelMode?
     public var separationLength: Int?
-    public var smoothness: Double?
+    public var smoothness: AudioVisualizerSmoothness?
     public var formatOnAction: String?
     public var sliderChange: String?
     public var sliderPause: String?
@@ -926,7 +931,7 @@ public struct KamidanaWidget: Decodable, Equatable {
         captureScope: KamidanaAudioVisualizerCaptureScope? = nil,
         channelMode: KamidanaAudioVisualizerChannelMode? = nil,
         separationLength: Int? = nil,
-        smoothness: Double? = nil,
+        smoothness: AudioVisualizerSmoothness? = nil,
         formatOnAction: String? = nil,
         sliderChange: String? = nil,
         sliderPause: String? = nil,
@@ -1005,7 +1010,8 @@ public struct KamidanaWidget: Decodable, Equatable {
             KamidanaAudioVisualizerChannelMode.self, forKey: .channelMode)
         let separationLength = try container.decodeIfPresent(
             Int.self, forKey: .separationLength)
-        let smoothness = try container.decodeIfPresent(Double.self, forKey: .smoothness)
+        let smoothness = try container.decodeIfPresent(
+            AudioVisualizerSmoothness.self, forKey: .smoothness)
 
         let regularIcon =
             kind == .battery || kind == .weather
@@ -1068,7 +1074,7 @@ public struct KamidanaWidget: Decodable, Equatable {
             separationLength: kind == .audioVisualizer
                 ? separationLength ?? 5 : separationLength,
             smoothness: kind == .audioVisualizer
-                ? smoothness ?? 0.5 : smoothness,
+                ? smoothness ?? .normal : smoothness,
             formatOnAction: try container.decodeIfPresent(String.self, forKey: .formatOnAction),
             sliderChange: try container.decodeIfPresent(String.self, forKey: .sliderChange),
             sliderPause: try container.decodeIfPresent(String.self, forKey: .sliderPause),
@@ -1599,7 +1605,8 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
                     )
                 }
             }
-            let maximumGradientSeparation = section == "center" ? 5 : 2
+            // let maximumGradientSeparation = section == "center" ? 5 : 2
+            let maximumGradientSeparation = 5
             let gradientSeparation = widget.gradientSeparation ?? 1
             if gradientSeparation < 1 || gradientSeparation > maximumGradientSeparation {
                 throw KamidanaConfigurationV1Error.invalidWidget(
@@ -1613,13 +1620,6 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
             if separationLength < 1 || separationLength > 20 {
                 throw KamidanaConfigurationV1Error.invalidWidget(
                     path: path, reason: "separation_length must be in 1...20"
-                )
-            }
-
-            let smoothness = widget.smoothness ?? 0.5
-            if smoothness < 0 || smoothness > 1 || !smoothness.isFinite {
-                throw KamidanaConfigurationV1Error.invalidWidget(
-                    path: path, reason: "smoothness must be in 0...1"
                 )
             }
 
@@ -1738,15 +1738,6 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
                     )
                 }
 
-                if visualizer.smoothness < 0
-                    || visualizer.smoothness > 1
-                    || !visualizer.smoothness.isFinite
-                {
-                    throw KamidanaConfigurationV1Error.invalidWidget(
-                        path: path,
-                        reason: "sound_visualizer.smoothness must be in 0...1"
-                    )
-                }
                 let placeholderCount =
                     visualizer.format.components(separatedBy: "{display}").count - 1
                 if placeholderCount != 1 {

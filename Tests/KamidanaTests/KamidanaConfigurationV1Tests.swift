@@ -168,7 +168,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
             capture_scope: system
             channel_mode: stereo
             separation_length: 12
-            smoothness: 0.5
+            smoothness: normal
             style:
               outline_color: ""
               gradient_color_1: "#f38ba8"
@@ -201,7 +201,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(widget.captureScope, .system)
     XCTAssertEqual(widget.channelMode, .stereo)
     XCTAssertEqual(widget.separationLength, 12)
-    XCTAssertEqual(widget.smoothness, 0.5)
+    XCTAssertEqual(widget.smoothness, .normal)
     XCTAssertEqual(widget.style?.outlineColor, "")
     XCTAssertEqual(widget.style?.gradientColor1, "#f38ba8")
     XCTAssertEqual(widget.style?.gradientColor2, "#a6e3a1")
@@ -294,8 +294,8 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     }
   }
 
-  func testRejectsAudioVisualizerSmoothnessOutsideUnitInterval() {
-    for smoothness in [-0.01, 1.01] {
+  func testDecodesAudioVisualizerSmoothnessLevels() throws {
+    for smoothness in ["high", "normal", "low"] {
       let yaml = """
         left:
           widgets:
@@ -310,15 +310,10 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
               compact_format: "{time}"
         """
 
-      assertError(
-        yaml,
-        matches: {
-          if case .invalidWidget(_, let reason) = $0 {
-            return reason.contains("smoothness")
-          }
-          return false
-        }
+      let widget = try XCTUnwrap(
+        KamidanaConfigurationV1Decoder.decode(yaml: yaml).left.widgets.first
       )
+      XCTAssertEqual(widget.smoothness?.rawValue, smoothness)
     }
   }
 
@@ -383,7 +378,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
               gradient_separation: 5
               capture_scope: system
               channel_mode: stereo
-              smoothness: 0.3
+              smoothness: low
               separation_length: 10
               style:
                 gradient_color_1: "#f38ba8"
@@ -404,7 +399,7 @@ final class KamidanaConfigurationV1Tests: XCTestCase {
     XCTAssertEqual(visualizer.padding.leading, 4)
     XCTAssertEqual(visualizer.gradientSeparation, 5)
     XCTAssertEqual(visualizer.separationLength, 10)
-    XCTAssertEqual(visualizer.smoothness, 0.3)
+    XCTAssertEqual(visualizer.smoothness, .low)
     XCTAssertEqual(visualizer.style.gradientColor1, "#f38ba8")
     XCTAssertEqual(visualizer.style.gradientColor5, "#89b4fa")
   }

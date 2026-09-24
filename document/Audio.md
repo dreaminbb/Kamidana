@@ -149,7 +149,7 @@ The widget must be added through the normal configuration flow:
   capture_scope: system
   channel_mode: stereo
   separation_length: 5
-  smoothness: 0.5
+  smoothness: normal
   style:
     outline_color: ""
     gradient_color_1: "#f38ba8"
@@ -172,7 +172,10 @@ The widget must be added through the normal configuration flow:
 - `channel_mode` accepts `stereo` or `mono`. Mono mode downmixes the available left and
   right channels before level analysis.
 - `separation_length` selects the number of displayed bars and accepts values in `1...20`.
-- `smoothness` accepts values in `0...1`.
+- `smoothness` accepts `high`, `normal`, or `low`; higher values retain more
+  previous visual levels and also controls the buffer update cycle: `high` is
+  16ms (about 62.5 updates per second), `normal` is 30ms (about 33.3 updates
+  per second), and `low` is 60ms (about 16.7 updates per second).
 - An empty `outline_color` disables the outline.
 
 ## Music Widget Relationship
@@ -216,7 +219,7 @@ It shares the independent audio capture lifecycle with the standalone widget.
     capture_scope: system
     channel_mode: stereo
     separation_length: 10
-    smoothness: 0.3
+    smoothness: normal
     style:
       gradient_color_1: "#f38ba8"
       gradient_color_2: "#a6e3a1"
@@ -233,7 +236,7 @@ Music `width` and `height` control the expanded Music Island size in points.
 ## Recommended Rollout
 
 1. Implement and test the Core Audio Tap capture manager for macOS 14.2+.
-2. Add FFT, smoothing, and a deterministic band-value model.
+2. Tune FFT smoothing and the deterministic frequency-band model.
 3. Add the standalone `audio-visualizer` widget and configuration schema.
 4. Add permission and unavailable states to regular and compact layouts.
 5. Consider an optional Music Island visualization after the standalone path is
