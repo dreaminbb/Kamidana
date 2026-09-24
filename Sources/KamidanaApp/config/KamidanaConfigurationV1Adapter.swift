@@ -245,6 +245,25 @@ public enum KamidanaConfigurationV1Adapter {
                 theme: resolvedTheme, popupTheme: resolvedPopupTheme
             )
 
+        case .forceQuit:
+            return WidgetInstance(
+                typeID: "systemAction",
+                config: SystemActionWidgetConfig(
+                    action: "forceQuit",
+                    name: displayFormat ?? "Force Quit",
+                    icon: widget.icon ?? "󰅙",
+                    iconColor: style.iconColor ?? "#f38ba8"
+                ),
+                id: widget.id,
+                v1Style: style,
+                v1PopupStyle: popupStyle,
+                v1Format: displayFormat,
+                v1Activate: activation,
+                v1Animation: animation,
+                theme: resolvedTheme,
+                popupTheme: resolvedPopupTheme
+            )
+
         case .custom:
             guard let command = widget.command else { return nil }
             return WidgetInstance(

@@ -57,10 +57,14 @@ private struct SystemForceQuitWorkspace: ForceQuitWorkspace {
     var events: AnyPublisher<ForceQuitWorkspaceEvent, Never> {
         let center = NSWorkspace.shared.notificationCenter
         let activations = center.publisher(for: NSWorkspace.didActivateApplicationNotification)
-            .compactMap { $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication }
+            .compactMap {
+                $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            }
             .map { ForceQuitWorkspaceEvent.activated($0) }
         let terminations = center.publisher(for: NSWorkspace.didTerminateApplicationNotification)
-            .compactMap { $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication }
+            .compactMap {
+                $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            }
             .map { ForceQuitWorkspaceEvent.terminated($0) }
         return activations.merge(with: terminations)
             .receive(on: DispatchQueue.main)
@@ -127,7 +131,9 @@ final class ForceQuitManager: ObservableObject {
     }
 
     var targetName: String? {
-        target.map { $0.localizedName ?? $0.bundleIdentifier ?? "Application (\($0.processIdentifier))" }
+        target.map {
+            $0.localizedName ?? $0.bundleIdentifier ?? "Application (\($0.processIdentifier))"
+        }
     }
 
     var canForceQuit: Bool {
@@ -138,7 +144,7 @@ final class ForceQuitManager: ObservableObject {
     var statusMessage: String {
         if isRequesting { return "Requesting force quit…" }
         if let feedback { return feedback.message }
-        if let targetName { return "Target: \(targetName)" }
+        if let targetName { return "\(targetName)" }
         return ForceQuitFeedback.noTarget.message
     }
 
@@ -181,7 +187,8 @@ final class ForceQuitManager: ObservableObject {
     }
 
     private func isEligible(_ application: ForceQuitApplication) -> Bool {
-        !isSelf(application) && application.processIdentifier > 0 && application.isRegularApplication
+        !isSelf(application) && application.processIdentifier > 0
+            && application.isRegularApplication
     }
 
     private func select(_ application: ForceQuitApplication?) {

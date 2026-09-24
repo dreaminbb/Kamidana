@@ -600,6 +600,7 @@ public enum KamidanaWidgetKind: String, Codable, Equatable, CaseIterable {
     case widgetFolder = "widget-folder"
     case systemAction = "system-action"
     case btop
+    case forceQuit = "force-quit"
 }
 
 public enum KamidanaSystemAction: String, Codable, Equatable {
