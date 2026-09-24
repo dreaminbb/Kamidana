@@ -99,6 +99,8 @@ final class MusicPlayingManager: ObservableObject {
         }
     }
 
+    private var artworkSubscription: AnyCancellable?
+
     private func apply(_ snapshot: MusicPlaybackSnapshot) {
         primaryApp = snapshot.app
         title = snapshot.title
@@ -111,28 +113,41 @@ final class MusicPlayingManager: ObservableObject {
         guard currentTrackIdentifier != snapshot.identifier else { return }
         currentTrackIdentifier = snapshot.identifier
 
-        if let artworkData = snapshot.artworkData {
-            artwork = NSImage(data: artworkData)
-        } else if let artworkURL = snapshot.artworkURL {
-            artwork = nil
-            loadArtwork(from: artworkURL, for: snapshot.identifier)
-        } else {
-            artwork = nil
+        updateArtwork(for: snapshot)
+    }
+
+    private func updateArtwork(for snapshot: MusicPlaybackSnapshot) {
+        artworkSubscription?.cancel()
+        artwork = nil
+
+        let key = MusicArtworkKey(snapshot: snapshot)
+        artworkSubscription = MusicArtworkCache.shared.load(key: key) { completion in
+            if let artworkData = snapshot.artworkData {
+                DispatchQueue.global(qos: .utility).async {
+                    completion(artworkData)
+                }
+                return AnyCancellable {}
+            } else if let artworkURL = snapshot.artworkURL {
+                return MusicArtworkDownloader.load(artworkURL, completion: completion)
+            } else {
+                completion(nil)
+                return AnyCancellable {}
+            }
+        } completion: { [weak self] cgImage in
+            guard let self, self.currentTrackIdentifier == snapshot.identifier else { return }
+            if let cgImage {
+                let size = NSSize(width: cgImage.width, height: cgImage.height)
+                self.artwork = NSImage(cgImage: cgImage, size: size)
+            } else {
+                self.artwork = nil
+            }
         }
     }
 
-    private func loadArtwork(from url: URL, for trackIdentifier: String) {
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            guard let data, let image = NSImage(data: data) else { return }
-
-            DispatchQueue.main.async {
-                guard self?.currentTrackIdentifier == trackIdentifier else { return }
-                self?.artwork = image
-            }
-        }.resume()
-    }
-
     private func clearInfo() {
+        artworkSubscription?.cancel()
+        artworkSubscription = nil
+
         guard
             !title.isEmpty || !artist.isEmpty || !album.isEmpty || artwork != nil
                 || isPlaying || currentPosition != 0 || trackTime != 0
