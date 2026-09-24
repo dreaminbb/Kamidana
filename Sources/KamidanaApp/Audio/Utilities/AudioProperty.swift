@@ -8,7 +8,7 @@ enum AudioError: Error {
 }
 
 class AudioProperty {
-    
+
     /// Common utility to get property value from CoreAudio
     /// - Parameters:
     ///   - objectID: Target object ID (e.g. kAudioObjectSystemObject for system-wide)
@@ -22,25 +22,27 @@ class AudioProperty {
         element: AudioObjectPropertyElement = kAudioObjectPropertyElementMain,
         defaultValue: T
     ) -> Result<T, AudioError> {
-        
+
         var address = AudioObjectPropertyAddress(
             mSelector: selector,
             mScope: scope,
             mElement: element
         )
-        
+
         var dataSize = UInt32(MemoryLayout<T>.size)
         var data = defaultValue
-        
-        let status = AudioObjectGetPropertyData(objectID, &address, 0, nil, &dataSize, &data)
-        
+
+        let status = withUnsafeMutablePointer(to: &data) { pointer in
+            AudioObjectGetPropertyData(objectID, &address, 0, nil, &dataSize, pointer)
+        }
+
         if status == noErr {
             return .success(data)
         } else {
             return .failure(.getPropertyFailed(status))
         }
     }
-    
+
     /// Utility to get array size and fetch array data from CoreAudio
     static func getArrayProperty<T>(
         objectID: AudioObjectID,
@@ -48,26 +50,26 @@ class AudioProperty {
         scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal,
         element: AudioObjectPropertyElement = kAudioObjectPropertyElementMain
     ) -> Result<[T], AudioError> {
-        
+
         var address = AudioObjectPropertyAddress(
             mSelector: selector,
             mScope: scope,
             mElement: element
         )
-        
+
         var dataSize: UInt32 = 0
         var status = AudioObjectGetPropertyDataSize(objectID, &address, 0, nil, &dataSize)
-        
+
         guard status == noErr, dataSize > 0 else {
             return status == noErr ? .success([]) : .failure(.getPropertyFailed(status))
         }
-        
+
         let count = Int(dataSize) / MemoryLayout<T>.size
         let pointer = UnsafeMutablePointer<T>.allocate(capacity: count)
         defer { pointer.deallocate() }
-        
+
         status = AudioObjectGetPropertyData(objectID, &address, 0, nil, &dataSize, pointer)
-        
+
         if status == noErr {
             let buffer = UnsafeBufferPointer(start: pointer, count: count)
             return .success(Array(buffer))
@@ -75,7 +77,7 @@ class AudioProperty {
             return .failure(.getPropertyFailed(status))
         }
     }
-    
+
     /// Utility to get string (CFString) from CoreAudio
     static func getStringProperty(
         objectID: AudioObjectID,
@@ -83,25 +85,27 @@ class AudioProperty {
         scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal,
         element: AudioObjectPropertyElement = kAudioObjectPropertyElementMain
     ) -> Result<String, AudioError> {
-        
+
         var address = AudioObjectPropertyAddress(
             mSelector: selector,
             mScope: scope,
             mElement: element
         )
-        
+
         var dataSize = UInt32(MemoryLayout<CFString?>.size)
         var cfString: CFString? = nil
-        
-        let status = AudioObjectGetPropertyData(objectID, &address, 0, nil, &dataSize, &cfString)
-        
+
+        let status = withUnsafeMutablePointer(to: &cfString) { pointer in
+            AudioObjectGetPropertyData(objectID, &address, 0, nil, &dataSize, pointer)
+        }
+
         if status == noErr, let string = cfString as String? {
             return .success(string)
         } else {
             return .failure(.getPropertyFailed(status))
         }
     }
-    
+
     /// Common utility to set property value on CoreAudio
     static func setProperty<T>(
         objectID: AudioObjectID,
@@ -110,18 +114,20 @@ class AudioProperty {
         element: AudioObjectPropertyElement = kAudioObjectPropertyElementMain,
         value: T
     ) -> Result<Void, AudioError> {
-        
+
         var address = AudioObjectPropertyAddress(
             mSelector: selector,
             mScope: scope,
             mElement: element
         )
-        
-        var dataSize = UInt32(MemoryLayout<T>.size)
+
+        let dataSize = UInt32(MemoryLayout<T>.size)
         var data = value
-        
-        let status = AudioObjectSetPropertyData(objectID, &address, 0, nil, dataSize, &data)
-        
+
+        let status = withUnsafePointer(to: &data) { pointer in
+            AudioObjectSetPropertyData(objectID, &address, 0, nil, dataSize, pointer)
+        }
+
         if status == noErr {
             return .success(())
         } else {
