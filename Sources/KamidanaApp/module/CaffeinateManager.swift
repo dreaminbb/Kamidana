@@ -8,8 +8,10 @@ final class CaffeinateManager: ObservableObject {
     @Published private(set) var isActive: Bool = false {
         didSet {
             if isActive {
+                print("Caffain active")
                 createAssertion()
             } else {
+                print("Caffain deactive")
                 releaseAssertion()
             }
         }
@@ -22,6 +24,7 @@ final class CaffeinateManager: ObservableObject {
     }
 
     private func createAssertion() {
+        print("Creating assertion...")
         guard assertionID == 0 else { return }
         let reasonForActivity = "Kamidana Caffeinate Widget" as CFString
         let result = IOPMAssertionCreateWithName(
@@ -33,7 +36,11 @@ final class CaffeinateManager: ObservableObject {
         if result != kIOReturnSuccess {
             assertionID = 0
             isActive = false
+            print("Failed to create assertion: \(result)")
+        } else {
+            print("Assertion created with ID: \(assertionID)")
         }
+
     }
 
     nonisolated private func releaseAssertion() {
@@ -44,7 +51,7 @@ final class CaffeinateManager: ObservableObject {
             }
         }
     }
-    
+
     deinit {
         releaseAssertion()
     }
