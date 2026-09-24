@@ -150,5 +150,11 @@ public class WidgetRegistry {
         viewMaker: { config in GpuWidget(config: config) },
         tabNameMaker: { _ in "GPU" }
       ))
+    register(
+      factory: GenericWidgetFactory<CaffeinateWidgetConfig, CaffeinateWidget>(
+        typeID: "caffeinate",
+        viewMaker: { config in CaffeinateWidget(config: config) },
+        tabNameMaker: { _ in "Caffeinate" }
+      ))
   }
 }
