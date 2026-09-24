@@ -245,6 +245,16 @@ public enum KamidanaConfigurationV1Adapter {
                 theme: resolvedTheme, popupTheme: resolvedPopupTheme
             )
 
+        case .caffeinate:
+            return WidgetInstance(
+                typeID: "caffeinate",
+                config: CaffeinateWidgetConfig(format: displayFormat ?? "{icon}"),
+                id: widget.id,
+                v1Style: style, v1PopupStyle: popupStyle, v1Format: displayFormat,
+                v1Activate: activation, v1Animation: animation,
+                theme: resolvedTheme, popupTheme: resolvedPopupTheme
+            )
+
         case .custom:
             guard let command = widget.command else { return nil }
             return WidgetInstance(
