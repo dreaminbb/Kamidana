@@ -500,6 +500,7 @@ public enum KamidanaConfigurationV1Adapter {
         switch action {
         case .aboutThisMac: return "aboutThisMac"
         case .lockScreen: return "lockScreen"
+        case .forceQuit: return "forceQuit"
         default: return action.rawValue
         }
     }

@@ -609,6 +609,7 @@ public enum KamidanaSystemAction: String, Codable, Equatable {
     case logout
     case lockScreen = "lock-screen"
     case aboutThisMac = "about-this-mac"
+    case forceQuit = "force-quit"
 }
 
 public struct KamidanaSystemActionChild: Decodable, Equatable {
