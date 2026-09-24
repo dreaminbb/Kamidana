@@ -250,7 +250,7 @@ public enum KamidanaConfigurationV1Adapter {
                 typeID: "systemAction",
                 config: SystemActionWidgetConfig(
                     action: "forceQuit",
-                    name: displayFormat ?? "Force Quit",
+                    name: displayFormat ?? "Quit",
                     icon: widget.icon ?? "󰅙",
                     iconColor: style.iconColor ?? "#f38ba8"
                 ),
@@ -312,9 +312,9 @@ public enum KamidanaConfigurationV1Adapter {
                     barWidth: visualizer.barWidth,
                     padding: visualizer.padding,
                     gradientSeparation: visualizer.gradientSeparation,
-              captureScope: visualizer.captureScope,
-              channelMode: visualizer.channelMode,
-              smoothness: visualizer.smoothness,
+                    captureScope: visualizer.captureScope,
+                    channelMode: visualizer.channelMode,
+                    smoothness: visualizer.smoothness,
                     outlineColor: visualizerStyle.outlineColor,
                     gradientColors: [
                         visualizerStyle.gradientColor1,
@@ -367,8 +367,8 @@ public enum KamidanaConfigurationV1Adapter {
                 padding: widget.padding ?? KamidanaInsets(),
                 gradientSeparation: widget.gradientSeparation ?? 1,
                 captureScope: widget.captureScope ?? .system,
-              channelMode: widget.channelMode ?? .stereo,
-              smoothness: widget.smoothness ?? .normal,
+                channelMode: widget.channelMode ?? .stereo,
+                smoothness: widget.smoothness ?? .normal,
                 outlineColor: style.outlineColor,
                 gradientColors: gradientColors,
                 separationLength: widget.separationLength ?? 5
