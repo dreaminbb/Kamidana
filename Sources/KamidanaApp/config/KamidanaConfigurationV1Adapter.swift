@@ -255,6 +255,25 @@ public enum KamidanaConfigurationV1Adapter {
                 theme: resolvedTheme, popupTheme: resolvedPopupTheme
             )
 
+        case .forceQuit:
+            return WidgetInstance(
+                typeID: "systemAction",
+                config: SystemActionWidgetConfig(
+                    action: "forceQuit",
+                    name: displayFormat ?? "Quit",
+                    icon: widget.icon ?? "󰅙",
+                    iconColor: style.iconColor ?? "#f38ba8"
+                ),
+                id: widget.id,
+                v1Style: style,
+                v1PopupStyle: popupStyle,
+                v1Format: displayFormat,
+                v1Activate: activation,
+                v1Animation: animation,
+                theme: resolvedTheme,
+                popupTheme: resolvedPopupTheme
+            )
+
         case .custom:
             guard let command = widget.command else { return nil }
             return WidgetInstance(
@@ -303,9 +322,9 @@ public enum KamidanaConfigurationV1Adapter {
                     barWidth: visualizer.barWidth,
                     padding: visualizer.padding,
                     gradientSeparation: visualizer.gradientSeparation,
-              captureScope: visualizer.captureScope,
-              channelMode: visualizer.channelMode,
-              smoothness: visualizer.smoothness,
+                    captureScope: visualizer.captureScope,
+                    channelMode: visualizer.channelMode,
+                    smoothness: visualizer.smoothness,
                     outlineColor: visualizerStyle.outlineColor,
                     gradientColors: [
                         visualizerStyle.gradientColor1,
@@ -358,8 +377,8 @@ public enum KamidanaConfigurationV1Adapter {
                 padding: widget.padding ?? KamidanaInsets(),
                 gradientSeparation: widget.gradientSeparation ?? 1,
                 captureScope: widget.captureScope ?? .system,
-              channelMode: widget.channelMode ?? .stereo,
-              smoothness: widget.smoothness ?? .normal,
+                channelMode: widget.channelMode ?? .stereo,
+                smoothness: widget.smoothness ?? .normal,
                 outlineColor: style.outlineColor,
                 gradientColors: gradientColors,
                 separationLength: widget.separationLength ?? 5
@@ -510,6 +529,7 @@ public enum KamidanaConfigurationV1Adapter {
         switch action {
         case .aboutThisMac: return "aboutThisMac"
         case .lockScreen: return "lockScreen"
+        case .forceQuit: return "forceQuit"
         default: return action.rawValue
         }
     }

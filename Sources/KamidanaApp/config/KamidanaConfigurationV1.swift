@@ -601,6 +601,7 @@ public enum KamidanaWidgetKind: String, Codable, Equatable, CaseIterable {
     case systemAction = "system-action"
     case btop
     case caffeinate
+    case forceQuit = "force-quit"
 }
 
 public enum KamidanaSystemAction: String, Codable, Equatable {
@@ -610,6 +611,7 @@ public enum KamidanaSystemAction: String, Codable, Equatable {
     case logout
     case lockScreen = "lock-screen"
     case aboutThisMac = "about-this-mac"
+    case forceQuit = "force-quit"
 }
 
 public struct KamidanaSystemActionChild: Decodable, Equatable {
@@ -1518,12 +1520,12 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
             )
         }
 
-        if widget.kind != .widgetFolder && widget.kind != .systemAction {
+        if widget.kind != .widgetFolder && widget.kind != .systemAction && widget.kind != .forceQuit {
             if widget.icon != nil {
                 throw KamidanaConfigurationV1Error.invalidWidget(
                     path: path,
                     reason:
-                        "icon is valid only for widget-folder and system-action; include Nerd Font icons in format for regular widgets"
+                        "icon is valid only for widget-folder, system-action, and force-quit; include Nerd Font icons in format for regular widgets"
                 )
             }
             if widget.foldedIcon != nil {
