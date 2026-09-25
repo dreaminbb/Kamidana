@@ -36,11 +36,11 @@ final class GPUProcessMonitor {
       let usage = Double(delta) / elapsedNanoseconds * 100
       guard usage > 0 else { return nil }
 
-      let application = NSRunningApplication(processIdentifier: pid_t(pid))
+      let metadata = ProcessMetadataCache.shared.metadata(forPID: pid_t(pid))
       return GPUProcessStat(
         id: pid,
-        name: application?.localizedName ?? entry.name,
-        icon: application?.icon,
+        name: metadata?.name ?? entry.name,
+        icon: metadata?.icon,
         gpuUsage: usage
       )
     }

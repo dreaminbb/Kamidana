@@ -79,21 +79,19 @@ public class ProcessMonitor {
                 var buffer = [Int8](repeating: 0, count: 4096)
                 let length = proc_pidpath(pid, &buffer, UInt32(buffer.count))
                 var path = ""
-                var name = "Unknown"
                 if length > 0 {
                     path = String(cString: buffer)
-                    name = URL(fileURLWithPath: path).lastPathComponent
                 }
                 
                 if path.isEmpty { continue }
                 
-                let icon = NSWorkspace.shared.icon(forFile: path)
+                let metadata = ProcessMetadataCache.shared.metadata(forPath: path)
                 
                 let newStat = ProcessStat(
                     id: pid,
-                    name: name,
+                    name: metadata.name,
                     path: path,
-                    icon: icon,
+                    icon: metadata.icon,
                     cpuUsage: 0.0,
                     memoryBytes: memory,
                     diskReadBytesPerSec: 0,
