@@ -316,33 +316,27 @@ internal final class AudioVisualizerAnalyzer {
     private static let minimumDecibels: Float = -72
     private static let levelBoostDecibels: Float = 1
     private static let frequencyContrastExponent: Float = 3
+    private static let log2FFTSize = vDSP_Length(log2(Float(fftSize)))
 
     private final class Workspace {
-        let spectrumSize = AudioVisualizerAnalyzer.fftSize / 2
-        var input = [Float](repeating: 0, count: AudioVisualizerAnalyzer.fftSize)
-        var dftInputReal = [Float](
-            repeating: 0,
-            count: AudioVisualizerAnalyzer.fftSize / 2
-        )
-        var dftInputImaginary = [Float](
-            repeating: 0,
-            count: AudioVisualizerAnalyzer.fftSize / 2
-        )
-        var real = [Float](
-            repeating: 0,
-            count: AudioVisualizerAnalyzer.fftSize / 2
-        )
-        var imaginary = [Float](
-            repeating: 0,
-            count: AudioVisualizerAnalyzer.fftSize / 2
-        )
-        var magnitudes = [Float](
-            repeating: 0,
-            count: AudioVisualizerAnalyzer.fftSize / 2
-        )
-        var hannWindow = [Float](repeating: 0, count: AudioVisualizerAnalyzer.fftSize)
+        let spectrumSize: Int
+        let packedSize: Int
+        var input: [Float]
+        var real: [Float]
+        var imaginary : [Float]
+        var magnitudes  :  [Float]
+        var hannWindow : [Float]
 
         init() {
+
+            self.spectrumSize = AudioVisualizerAnalyzer.fftSize / 2 + 1
+            self.packedSize = AudioVisualizerAnalyzer.fftSize / 2
+            self.input = [Float](repeating: 0, count: AudioVisualizerAnalyzer.fftSize)
+            self.imaginary = [Float](repeating: 0, count: self.packedSize)
+            self.real = [Float](repeating: 0, count: self.packedSize)
+            self.magnitudes = [Float](repeating: 0, count: self.spectrumSize)
+            self.hannWindow = [Float](repeating: 0, count: AudioVisualizerAnalyzer.fftSize)
+
             vDSP_hann_window(
                 &hannWindow,
                 vDSP_Length(AudioVisualizerAnalyzer.fftSize),
@@ -380,26 +374,24 @@ internal final class AudioVisualizerAnalyzer {
             }
         }
 
-        func packDFTInput() {
-            for index in 0..<spectrumSize {
-                dftInputReal[index] = input[index * 2]
-                dftInputImaginary[index] = input[index * 2 + 1]
+        func packRealFFTInput() {
+            for index in 0..<packedSize {
+                real[index] = input[index * 2]
+                imaginary[index] = input[index * 2 + 1]
             }
         }
     }
 
-    private let dft: vDSP.DiscreteFourierTransform<Float>?
+    private let fftSetup: FFTSetup?
     private let workspace = Workspace()
     private var cachedSampleRate: Float?
     private var cachedBarCount = 0
     private var cachedBandRanges: [Range<Int>] = []
 
     init() {
-        dft = try? vDSP.DiscreteFourierTransform(
-            count: Self.fftSize,
-            direction: .forward,
-            transformType: .complexReal, // There are only complexReal and  complexComplex
-            ofType: Float.self
+        fftSetup = vDSP_create_fftsetup(
+            Self.log2FFTSize,
+            FFTRadix(kFFTRadix2)
         )
     }
 
@@ -414,7 +406,7 @@ internal final class AudioVisualizerAnalyzer {
             buffer.frameCount > 0,
             buffer.sampleRate > 0,
             barCount > 0,
-            dft != nil
+            fftSetup != nil
         else {
             return levels
         }
@@ -449,7 +441,7 @@ internal final class AudioVisualizerAnalyzer {
         into levels: inout [Float]
     ) {
         let copiedFrameCount = prepareInput(from: buffer, channel: channel)
-        guard copiedFrameCount >= 2, let dft else { return }
+        guard copiedFrameCount >= 2, let fftSetup else { return }
 
         removeDCOffset(sampleCount: copiedFrameCount)
 
@@ -466,38 +458,41 @@ internal final class AudioVisualizerAnalyzer {
         guard peak > Self.silenceThreshold else { return }
 
         workspace.applyHannWindow()
-        workspace.packDFTInput()
-        dft.transform(
-            inputReal: workspace.dftInputReal,
-            inputImaginary: workspace.dftInputImaginary,
-            outputReal: &workspace.real,
-            outputImaginary: &workspace.imaginary
-        )
+        workspace.packRealFFTInput()
 
         workspace.real.withUnsafeMutableBufferPointer { realBuffer in
             workspace.imaginary.withUnsafeMutableBufferPointer { imaginaryBuffer in
-                workspace.magnitudes.withUnsafeMutableBufferPointer { magnitudesBuffer in
-                    guard
-                        let realPointer = realBuffer.baseAddress,
-                        let imaginaryPointer = imaginaryBuffer.baseAddress,
-                        let magnitudesPointer = magnitudesBuffer.baseAddress
-                    else {
-                        return
-                    }
-
-                    var splitComplex = DSPSplitComplex(
-                        realp: realPointer,
-                        imagp: imaginaryPointer
-                    )
-                    vDSP_zvabs(
-                        &splitComplex,
-                        1,
-                        magnitudesPointer,
-                        1,
-                        vDSP_Length(workspace.spectrumSize)
-                    )
+                guard
+                    let realPointer = realBuffer.baseAddress,
+                    let imaginaryPointer = imaginaryBuffer.baseAddress
+                else {
+                    return
                 }
+
+                var splitComplex = DSPSplitComplex(
+                    realp: realPointer,
+                    imagp: imaginaryPointer
+                )
+                vDSP_fft_zrip(
+                    fftSetup,
+                    &splitComplex,
+                    1,
+                    Self.log2FFTSize,
+                    FFTDirection(FFT_FORWARD)
+                )
             }
+        }
+
+        workspace.magnitudes[0] = abs(workspace.real[0])
+        workspace.magnitudes[workspace.spectrumSize - 1] = abs(
+            workspace.imaginary[0]
+        )
+        for index in 1..<(workspace.spectrumSize - 1) {
+            let real = workspace.real[index]
+            let imaginary = workspace.imaginary[index]
+            workspace.magnitudes[index] = sqrt(
+                real * real + imaginary * imaginary
+            )
         }
 
         var spectralPeak: Float = 0
@@ -597,6 +592,12 @@ internal final class AudioVisualizerAnalyzer {
                 1,
                 vDSP_Length(sampleCount)
             )
+        }
+    }
+
+    deinit {
+        if let fftSetup {
+            vDSP_destroy_fftsetup(fftSetup)
         }
     }
 
