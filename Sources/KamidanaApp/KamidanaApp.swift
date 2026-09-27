@@ -8,6 +8,8 @@ import SwiftUI
     private let isProductionBuild = false
 #endif
 
+// TODO : font-familyをconfig.yamlから指定できるようにする
+
 public class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowControllers: [CGDirectDisplayID: StatusBarWindowController] = [:]
     private let launchAtLoginManager = LaunchAtLoginManager()
@@ -71,7 +73,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 isEnabled: ConfigManager.shared.globalV1Config.launchAtLogin
             )
         }
-        
+
         restartWorkItem?.cancel()
         let item = DispatchWorkItem { [weak self] in
             self?.restartApplication()
@@ -84,15 +86,17 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         let args = ProcessInfo.processInfo.arguments
         guard let executablePath = args.first else { return }
 
-        if executablePath.hasSuffix("/Kamidana") && executablePath.contains(".app/Contents/MacOS/") {
+        if executablePath.hasSuffix("/Kamidana") && executablePath.contains(".app/Contents/MacOS/")
+        {
             let appBundlePath = URL(fileURLWithPath: executablePath)
                 .deletingLastPathComponent()
                 .deletingLastPathComponent()
                 .deletingLastPathComponent()
-            
+
             let configuration = NSWorkspace.OpenConfiguration()
             configuration.createsNewApplicationInstance = true
-            NSWorkspace.shared.openApplication(at: appBundlePath, configuration: configuration) { _, error in
+            NSWorkspace.shared.openApplication(at: appBundlePath, configuration: configuration) {
+                _, error in
                 if error == nil {
                     DispatchQueue.main.async {
                         NSApplication.shared.terminate(nil)
@@ -359,10 +363,8 @@ struct StatusBarView: View {
                 }
             }
             .kamidanaSectionSurface(style: leftStyle, isEnabled: leftMode == .perSection)
-            .frame(height: 40)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 10)
-            .padding(.top, 5)
             .environment(\.kamidanaPopupHorizontalAlignment, .leading)
             .zIndex(200)
 
@@ -385,10 +387,8 @@ struct StatusBarView: View {
                 }
             )
             .kamidanaSectionSurface(style: rightStyle, isEnabled: rightMode == .perSection)
-            .frame(height: 40)
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, 10)
-            .padding(.top, 5)
             .environment(\.kamidanaPopupHorizontalAlignment, .trailing)
             .zIndex(200)
 
@@ -396,14 +396,18 @@ struct StatusBarView: View {
             // compact state with the camera/notch instead of moving with the left section.
             KamidanaIsland(
                 centerWidgets: currentLayout.center,
+                centerStyle: centerStyle,
                 isBuiltInDisplay: isBuiltInDisplay,
                 builtInTopInset: builtInTopInset
             )
             .environment(\.showsKamidanaWidgetSurface, centerMode == .perWidget)
             .environment(\.kamidanaPopupHorizontalAlignment, .center)
             .fixedSize()
-            .kamidanaSectionSurface(style: centerStyle, isEnabled: centerMode == .perSection)
-            .padding(.top, isBuiltInDisplay ? 0 : 7)
+            .kamidanaSectionSurface(
+                style: centerStyle,
+                isEnabled: centerMode == .perSection,
+                includesPadding: false
+            )
             .zIndex(100)
         }
         .kamidanaSectionSurface(

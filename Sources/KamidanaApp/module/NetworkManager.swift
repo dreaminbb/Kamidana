@@ -481,7 +481,10 @@ class NetworkManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     private func refreshConnectionIdentity() {
-        let liveSSID = wifiInterface()?.ssid()
+        let interface = wifiInterface()
+        let liveSSID = interface?.ssid()
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .flatMap { $0.isEmpty ? nil : $0 }
         let retainedSSID = currentSSID.isEmpty ? nil : currentSSID
         let resolvedSSID = liveSSID ?? retainedSSID
         currentSSID = Self.displaySSID(connection: currentConnection, ssid: resolvedSSID)

@@ -42,11 +42,13 @@ struct KamidanaFormatSegment: Equatable {
 }
 
 struct FormattedWidgetLabel: View {
+  @Environment(\.theme) private var theme
+
   let format: String
   let values: [String: String]
   let iconColor: Color
   let textColor: Color
-  var iconSize: CGFloat = 20
+  var iconSize: CGFloat?
 
   var body: some View {
     let rendered = KamidanaFormatRenderer.render(format, values: values)
@@ -55,8 +57,12 @@ struct FormattedWidgetLabel: View {
     HStack(spacing: 0) {
       ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
         if segment.isIcon {
-          NerdFontIcon(segment.value, size: iconSize)
+          NerdFontIcon(segment.value, size: theme?.iconSize ?? iconSize ?? 20)
             .foregroundColor(iconColor)
+        } else if let fontSize = theme?.fontSize {
+          Text(segment.value)
+            .foregroundColor(textColor)
+            .font(.system(size: fontSize))
         } else {
           Text(segment.value)
             .foregroundColor(textColor)

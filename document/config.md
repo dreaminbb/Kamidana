@@ -74,7 +74,23 @@ Each selector must contain `kind` and only the field required by that kind. `nam
 
 ## Widget and Popup Surfaces
 
-`style` controls the normal widget surface. `popup_style` controls its expanded panel. Both accept `background`, `color`, `opacity`, `corner_radius`, `material`, `border`, and `shadow`. `style` additionally controls the compact widget's padding and hover state.
+`style` controls the normal widget surface. `popup_style` controls its expanded panel. Both accept `background`, `color`, `opacity`, `corner_radius`, `material`, `border`, and `shadow`. `style` additionally controls the compact widget's padding, hover state, `font_size`, `icon_size`, `width`, and `height`. `padding` is an independent top, bottom, leading, and trailing inset; `width` and `height` set the widget surface size in points. These values are inherited from `global.style` through the section and widget styles. Omitted `padding` values use no inset for normal widgets, omitted `width` and `height` values use automatic content sizing, and popup styles retain their application-defined default inset.
+
+```yaml
+global:
+  style:
+    font_size: 13
+    icon_size: 18
+    width: 120
+    height: 24
+
+built_in:
+  right:
+    style:
+      font_size: 12
+      icon_size: 16
+    widgets: []
+```
 
 `popup_style` may be declared under `global`, a section (`left`, `center`, or `right`), or an individual widget. Values inherit in that order, so a widget only needs to override the fields that differ. Popup positioning remains application-defined: panels have no speech-bubble arrow and are aligned inward automatically for the left and right sections.
 
@@ -437,7 +453,7 @@ The compact bar does not display codec information automatically. Hovering the w
 | Placeholder | Value |
 |---|---|
 | `{connection_icon}` | Wired, Wi-Fi, or offline icon |
-| `{ssid}` | Current SSID for Wi-Fi; empty for wired and offline connections |
+| `{ssid}` | Current SSID for Wi-Fi; falls back to the Wi-Fi connection name while SSID permission data is loading; empty for wired and offline connections |
 | `{network_name}` | SSID for Wi-Fi, interface-qualified Ethernet name for wired, or connection fallback |
 | `{upload}` | Current upload rate |
 | `{upload_icon}` | Upload icon |

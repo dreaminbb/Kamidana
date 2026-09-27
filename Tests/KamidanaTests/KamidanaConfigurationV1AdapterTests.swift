@@ -28,6 +28,75 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertNotNil(theme.hoverTheme?.background)
   }
 
+  func testResolvedThemeIncludesConfiguredTextAndIconSizes() throws {
+    let yaml = """
+      global:
+        style:
+          font_size: 13
+          icon_size: 18
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let clock = try XCTUnwrap(runtime.externalDisplay.center.first)
+
+    XCTAssertEqual(clock.theme?.fontSize, 13)
+    XCTAssertEqual(clock.theme?.iconSize, 18)
+  }
+
+  func testResolvedThemeSeparatesWidgetSizeFromPadding() throws {
+    let yaml = """
+      global:
+        style:
+          padding:
+            top: 2
+            bottom: 3
+            leading: 4
+            trailing: 5
+          width: 120
+          height: 24
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let clock = try XCTUnwrap(runtime.externalDisplay.center.first)
+
+    XCTAssertNotNil(clock.theme?.padding)
+    XCTAssertEqual(clock.theme?.width, 120)
+    XCTAssertEqual(clock.theme?.height, 24)
+  }
+
+  func testResolvedThemeUsesAutomaticSizeWhenWidgetSizeIsOmitted() throws {
+    let yaml = """
+      center:
+        center_default: clock
+        widgets:
+          - id: clock
+            type: clock
+            compact_format: "{time}"
+      """
+
+    let configuration = try KamidanaConfigurationV1Decoder.decode(yaml: yaml)
+    let runtime = KamidanaConfigurationV1Adapter.makeLegacyConfig(from: configuration)
+    let clock = try XCTUnwrap(runtime.externalDisplay.center.first)
+
+    XCTAssertNil(clock.theme?.width)
+    XCTAssertNil(clock.theme?.height)
+    XCTAssertEqual(clock.theme?.padding, KamidanaInsets())
+  }
+
   func testAdapterPreservesWeatherConfigurationWithoutFetchingData() throws {
     let yaml = """
       center:
@@ -71,7 +140,11 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
             format: "Spectrum: {display}"
             height: 4
             bar_width: 10
-            padding: "1, 2, 3, 4"
+            padding:
+              top: 1
+              right: 2
+              bottom: 3
+              left: 4
             gradient_separation: 2
             capture_scope: microphone
             channel_mode: mono
@@ -135,6 +208,7 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
         widgets:
           - id: music
             type: music
+            compact_format: "{icon}"
             width: 1000
             height: 800
             sound_visualizer:
@@ -142,7 +216,11 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
               position: right
               height: 3
               bar_width: 12
-              padding: "1, 2, 3, 4"
+              padding:
+              top: 1
+              right: 2
+              bottom: 3
+              left: 4
               capture_scope: microphone
               channel_mode: mono
               separation_length: 30
@@ -163,10 +241,6 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(visualizer.position, .right)
     XCTAssertEqual(visualizer.height, 3)
     XCTAssertEqual(visualizer.barWidth, 12)
-    XCTAssertEqual(visualizer.padding.top, 1)
-    XCTAssertEqual(visualizer.padding.trailing, 2)
-    XCTAssertEqual(visualizer.padding.bottom, 3)
-    XCTAssertEqual(visualizer.padding.leading, 4)
     XCTAssertEqual(visualizer.captureScope, .microphone)
     XCTAssertEqual(visualizer.channelMode, .mono)
     XCTAssertEqual(visualizer.separationLength, 30)
@@ -232,12 +306,12 @@ final class KamidanaConfigurationV1AdapterTests: XCTestCase {
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1Style?.color, "#eeeeee")
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1Format, "󰍛 {usage}%")
     XCTAssertEqual(legacy.externalDisplay.right.first?.v1Style?.cornerRadius, 20)
-    XCTAssertEqual(legacy.externalDisplay.left.first?.v1Style?.padding?.top, 9)
+    XCTAssertEqual(legacy.externalDisplay.left.first?.v1Style?.padding?.top, 0)
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.background, "#202020")
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.cornerRadius, 18)
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.border?.width, 2)
     XCTAssertEqual(legacy.externalDisplay.left.first?.v1PopupStyle?.border?.color, "#00ff00")
-    XCTAssertEqual(legacy.externalDisplay.left.first?.theme?.padding.top, 9)
+    XCTAssertEqual(legacy.externalDisplay.left.first?.theme?.padding.top, 0)
     XCTAssertEqual(legacy.externalDisplay.left.first?.theme?.cornerRadius, 12)
     XCTAssertEqual(legacy.externalDisplay.left.first?.popupTheme?.cornerRadius, 18)
     XCTAssertEqual(legacy.externalDisplay.barPadding.top, 4)

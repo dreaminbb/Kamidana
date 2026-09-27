@@ -232,7 +232,7 @@ public struct KamidanaInsets: Codable, Hashable {
                         debugDescription: "Padding requires four values")
                 )
             }
-            self.init(top: values[0], bottom: values[2], leading: values[3], trailing: values[1])
+            self.init(top: values[2], bottom: values[3], leading: values[0], trailing: values[1])
             return
         }
 
@@ -247,22 +247,42 @@ public struct KamidanaInsets: Codable, Hashable {
                         debugDescription: "Padding requires four comma-separated values")
                 )
             }
-            self.init(top: values[0], bottom: values[2], leading: values[3], trailing: values[1])
+            self.init(top: values[2], bottom: values[3], leading: values[0], trailing: values[1])
             return
         }
 
         try rejectUnknownKeys(in: decoder, knownBy: CodingKeys.self)
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        for (edge, legacyEdge) in [(CodingKeys.left, CodingKeys.leading), (.right, .trailing)] {
+            if container.contains(edge), container.contains(legacyEdge) {
+                throw DecodingError.dataCorrupted(
+                    .init(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Padding cannot specify both \(edge.rawValue) and \(legacyEdge.rawValue)"
+                    )
+                )
+            }
+        }
         self.init(
             top: try container.decodeIfPresent(Double.self, forKey: .top) ?? 0,
             bottom: try container.decodeIfPresent(Double.self, forKey: .bottom) ?? 0,
-            leading: try container.decodeIfPresent(Double.self, forKey: .leading) ?? 0,
-            trailing: try container.decodeIfPresent(Double.self, forKey: .trailing) ?? 0
+            leading: try container.decodeIfPresent(Double.self, forKey: .left)
+                ?? container.decodeIfPresent(Double.self, forKey: .leading) ?? 0,
+            trailing: try container.decodeIfPresent(Double.self, forKey: .right)
+                ?? container.decodeIfPresent(Double.self, forKey: .trailing) ?? 0
         )
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(top, forKey: .top)
+        try container.encode(bottom, forKey: .bottom)
+        try container.encode(leading, forKey: .left)
+        try container.encode(trailing, forKey: .right)
+    }
+
     private enum CodingKeys: String, CodingKey, CaseIterable {
-        case top, bottom, leading, trailing
+        case top, bottom, left, right, leading, trailing
     }
 }
 
@@ -388,6 +408,10 @@ public struct KamidanaStyle: Codable, Hashable {
     public var shadow: KamidanaShadow?
     public var material: KamidanaMaterial?
     public var animation: KamidanaAnimation?
+    public var fontSize: Double?
+    public var iconSize: Double?
+    public var width: Double?
+    public var height: Double?
     public var states: [String: KamidanaStyle]
 
     public init(
@@ -412,6 +436,10 @@ public struct KamidanaStyle: Codable, Hashable {
         shadow: KamidanaShadow? = nil,
         material: KamidanaMaterial? = nil,
         animation: KamidanaAnimation? = nil,
+        fontSize: Double? = nil,
+        iconSize: Double? = nil,
+        width: Double? = nil,
+        height: Double? = nil,
         states: [String: KamidanaStyle] = [:]
     ) {
         self.background = background
@@ -435,6 +463,10 @@ public struct KamidanaStyle: Codable, Hashable {
         self.shadow = shadow
         self.material = material
         self.animation = animation
+        self.fontSize = fontSize
+        self.iconSize = iconSize
+        self.width = width
+        self.height = height
         self.states = states
     }
 
@@ -454,7 +486,11 @@ public struct KamidanaStyle: Codable, Hashable {
         case opacity
         case padding, spacing
         case cornerRadius = "corner_radius"
-        case border, shadow, material, animation, states
+        case border, shadow, material, animation
+        case fontSize = "font_size"
+        case iconSize = "icon_size"
+        case width, height
+        case states
     }
 
     public init(from decoder: Decoder) throws {
@@ -482,6 +518,10 @@ public struct KamidanaStyle: Codable, Hashable {
             shadow: try container.decodeIfPresent(KamidanaShadow.self, forKey: .shadow),
             material: try container.decodeIfPresent(KamidanaMaterial.self, forKey: .material),
             animation: try container.decodeIfPresent(KamidanaAnimation.self, forKey: .animation),
+            fontSize: try container.decodeIfPresent(Double.self, forKey: .fontSize),
+            iconSize: try container.decodeIfPresent(Double.self, forKey: .iconSize),
+            width: try container.decodeIfPresent(Double.self, forKey: .width),
+            height: try container.decodeIfPresent(Double.self, forKey: .height),
             states: try container.decodeIfPresent([String: KamidanaStyle].self, forKey: .states)
                 ?? [:]
         )
@@ -1816,6 +1856,10 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
         }
         try nonNegative(style.spacing, "spacing")
         try nonNegative(style.cornerRadius, "corner_radius")
+        try positiveFinite(style.fontSize, "font_size", path: path)
+        try positiveFinite(style.iconSize, "icon_size", path: path)
+        try positiveFinite(style.width, "width", path: path)
+        try positiveFinite(style.height, "height", path: path)
         if let padding = style.padding {
             try nonNegative(padding.top, "padding.top")
             try nonNegative(padding.bottom, "padding.bottom")
@@ -1844,6 +1888,13 @@ public struct KamidanaConfigurationV1: Decodable, Equatable {
         }
         for (state, override) in style.states {
             try validateStyle(override, path: "\(path).states.\(state)")
+        }
+    }
+
+    private func positiveFinite(_ value: Double?, _ name: String, path: String) throws {
+        if let value, value <= 0 || !value.isFinite {
+            throw KamidanaConfigurationV1Error.invalidStyle(
+                path: path, reason: "\(name) must be greater than zero")
         }
     }
 

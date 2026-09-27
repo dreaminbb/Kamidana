@@ -65,11 +65,14 @@ private struct WidgetInteractionModifier: ViewModifier {
       .opacity(appearance.opacity)
 
     guard !isInsideWidgetFolder, showsWidgetSurface else {
-      return AnyView(styledContent)
+      return AnyView(
+        styledContent
+          .frame(width: theme?.width, height: theme?.height)
+      )
     }
 
-    let leadingPadding = (theme?.padding.leading ?? 0) + WidgetSurfaceMetrics.additionalHorizontalPadding
-    let trailingPadding = (theme?.padding.trailing ?? 0) + WidgetSurfaceMetrics.additionalHorizontalPadding
+    let leadingPadding = theme?.padding.leading ?? 0
+    let trailingPadding = theme?.padding.trailing ?? 0
     let topPadding = theme?.padding.top ?? 0
     let bottomPadding = theme?.padding.bottom ?? 0
     let background = appearance.background ?? theme?.background ?? .clear
@@ -84,6 +87,7 @@ private struct WidgetInteractionModifier: ViewModifier {
       .padding(.trailing, trailingPadding)
       .padding(.top, topPadding)
       .padding(.bottom, bottomPadding)
+      .frame(width: theme?.width, height: theme?.height)
       .background(background)
       .background(material)
       .cornerRadius(baseCornerRadius)
@@ -294,6 +298,7 @@ struct KamidanaPopupSurfaceModifier: ViewModifier {
 
     content
       .foregroundColor(foreground)
+      .frame(width: popupTheme?.width, height: popupTheme?.height)
       .background(background)
       .background(material)
       .clipShape(RoundedRectangle(cornerRadius: cornerRadius))

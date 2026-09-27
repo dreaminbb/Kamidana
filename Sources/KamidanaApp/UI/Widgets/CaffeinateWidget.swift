@@ -26,7 +26,10 @@ struct CaffeinateWidget: View {
             manager.toggle()
         }) {
             HStack(spacing: 8) {
-                NerdFontIcon(manager.isActive ? (config.iconActive ?? "󰅶") : (config.iconInactive ?? "󰾆"), size: 16)
+                NerdFontIcon(
+                    manager.isActive ? (config.iconActive ?? "󰅶") : (config.iconInactive ?? "󰾆"),
+                    size: theme?.iconSize ?? 16
+                )
                     .foregroundColor(manager.isActive ? theme?.severityColors.warning : theme?.foreground)
                 
                 let text = config.format.replacingOccurrences(of: "{icon}", with: "")

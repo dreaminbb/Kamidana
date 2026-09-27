@@ -25,7 +25,7 @@ struct NetworkWidget: View {
                     ?? Self.defaultFormat,
                 values: [
                     "connection_icon": connectionIcon,
-                    "ssid": netManager.currentSSID,
+                    "ssid": displaySSID,
                     "network_name": netManager.networkDisplayName,
                     "upload": upload,
                     "upload_icon": config.uploadIcon,
@@ -36,6 +36,7 @@ struct NetworkWidget: View {
                 textColor: theme?.foreground ?? Color(hex: config.textColor)
             )
             .font(.system(size: 14, weight: .semibold, design: .monospaced))
+            .layoutPriority(1)
         }
         .widgetInteraction(controller: interaction, activation: activation) { presentation in
             popoverContent(
@@ -163,6 +164,10 @@ struct NetworkWidget: View {
         case "WIFI": return config.wirelessIcon
         default: return config.offlineIcon
         }
+    }
+
+    private var displaySSID: String {
+        netManager.currentConnection == "WIFI" ? netManager.currentSSID : ""
     }
 
     private var activation: KamidanaActivation { widgetActivation ?? .click }

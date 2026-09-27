@@ -11,6 +11,10 @@ public struct Theme: Equatable {
     public var shadow: KamidanaShadow?
     public var material: KamidanaMaterial
     public var animation: KamidanaAnimation?
+    public var fontSize: CGFloat?
+    public var iconSize: CGFloat?
+    public var width: CGFloat?
+    public var height: CGFloat?
     public var hoverTheme: HoverTheme?
     public var pressedTheme: PressedTheme?
     public var motion: Motion
@@ -141,6 +145,10 @@ public struct Theme: Equatable {
         shadow: KamidanaShadow? = nil,
         material: KamidanaMaterial = .ultraThin,
         animation: KamidanaAnimation? = nil,
+        fontSize: CGFloat? = nil,
+        iconSize: CGFloat? = nil,
+        width: CGFloat? = nil,
+        height: CGFloat? = nil,
         hoverTheme: HoverTheme? = nil,
         pressedTheme: PressedTheme? = PressedTheme(opacity: 0.88),
         motion: Motion = .standard,
@@ -156,6 +164,10 @@ public struct Theme: Equatable {
         self.shadow = shadow
         self.material = material
         self.animation = animation
+        self.fontSize = fontSize
+        self.iconSize = iconSize
+        self.width = width
+        self.height = height
         self.hoverTheme = hoverTheme
         self.pressedTheme = pressedTheme
         self.motion = motion

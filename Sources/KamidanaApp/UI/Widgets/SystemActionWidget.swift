@@ -19,7 +19,7 @@ struct SystemActionWidget: View {
     var body: some View {
         WidgetActionButton(action: performAction) {
             HStack(spacing: 8) {
-                NerdFontIcon(config.icon, size: 20)
+                NerdFontIcon(config.icon, size: theme?.iconSize ?? 20)
                     .foregroundColor(theme?.iconForeground ?? Color(hex: config.iconColor))
                 
                 VStack(alignment: .leading, spacing: 4) {

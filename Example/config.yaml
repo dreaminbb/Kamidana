@@ -5,8 +5,8 @@ global:
     - kind: primary
   bar_padding:
     top: 0
-    leading: 0
-    trailing: 0
+    left: 0
+    right: 0
   style:
     background: "#1e1e2e"
     color: "#cdd6f4"
@@ -14,8 +14,10 @@ global:
     padding:
       top: 6
       bottom: 9
-      leading: 12
-      trailing: 12
+      left: 12
+      right: 12
+    font_size: 13
+    icon_size: 18
     spacing: 8
     corner_radius: 12
     material: ultra_thin

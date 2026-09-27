@@ -153,7 +153,7 @@ public enum KamidanaConfigurationV1Adapter {
         colors: GlobalColorsConfig,
         compact: Bool
     ) -> WidgetInstance? {
-        let style = mergedStyle(sectionStyle, widget.style ?? KamidanaStyle())
+        let style = resolvedWidgetStyle(sectionStyle, widget.style)
         let popupStyle = mergedStyle(sectionPopupStyle, widget.popupStyle ?? KamidanaStyle())
         let animation = inheritedAnimation ?? widget.animation ?? .dynamic
         let resolvedTheme = resolveTheme(style: style, colors: colors, compact: compact)
@@ -163,7 +163,7 @@ public enum KamidanaConfigurationV1Adapter {
         switch widget.kind {
         case .systemAction:
             let children = widget.actionChildren.map { child in
-                let childStyle = mergedStyle(style, child.style)
+                let childStyle = resolvedWidgetStyle(style, child.style)
                 return WidgetInstance(
                     typeID: "systemAction",
                     config: SystemActionWidgetConfig(
@@ -534,6 +534,16 @@ public enum KamidanaConfigurationV1Adapter {
         }
     }
 
+    /// Only appearance tokens cascade. Padding belongs to the widget being resolved.
+    public static func resolvedWidgetStyle(
+        _ parent: KamidanaStyle,
+        _ widgetStyle: KamidanaStyle?
+    ) -> KamidanaStyle {
+        var style = mergedStyle(parent, widgetStyle ?? KamidanaStyle())
+        style.padding = widgetStyle?.padding ?? KamidanaInsets()
+        return style
+    }
+
     public static func mergedStyle(
         _ parent: KamidanaStyle,
         _ child: KamidanaStyle
@@ -560,6 +570,10 @@ public enum KamidanaConfigurationV1Adapter {
             shadow: child.shadow ?? parent.shadow,
             material: child.material ?? parent.material,
             animation: child.animation ?? parent.animation,
+            fontSize: child.fontSize ?? parent.fontSize,
+            iconSize: child.iconSize ?? parent.iconSize,
+            width: child.width ?? parent.width,
+            height: child.height ?? parent.height,
             states: parent.states.merging(child.states) { _, child in child }
         )
     }
@@ -604,15 +618,11 @@ public enum KamidanaConfigurationV1Adapter {
         let foregroundHex = style.color ?? colors.textPrimary
         let iconHex = style.iconColor ?? foregroundHex
 
-        let defaultHorizontalPadding: Double = compact ? 8 : 12
-        let defaultPadding = KamidanaInsets(
-            top: 6, bottom: 9, leading: defaultHorizontalPadding, trailing: defaultHorizontalPadding
-        )
-
         let padding =
             style.padding
             ?? (isPopup
-                ? KamidanaInsets(top: 12, bottom: 12, leading: 12, trailing: 12) : defaultPadding)
+                ? KamidanaInsets(top: 12, bottom: 12, leading: 12, trailing: 12)
+                : KamidanaInsets())
         let cornerRadius = style.cornerRadius ?? (isPopup ? 12 : (compact ? 8 : 12))
 
         let borderWidth = style.border?.width ?? (isPopup ? 1 : 0)
@@ -665,6 +675,10 @@ public enum KamidanaConfigurationV1Adapter {
             warning: Color(hex: style.states["warning"]?.color ?? colors.warning),
             critical: Color(hex: style.states["critical"]?.color ?? colors.danger)
         )
+        let fontSize = style.fontSize.map { CGFloat($0) }
+        let iconSize = style.iconSize.map { CGFloat($0) }
+        let width = style.width.map { CGFloat($0) }
+        let height = style.height.map { CGFloat($0) }
 
         return Theme(
             background: Color(hex: backgroundHex).opacity(style.opacity ?? (isPopup ? 0.96 : 0.6)),
@@ -677,6 +691,10 @@ public enum KamidanaConfigurationV1Adapter {
             shadow: style.shadow,
             material: style.material ?? .ultraThin,
             animation: style.animation,
+            fontSize: fontSize,
+            iconSize: iconSize,
+            width: width,
+            height: height,
             hoverTheme: hoverTheme,
             pressedTheme: pressedTheme,
             motion: motion,

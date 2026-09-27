@@ -8,6 +8,7 @@ struct windowSizeRequirements {
 struct KamidanaIsland: View {
     @Environment(\.showsKamidanaWidgetSurface) private var showsWidgetSurface
     let centerWidgets: [WidgetInstance]
+    let centerStyle: KamidanaStyle?
     let isBuiltInDisplay: Bool
     let builtInTopInset: CGFloat
 
@@ -18,7 +19,29 @@ struct KamidanaIsland: View {
         width: nil, height: nil)
 
     static let defaultHoveredSize = CGSize(width: 600, height: 300)
-    static let collapsedHeight: CGFloat = 32
+    static let defaultCollapsedContentHeight: CGFloat = 24
+
+    private var islandPadding: EdgeInsets {
+        let padding = centerStyle?.padding ?? KamidanaInsets()
+        return EdgeInsets(
+            top: isBuiltInDisplay ? CGFloat(padding.top) : 0,
+            leading: CGFloat(padding.leading),
+            bottom: CGFloat(padding.bottom),
+            trailing: CGFloat(padding.trailing)
+        )
+    }
+
+    private var collapsedHeight: CGFloat {
+        Self.defaultCollapsedContentHeight + islandPadding.top + islandPadding.bottom
+    }
+
+    private var islandPaddingWidth: CGFloat {
+        islandPadding.leading + islandPadding.trailing
+    }
+
+    private var islandPaddingHeight: CGFloat {
+        islandPadding.top + islandPadding.bottom
+    }
 
     private func expandedIslandSize() -> CGSize {
         // If size change by tab is needed, calculate here
@@ -26,16 +49,18 @@ struct KamidanaIsland: View {
             if tab.typeID == "terminal" {
                 let terminal = tab.config as? TerminalWidgetConfig
                 return CGSize(
-                    width: CGFloat(terminal?.width ?? 700) + 24,
-                    height: CGFloat(terminal?.height ?? 400) + 80
+                    width: CGFloat(terminal?.width ?? 700) + 24 + islandPaddingWidth,
+                    height: CGFloat(terminal?.height ?? 400) + 80 + islandPaddingHeight
                 )
             }
             if tab.typeID == "music" {
                 let music = tab.config as? MusicWidgetConfig
                 if music?.width != nil || music?.height != nil {
                     return CGSize(
-                        width: CGFloat(music?.width ?? Self.defaultHoveredSize.width) + 24,
+                        width: CGFloat(music?.width ?? Self.defaultHoveredSize.width) + 24
+                            + islandPaddingWidth,
                         height: CGFloat(music?.height ?? Self.defaultHoveredSize.height) + 80
+                            + islandPaddingHeight
                     )
                 }
             }
@@ -44,7 +69,10 @@ struct KamidanaIsland: View {
         // Use `??` operator to provide fallback defaults cleanly when nil
         let w = islandSize.width ?? Self.defaultHoveredSize.width
         let h = islandSize.height ?? Self.defaultHoveredSize.height
-        return CGSize(width: w, height: h)
+        return CGSize(
+            width: w + islandPaddingWidth,
+            height: h + islandPaddingHeight
+        )
     }
 
     var body: some View {
@@ -71,7 +99,7 @@ struct KamidanaIsland: View {
             }
         }()
         ZStack(alignment: .top) {
-            VStack(spacing: 0) {
+            VStack(alignment: .center, spacing: 0) {
                 if isHovered {
                     // Expanded UI
 
@@ -105,6 +133,7 @@ struct KamidanaIsland: View {
                             .buttonStyle(.plain)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 12)
                     .padding(.bottom, 8)
 
@@ -129,21 +158,25 @@ struct KamidanaIsland: View {
 
                 } else {
                     // Compact UI (collapsed state)
-                    HStack(spacing: 6) {
-                        if let defaultWidget = centerWidgets.first {
-                            compactContent(for: defaultWidget)
+                    ZStack {
+                        HStack(spacing: 6) {
+                            if let defaultWidget = centerWidgets.first {
+                                compactContent(for: defaultWidget)
+                            }
                         }
                     }
-                    .padding(
-                        .horizontal,
-                        10 + WidgetSurfaceMetrics.additionalHorizontalPadding
-                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
             }
-            .fixedSize(horizontal: !isHovered, vertical: !isHovered)
+            .padding(.top, isHovered ? islandPadding.top : 0)
+            .padding(.bottom, isHovered ? islandPadding.bottom : 0)
+            .padding(.leading, islandPadding.leading)
+            .padding(.trailing, islandPadding.trailing)
+            .fixedSize(horizontal: !isHovered, vertical: false)
             .frame(
                 width: isHovered ? expandedSize.width : nil,
-                height: isHovered ? expandedSize.height : Self.collapsedHeight
+                height: isHovered ? expandedSize.height : collapsedHeight,
+                alignment: .center
             )
             .background(background)
             .background(material)
@@ -158,7 +191,7 @@ struct KamidanaIsland: View {
             width: isHovered ? expandedSize.width : nil,
             height: isHovered
                 ? expandedSize.height + max(0, verticalOffset)
-                : Self.collapsedHeight
+                : collapsedHeight
         )
         // This transparent container bridges the camera gap and the shifted expanded panel.
         .contentShape(Rectangle())

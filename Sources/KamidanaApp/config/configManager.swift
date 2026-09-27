@@ -1282,9 +1282,9 @@ public class ConfigManager {
         inheritedStyle: KamidanaStyle,
         inheritedPopupStyle: KamidanaStyle
     ) -> KamidanaRuntimeWidget {
-        let style = KamidanaConfigurationV1Adapter.mergedStyle(
+        let style = KamidanaConfigurationV1Adapter.resolvedWidgetStyle(
             inheritedStyle,
-            widget.style ?? KamidanaStyle()
+            widget.style
         )
         let popupStyle = KamidanaConfigurationV1Adapter.mergedStyle(
             inheritedPopupStyle,
@@ -1316,7 +1316,7 @@ public class ConfigManager {
                     activation: activation,
                     activationSource: activationSource,
                     animation: inheritedAnimation ?? widget.animation ?? .dynamic,
-                    style: KamidanaConfigurationV1Adapter.mergedStyle(style, child.style),
+                    style: KamidanaConfigurationV1Adapter.resolvedWidgetStyle(style, child.style),
                     popupStyle: popupStyle,
                     action: child.action.rawValue,
                     format: child.format,
