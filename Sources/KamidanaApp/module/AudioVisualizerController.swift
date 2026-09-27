@@ -4,10 +4,10 @@ import Foundation
 
 public struct AudioVisualizerPCMBuffer: Equatable, Sendable {
     public let samples: [Float]
-    public let sampleRate: Double
+    public let sampleRate: Float
     public let channelCount: Int
 
-    public init(samples: [Float], sampleRate: Double, channelCount: Int) {
+    public init(samples: [Float], sampleRate: Float, channelCount: Int) {
         self.samples = samples
         self.sampleRate = sampleRate
         self.channelCount = channelCount
@@ -23,12 +23,12 @@ public struct AudioVisualizerPCMBuffer: Equatable, Sendable {
     }
 }
 
-public enum AudioVisualizerCaptureScope: Equatable, Sendable {
+public enum AudioVisualizerCaptureScope: Equatable, Hashable, Sendable {
     case system
     case microphone
 }
 
-public enum AudioVisualizerChannelMode: Equatable, Sendable {
+public enum AudioVisualizerChannelMode: Equatable, Hashable, Sendable {
     case stereo
     case mono
 }
@@ -160,8 +160,7 @@ public final class AudioVisualizerController {
                 maxBufferedFrames: configuration.maxBufferedFrames,
                 bufferFrequency: configuration.bufferFrequency
             ),
-            configuration: configuration,
-
+            configuration: configuration
         )
     }
 
@@ -208,7 +207,12 @@ public final class AudioVisualizerController {
 
     deinit {
         captureSource.onAudioData = nil
-        captureSource.stop()
+        switch state {
+        case .starting, .listening:
+            captureSource.stop()
+        case .stopped, .failed:
+            break
+        }
     }
 }
 
@@ -355,7 +359,7 @@ private final class MicrophoneAudioCaptureSource: AudioVisualizerCaptureSource {
     private func publishAvailableSamples() {
         guard
             let format = streamFormat,
-            let samples = sampleRingBuffer?.readAvailableSamples(),
+            let samples = sampleRingBuffer?.readLatestFrames(maxFrameCount: 2_048),
             !samples.isEmpty
         else {
             return
@@ -364,7 +368,7 @@ private final class MicrophoneAudioCaptureSource: AudioVisualizerCaptureSource {
         onAudioData?(
             AudioVisualizerPCMBuffer(
                 samples: samples,
-                sampleRate: format.mSampleRate,
+                sampleRate: Float(format.mSampleRate),
                 channelCount: Int(format.mChannelsPerFrame)
             )
         )
@@ -564,7 +568,7 @@ private final class CoreAudioProcessTapCaptureSource: AudioVisualizerCaptureSour
     private func publishAvailableSamples() {
         guard
             let format = streamFormat,
-            let samples = sampleRingBuffer?.readAvailableSamples(),
+            let samples = sampleRingBuffer?.readLatestFrames(maxFrameCount: 2_048),
             !samples.isEmpty
         else {
             return
@@ -573,7 +577,7 @@ private final class CoreAudioProcessTapCaptureSource: AudioVisualizerCaptureSour
         onAudioData?(
             AudioVisualizerPCMBuffer(
                 samples: samples,
-                sampleRate: format.mSampleRate,
+                sampleRate: Float(format.mSampleRate),
                 channelCount: Int(format.mChannelsPerFrame)
             )
         )
@@ -616,7 +620,7 @@ private final class CoreAudioProcessTapCaptureSource: AudioVisualizerCaptureSour
     }
 }
 
-private final class AudioSampleRingBuffer {
+final class AudioSampleRingBuffer {
     private let lock = NSLock()
     private let channelCount: Int
     private var storage: [Float]
@@ -626,7 +630,9 @@ private final class AudioSampleRingBuffer {
 
     init(capacity: Int, channelCount: Int) {
         self.channelCount = max(1, channelCount)
-        storage = Array(repeating: 0, count: max(channelCount, capacity))
+        let minimumCapacity = max(self.channelCount, capacity)
+        let alignedCapacity = minimumCapacity - (minimumCapacity % self.channelCount)
+        storage = Array(repeating: 0, count: alignedCapacity)
     }
 
     func write(inputData: UnsafePointer<AudioBufferList>, format: AudioStreamBasicDescription) {
@@ -645,40 +651,104 @@ private final class AudioSampleRingBuffer {
         }
     }
 
-    func readAvailableSamples() -> [Float] {
+    func write(interleavedSamples samples: UnsafeBufferPointer<Float>) {
+        guard lock.try() else { return }
+        defer { lock.unlock() }
+        writeInterleavedSamples(samples)
+    }
+
+    func readLatestFrames(maxFrameCount: Int) -> [Float] {
+        guard maxFrameCount > 0 else { return [] }
+
         lock.lock()
         defer { lock.unlock() }
 
-        let alignedSampleCount = sampleCount - (sampleCount % channelCount)
-        guard alignedSampleCount > 0 else { return [] }
+        let availableFrameCount = sampleCount / channelCount
+        let frameCount = min(maxFrameCount, availableFrameCount)
+        let resultSampleCount = frameCount * channelCount
+        guard resultSampleCount > 0 else { return [] }
 
-        var result = Array(repeating: Float.zero, count: alignedSampleCount)
-        for index in result.indices {
-            result[index] = storage[readIndex]
-            readIndex = (readIndex + 1) % storage.count
+        let discardedSampleCount = sampleCount - resultSampleCount
+        readIndex = advancedIndex(readIndex, by: discardedSampleCount)
+
+        var result = Array(repeating: Float.zero, count: resultSampleCount)
+        result.withUnsafeMutableBufferPointer { destination in
+            storage.withUnsafeBufferPointer { source in
+                guard
+                    let sourceBaseAddress = source.baseAddress,
+                    let destinationBaseAddress = destination.baseAddress
+                else {
+                    return
+                }
+
+                let firstSampleCount = min(resultSampleCount, storage.count - readIndex)
+                destinationBaseAddress.update(
+                    from: sourceBaseAddress.advanced(by: readIndex),
+                    count: firstSampleCount
+                )
+
+                let secondSampleCount = resultSampleCount - firstSampleCount
+                if secondSampleCount > 0 {
+                    destinationBaseAddress.advanced(by: firstSampleCount).update(
+                        from: sourceBaseAddress,
+                        count: secondSampleCount
+                    )
+                }
+            }
         }
-        sampleCount -= alignedSampleCount
+
+        readIndex = advancedIndex(readIndex, by: resultSampleCount)
+        sampleCount = 0
         return result
     }
 
     private func writeInterleaved(_ buffer: AudioBuffer) {
         guard let data = buffer.mData else { return }
 
-        let availableSamples = Int(buffer.mDataByteSize) / MemoryLayout<Float>.size
-        let alignedSampleCount = availableSamples - (availableSamples % channelCount)
-        let source = data.assumingMemoryBound(to: Float.self)
+        let availableSampleCount = Int(buffer.mDataByteSize) / MemoryLayout<Float>.size
+        let source = UnsafeBufferPointer(
+            start: data.assumingMemoryBound(to: Float.self),
+            count: availableSampleCount
+        )
+        writeInterleavedSamples(source)
+    }
 
-        for index in 0..<alignedSampleCount {
-            append(source[index])
+    private func writeInterleavedSamples(_ samples: UnsafeBufferPointer<Float>) {
+        let alignedSampleCount = samples.count - (samples.count % channelCount)
+        let retainedSampleCount = min(alignedSampleCount, storage.count)
+        guard retainedSampleCount > 0, let sourceBaseAddress = samples.baseAddress else { return }
+
+        let sourceStartIndex = alignedSampleCount - retainedSampleCount
+        let storageCapacity = storage.count
+        prepareForWrite(sampleCount: retainedSampleCount)
+
+        storage.withUnsafeMutableBufferPointer { destination in
+            guard let destinationBaseAddress = destination.baseAddress else { return }
+
+            let firstSampleCount = min(retainedSampleCount, storageCapacity - writeIndex)
+            destinationBaseAddress.advanced(by: writeIndex).update(
+                from: sourceBaseAddress.advanced(by: sourceStartIndex),
+                count: firstSampleCount
+            )
+
+            let secondSampleCount = retainedSampleCount - firstSampleCount
+            if secondSampleCount > 0 {
+                destinationBaseAddress.update(
+                    from: sourceBaseAddress.advanced(by: sourceStartIndex + firstSampleCount),
+                    count: secondSampleCount
+                )
+            }
         }
+
+        finishWrite(sampleCount: retainedSampleCount)
     }
 
     private func writeNonInterleaved(_ buffers: UnsafeMutableAudioBufferListPointer) {
-        let activeChannelCount = min(channelCount, buffers.count)
-        guard activeChannelCount > 0 else { return }
+        guard buffers.count >= channelCount else { return }
 
         var frameCount = Int.max
-        for channel in 0..<activeChannelCount {
+        for channel in 0..<channelCount {
+            guard buffers[channel].mData != nil else { return }
             frameCount = min(
                 frameCount,
                 Int(buffers[channel].mDataByteSize) / MemoryLayout<Float>.size
@@ -686,22 +756,45 @@ private final class AudioSampleRingBuffer {
         }
         guard frameCount != Int.max, frameCount > 0 else { return }
 
-        for frame in 0..<frameCount {
-            for channel in 0..<activeChannelCount {
-                guard let data = buffers[channel].mData else { return }
-                append(data.assumingMemoryBound(to: Float.self)[frame])
+        let retainedFrameCount = min(frameCount, storage.count / channelCount)
+        let sourceFrameOffset = frameCount - retainedFrameCount
+        let retainedSampleCount = retainedFrameCount * channelCount
+        let destinationStartIndex = writeIndex
+        prepareForWrite(sampleCount: retainedSampleCount)
+
+        for channel in 0..<channelCount {
+            guard let data = buffers[channel].mData else { return }
+            let source = data.assumingMemoryBound(to: Float.self)
+            var destinationIndex = destinationStartIndex + channel
+            if destinationIndex >= storage.count {
+                destinationIndex -= storage.count
+            }
+
+            for frame in 0..<retainedFrameCount {
+                storage[destinationIndex] = source[sourceFrameOffset + frame]
+                destinationIndex += channelCount
+                if destinationIndex >= storage.count {
+                    destinationIndex -= storage.count
+                }
             }
         }
+
+        finishWrite(sampleCount: retainedSampleCount)
     }
 
-    private func append(_ sample: Float) {
-        storage[writeIndex] = sample
-        writeIndex = (writeIndex + 1) % storage.count
+    private func prepareForWrite(sampleCount incomingSampleCount: Int) {
+        let availableSampleCount = storage.count - sampleCount
+        let discardedSampleCount = max(0, incomingSampleCount - availableSampleCount)
+        readIndex = advancedIndex(readIndex, by: discardedSampleCount)
+    }
 
-        if sampleCount == storage.count {
-            readIndex = (readIndex + 1) % storage.count
-        } else {
-            sampleCount += 1
-        }
+    private func finishWrite(sampleCount writtenSampleCount: Int) {
+        writeIndex = advancedIndex(writeIndex, by: writtenSampleCount)
+        sampleCount = min(storage.count, sampleCount + writtenSampleCount)
+    }
+
+    private func advancedIndex(_ index: Int, by sampleCount: Int) -> Int {
+        let advancedIndex = index + sampleCount
+        return advancedIndex >= storage.count ? advancedIndex - storage.count : advancedIndex
     }
 }

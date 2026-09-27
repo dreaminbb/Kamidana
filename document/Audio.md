@@ -105,6 +105,9 @@ Requirements:
 - Use a bounded buffer so a slow UI cannot grow memory without limit.
 - Resample or normalize formats at the analysis boundary when necessary.
 - Publish reduced visual data, not raw PCM, to SwiftUI.
+- Map spectral magnitude ratios through a decibel response curve so quiet audio
+  remains visible without clipping dominant frequency bands. The analyzer applies
+  a fixed decibel boost before normalizing the result into the visual range.
 - Use monospaced or fixed-width visual elements where changing values could
   cause status-bar jitter.
 - Stop and recreate the capture pipeline when the output device or stream
@@ -160,7 +163,7 @@ The widget must be added through the normal configuration flow:
 ```
 
 - `format` uses `{display}` for the rendered bar canvas.
-- `height` controls the maximum bar height in rendering units and accepts `1...5`.
+- `height` controls the maximum bar height in rendering units and accepts `1...100`.
 - `bar_width` controls each Canvas bar width in points and must be positive.
 - `padding` is ordered as `top, right, bottom, left` and is applied between the
   visualizer and its surrounding Island wall. It accepts a comma-separated
@@ -199,6 +202,13 @@ The Music Island presentation consumes the same visualizer configuration and
 capture lifecycle. It is a presentation adapter, not a second capture
 pipeline.
 
+`AudioVisualizerSpectrumService` owns shared analysis pipelines keyed by capture
+scope, channel mode, and buffer frequency. Matching widgets subscribe to one
+pipeline, which captures PCM and computes a fixed 30-band spectrum once per
+update. Each subscription resamples that shared spectrum to its configured
+`separation_length`. The first subscriber starts the pipeline and the final
+subscriber stops it.
+
 ### Music Island Sound Visualizer
 
 The center Music widget may embed the same visualizer using `sound_visualizer`.
@@ -225,8 +235,8 @@ It shares the independent audio capture lifecycle with the standalone widget.
       gradient_color_2: "#a6e3a1"
 ```
 
-`position` accepts `top`, `bottom`, `left`, or `right`. `height` controls how
-many times each Unicode bar is repeated vertically and accepts `1...5`. The
+`position` accepts `top`, `bottom`, `left`, or `right`. `height` controls the
+maximum Canvas bar height in rendering units and accepts `1...100`. The
 Music Island visualizer accepts `separation_length` values from `1...30`;
 standalone visualizers remain limited to `1...20`. It is rendered inside the
 Music Island without creating a second capture service.

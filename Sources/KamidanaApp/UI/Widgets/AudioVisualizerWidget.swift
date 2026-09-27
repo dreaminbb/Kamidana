@@ -1,3 +1,4 @@
+import Accelerate
 import Foundation
 import SwiftUI
 
@@ -110,7 +111,9 @@ struct AudioVisualizerDisplay: View {
     let formatOverride: String?
     let showsSurface: Bool
     let visualizerPosition: KamidanaSoundVisualizerPosition?
-    let barHeightAtZeroSound: Double = 0.08
+    let barHeightAtZeroSound: Float = 0.08
+    let resolvedOutlineColor: Color?
+    let resolvedGradientColors: [Color]
 
     init(
         config: AudioVisualizerWidgetConfig,
@@ -122,6 +125,10 @@ struct AudioVisualizerDisplay: View {
         self.formatOverride = formatOverride
         self.showsSurface = showsSurface
         self.visualizerPosition = visualizerPosition
+        self.resolvedOutlineColor = config.outlineColor.flatMap { value in
+            value.isEmpty ? nil : Color(hex: value)
+        }
+        self.resolvedGradientColors = config.gradientColors.map { Color(hex: $0) }
         _model = StateObject(wrappedValue: AudioVisualizerWidgetModel(config: config))
     }
 
@@ -223,7 +230,9 @@ struct AudioVisualizerDisplay: View {
         let outline = outlineColor
 
         for (index, level) in levels.enumerated() {
-            let normalizedLevel = min(1, max(self.barHeightAtZeroSound, level))
+            let normalizedLevel = CGFloat(
+                min(1, max(self.barHeightAtZeroSound, level))
+            )
             let color = color(forBarAt: index)
 
             if isVertical {
@@ -281,256 +290,443 @@ struct AudioVisualizerDisplay: View {
     }
 
     private var outlineColor: Color? {
-        guard let value = config.outlineColor, !value.isEmpty else { return nil }
-        return Color(hex: value)
+        resolvedOutlineColor
     }
 
     private func color(forBarAt index: Int) -> Color {
-        guard !config.gradientColors.isEmpty else {
+        guard !resolvedGradientColors.isEmpty else {
             return theme?.foreground ?? .primary
         }
 
         let colorCount = min(
             max(1, config.gradientSeparation),
-            config.gradientColors.count
+            resolvedGradientColors.count
         )
         let colorIndex = min(
             colorCount - 1,
             index * colorCount / config.resolvedBarCount
         )
-        return Color(hex: config.gradientColors[colorIndex])
+        return resolvedGradientColors[colorIndex]
+    }
+}
+
+internal final class AudioVisualizerAnalyzer {
+    private static let fftSize = 512
+    private static let silenceThreshold: Float = 0.000_01
+    private static let minimumDecibels: Float = -72
+    private static let levelBoostDecibels: Float = 1
+    private static let frequencyContrastExponent: Float = 3
+
+    private final class Workspace {
+        let spectrumSize = AudioVisualizerAnalyzer.fftSize / 2
+        var input = [Float](repeating: 0, count: AudioVisualizerAnalyzer.fftSize)
+        var dftInputReal = [Float](
+            repeating: 0,
+            count: AudioVisualizerAnalyzer.fftSize / 2
+        )
+        var dftInputImaginary = [Float](
+            repeating: 0,
+            count: AudioVisualizerAnalyzer.fftSize / 2
+        )
+        var real = [Float](
+            repeating: 0,
+            count: AudioVisualizerAnalyzer.fftSize / 2
+        )
+        var imaginary = [Float](
+            repeating: 0,
+            count: AudioVisualizerAnalyzer.fftSize / 2
+        )
+        var magnitudes = [Float](
+            repeating: 0,
+            count: AudioVisualizerAnalyzer.fftSize / 2
+        )
+        var hannWindow = [Float](repeating: 0, count: AudioVisualizerAnalyzer.fftSize)
+
+        init() {
+            vDSP_hann_window(
+                &hannWindow,
+                vDSP_Length(AudioVisualizerAnalyzer.fftSize),
+                Int32(vDSP_HANN_NORM)
+            )
+        }
+
+        func clearInput() {
+            vDSP_vclr(
+                &input,
+                1,
+                vDSP_Length(AudioVisualizerAnalyzer.fftSize)
+            )
+        }
+
+        func applyHannWindow() {
+            input.withUnsafeMutableBufferPointer { inputBuffer in
+                hannWindow.withUnsafeBufferPointer { windowBuffer in
+                    guard
+                        let inputPointer = inputBuffer.baseAddress,
+                        let windowPointer = windowBuffer.baseAddress
+                    else {
+                        return
+                    }
+                    vDSP_vmul(
+                        inputPointer,
+                        1,
+                        windowPointer,
+                        1,
+                        inputPointer,
+                        1,
+                        vDSP_Length(AudioVisualizerAnalyzer.fftSize)
+                    )
+                }
+            }
+        }
+
+        func packDFTInput() {
+            for index in 0..<spectrumSize {
+                dftInputReal[index] = input[index * 2]
+                dftInputImaginary[index] = input[index * 2 + 1]
+            }
+        }
+    }
+
+    private let dft: vDSP.DiscreteFourierTransform<Float>?
+    private let workspace = Workspace()
+    private var cachedSampleRate: Float?
+    private var cachedBarCount = 0
+    private var cachedBandRanges: [Range<Int>] = []
+
+    init() {
+        dft = try? vDSP.DiscreteFourierTransform(
+            count: Self.fftSize,
+            direction: .forward,
+            transformType: .complexReal, // There are only complexReal and  complexComplex
+            ofType: Float.self
+        )
+    }
+
+    func normalizedLevels(
+        from buffer: AudioVisualizerPCMBuffer,
+        channelMode: AudioVisualizerChannelMode,
+        barCount: Int
+    ) -> [Float] {
+        var levels = [Float](repeating: 0, count: max(0, barCount))
+        guard
+            buffer.channelCount > 0,
+            buffer.frameCount > 0,
+            buffer.sampleRate > 0,
+            barCount > 0,
+            dft != nil
+        else {
+            return levels
+        }
+
+        let selectedChannelCount = min(2, buffer.channelCount)
+        if channelMode == .mono {
+            accumulateFrequencyLevels(
+                from: buffer,
+                channel: nil,
+                weight: 1,
+                into: &levels
+            )
+        } else {
+            let channelWeight = 1 / Float(selectedChannelCount)
+            for channel in 0..<selectedChannelCount {
+                accumulateFrequencyLevels(
+                    from: buffer,
+                    channel: channel,
+                    weight: channelWeight,
+                    into: &levels
+                )
+            }
+        }
+
+        return levels
+    }
+
+    private func accumulateFrequencyLevels(
+        from buffer: AudioVisualizerPCMBuffer,
+        channel: Int?,
+        weight: Float,
+        into levels: inout [Float]
+    ) {
+        let copiedFrameCount = prepareInput(from: buffer, channel: channel)
+        guard copiedFrameCount >= 2, let dft else { return }
+
+        removeDCOffset(sampleCount: copiedFrameCount)
+
+        var peak: Float = 0
+        workspace.input.withUnsafeBufferPointer { inputBuffer in
+            guard let inputPointer = inputBuffer.baseAddress else { return }
+            vDSP_maxmgv(
+                inputPointer,
+                1,
+                &peak,
+                vDSP_Length(copiedFrameCount)
+            )
+        }
+        guard peak > Self.silenceThreshold else { return }
+
+        workspace.applyHannWindow()
+        workspace.packDFTInput()
+        dft.transform(
+            inputReal: workspace.dftInputReal,
+            inputImaginary: workspace.dftInputImaginary,
+            outputReal: &workspace.real,
+            outputImaginary: &workspace.imaginary
+        )
+
+        workspace.real.withUnsafeMutableBufferPointer { realBuffer in
+            workspace.imaginary.withUnsafeMutableBufferPointer { imaginaryBuffer in
+                workspace.magnitudes.withUnsafeMutableBufferPointer { magnitudesBuffer in
+                    guard
+                        let realPointer = realBuffer.baseAddress,
+                        let imaginaryPointer = imaginaryBuffer.baseAddress,
+                        let magnitudesPointer = magnitudesBuffer.baseAddress
+                    else {
+                        return
+                    }
+
+                    var splitComplex = DSPSplitComplex(
+                        realp: realPointer,
+                        imagp: imaginaryPointer
+                    )
+                    vDSP_zvabs(
+                        &splitComplex,
+                        1,
+                        magnitudesPointer,
+                        1,
+                        vDSP_Length(workspace.spectrumSize)
+                    )
+                }
+            }
+        }
+
+        var spectralPeak: Float = 0
+        workspace.magnitudes.withUnsafeBufferPointer { magnitudesBuffer in
+            guard let magnitudesPointer = magnitudesBuffer.baseAddress else { return }
+            vDSP_maxv(
+                magnitudesPointer,
+                1,
+                &spectralPeak,
+                vDSP_Length(workspace.spectrumSize)
+            )
+        }
+        guard spectralPeak > 0 else { return }
+
+        let bandRanges = frequencyBandRanges(
+            sampleRate: buffer.sampleRate,
+            barCount: levels.count
+        )
+        workspace.magnitudes.withUnsafeBufferPointer { magnitudesBuffer in
+            guard let magnitudesPointer = magnitudesBuffer.baseAddress else { return }
+
+            for (bandIndex, range) in bandRanges.enumerated() {
+                var bandPeak: Float = 0
+                vDSP_maxv(
+                    magnitudesPointer.advanced(by: range.lowerBound),
+                    1,
+                    &bandPeak,
+                    vDSP_Length(range.count)
+                )
+                let magnitudeRatio = max(
+                    bandPeak / spectralPeak,
+                    Float.leastNonzeroMagnitude
+                )
+                let decibels = 20 * log10(magnitudeRatio)
+                let boostedDecibels = min(0, decibels + Self.levelBoostDecibels)
+                let decibelLevel = min(
+                    1,
+                    max(
+                        0,
+                        (boostedDecibels - Self.minimumDecibels)
+                            / -Self.minimumDecibels
+                    )
+                )
+                let contrastedLevel = pow(
+                    decibelLevel,
+                    Self.frequencyContrastExponent
+                )
+                levels[bandIndex] += contrastedLevel * weight
+            }
+        }
+    }
+
+    private func prepareInput(
+        from buffer: AudioVisualizerPCMBuffer,
+        channel: Int?
+    ) -> Int {
+        workspace.clearInput()
+
+        let copiedFrameCount = min(buffer.frameCount, Self.fftSize)
+        let firstFrame = buffer.frameCount - copiedFrameCount
+        let mixedChannelCount = min(2, buffer.channelCount)
+
+        for destinationFrame in 0..<copiedFrameCount {
+            let sourceFrame = firstFrame + destinationFrame
+            let sourceIndex = sourceFrame * buffer.channelCount
+
+            if let channel {
+                workspace.input[destinationFrame] = buffer.samples[sourceIndex + channel]
+            } else {
+                var mixedSample: Float = 0
+                for mixedChannel in 0..<mixedChannelCount {
+                    mixedSample += buffer.samples[sourceIndex + mixedChannel]
+                }
+                workspace.input[destinationFrame] = mixedSample / Float(mixedChannelCount)
+            }
+        }
+
+        return copiedFrameCount
+    }
+
+    private func removeDCOffset(sampleCount: Int) {
+        var mean: Float = 0
+        workspace.input.withUnsafeMutableBufferPointer { inputBuffer in
+            guard let inputPointer = inputBuffer.baseAddress else { return }
+            vDSP_meanv(
+                inputPointer,
+                1,
+                &mean,
+                vDSP_Length(sampleCount)
+            )
+            var negativeMean = -mean
+            vDSP_vsadd(
+                inputPointer,
+                1,
+                &negativeMean,
+                inputPointer,
+                1,
+                vDSP_Length(sampleCount)
+            )
+        }
+    }
+
+    private func frequencyBandRanges(
+        sampleRate: Float,
+        barCount: Int
+    ) -> [Range<Int>] {
+        if cachedSampleRate == sampleRate,
+            cachedBarCount == barCount,
+            cachedBandRanges.count == barCount
+        {
+            return cachedBandRanges
+        }
+
+        let nyquist = sampleRate / 2
+        let minimumFrequency = min(55, nyquist / 2)
+        let maximumFrequency = min(20_000, nyquist)
+        guard maximumFrequency > minimumFrequency else { return [] }
+
+        let frequencyRatio = maximumFrequency / minimumFrequency
+        var ranges: [Range<Int>] = []
+        ranges.reserveCapacity(barCount)
+        var previousUpperBin = 1
+
+        for bandIndex in 0..<barCount {
+            let lowerRatio = Float(bandIndex) / Float(barCount)
+            let upperRatio = Float(bandIndex + 1) / Float(barCount)
+            let lowerFrequency = minimumFrequency * pow(frequencyRatio, lowerRatio)
+            let upperFrequency = minimumFrequency * pow(frequencyRatio, upperRatio)
+            let calculatedLowerBin = Int(
+                lowerFrequency / sampleRate * Float(Self.fftSize)
+            )
+            let lowerBin = min(
+                workspace.spectrumSize - 1,
+                max(previousUpperBin, calculatedLowerBin)
+            )
+            let upperBin = min(
+                workspace.spectrumSize,
+                max(
+                    lowerBin + 1,
+                    Int(ceil(upperFrequency / sampleRate * Float(Self.fftSize)))
+                )
+            )
+            ranges.append(lowerBin..<upperBin)
+            previousUpperBin = upperBin
+        }
+
+        cachedSampleRate = sampleRate
+        cachedBarCount = barCount
+        cachedBandRanges = ranges
+        return ranges
     }
 }
 
 final class AudioVisualizerWidgetModel: ObservableObject {
-    @Published private(set) var levels: [Double]
+    @Published private(set) var levels: [Float]
 
     private let config: AudioVisualizerWidgetConfig
-    private let controller: AudioVisualizerController
+    private let spectrumService: AudioVisualizerSpectrumProviding
     private let barCount: Int
-    private var isListening = false
+    private var subscription: AudioVisualizerSpectrumSubscription?
+    private var subscriptionGeneration = 0
 
     init(
         config: AudioVisualizerWidgetConfig,
-        controller: AudioVisualizerController? = nil
+        spectrumService: AudioVisualizerSpectrumProviding = AudioVisualizerSpectrumService.shared
     ) {
         let barCount = config.resolvedBarCount
         self.config = config
+        self.spectrumService = spectrumService
         self.barCount = barCount
         self.levels = Array(repeating: 0, count: barCount)
-
-        let captureScope: AudioVisualizerCaptureScope =
-            config.captureScope == .system ? .system : .microphone
-        let channelMode: AudioVisualizerChannelMode =
-            config.channelMode == .stereo ? .stereo : .mono
-        let controllerConfiguration = AudioVisualizerController.Configuration(
-            captureScope: captureScope,
-            channelMode: channelMode,
-            bufferFrequency: config.smoothness.bufferFrequency
-        )
-        self.controller =
-            controller
-            ?? AudioVisualizerController(configuration: controllerConfiguration)
     }
 
-    var levelsSnapshot: [Double] {
+    var levelsSnapshot: [Float] {
         levels
     }
 
     func startListening() {
-        guard !isListening else { return }
+        guard subscription == nil else { return }
 
-        controller.onAudioData = { [weak self] buffer in
-            guard let self else { return }
-            let newLevels = Self.normalizedLevels(
-                from: buffer,
-                channelMode: self.config.channelMode,
-                barCount: self.barCount
-            )
-            DispatchQueue.main.async { [weak self] in
-                self?.apply(newLevels)
-            }
-        }
+        subscriptionGeneration += 1
+        let generation = subscriptionGeneration
+        let configuration = AudioVisualizerSpectrumConfiguration(
+            captureScope: config.captureScope == .system ? .system : .microphone,
+            channelMode: config.channelMode == .stereo ? .stereo : .mono,
+            bufferFrequency: config.smoothness.bufferFrequency
+        )
 
         do {
-            try controller.startListening()
-            isListening = true
+            subscription = try spectrumService.subscribe(
+                configuration: configuration,
+                barCount: barCount
+            ) { [weak self] newLevels in
+                DispatchQueue.main.async { [weak self] in
+                    guard
+                        let self,
+                        self.subscription != nil,
+                        self.subscriptionGeneration == generation
+                    else {
+                        return
+                    }
+                    self.apply(newLevels)
+                }
+            }
         } catch {
-            isListening = false
+            subscription = nil
         }
     }
 
     func stopListening() {
-        guard isListening else { return }
-        isListening = false
-        controller.onAudioData = nil
-        controller.stopListening()
+        subscriptionGeneration += 1
+        subscription?.cancel()
+        subscription = nil
     }
 
-    static func normalizedLevels(
-        from buffer: AudioVisualizerPCMBuffer,
-        channelMode: KamidanaAudioVisualizerChannelMode,
-        barCount: Int
-    ) -> [Double] {
-        guard buffer.channelCount > 0, buffer.frameCount > 0, barCount > 0 else {
-            return Array(repeating: 0, count: max(0, barCount))
-        }
-
-        let selectedChannelCount = min(2, buffer.channelCount)
-        let channelSamples = (0..<selectedChannelCount).map { channel in
-            (0..<buffer.frameCount).map { frame in
-                Double(buffer.samples[frame * buffer.channelCount + channel])
-            }
-        }
-
-        if channelMode == .mono || channelSamples.count == 1 {
-            let mixedSamples = (0..<buffer.frameCount).map { frame in
-                channelSamples.reduce(0) { $0 + $1[frame] }
-                    / Double(channelSamples.count)
-            }
-            return frequencyLevels(
-                from: mixedSamples,
-                sampleRate: buffer.sampleRate,
-                barCount: barCount
-            )
-        }
-
-        let channelLevels = channelSamples.map {
-            frequencyLevels(from: $0, sampleRate: buffer.sampleRate, barCount: barCount)
-        }
-        return (0..<barCount).map { bandIndex in
-            channelLevels.reduce(0) { $0 + $1[bandIndex] }
-                / Double(channelLevels.count)
-        }
-    }
-
-    private static func frequencyLevels(
-        from samples: [Double],
-        sampleRate: Double,
-        barCount: Int
-    ) -> [Double] {
-        guard samples.count >= 2, sampleRate > 0, barCount > 0 else {
-            return Array(repeating: 0, count: max(0, barCount))
-        }
-
-        let fftSize = largestPowerOfTwo(atMost: min(samples.count, 2_048))
-        guard fftSize >= 2 else {
-            return Array(repeating: 0, count: barCount)
-        }
-
-        var real = Array(samples.suffix(fftSize))
-        var imaginary = Array(repeating: 0.0, count: fftSize)
-        applyHannWindow(to: &real)
-        fft(real: &real, imaginary: &imaginary)
-
-        let magnitudes = (1..<(fftSize / 2)).map { index in
-            hypot(real[index], imaginary[index])
-        }
-        guard let peak = magnitudes.max(), peak > 0 else {
-            return Array(repeating: 0, count: barCount)
-        }
-
-        let nyquist = sampleRate / 2
-        let minimumFrequency = min(55.0, nyquist / 2)
-        let maximumFrequency = min(20_000.0, nyquist)
-        guard maximumFrequency > minimumFrequency else {
-            return Array(repeating: 0, count: barCount)
-        }
-
-        let frequencyRatio = maximumFrequency / minimumFrequency
-        return (0..<barCount).map { bandIndex in
-            let lowerRatio = Double(bandIndex) / Double(barCount)
-            let upperRatio = Double(bandIndex + 1) / Double(barCount)
-            let lowerFrequency = minimumFrequency * pow(frequencyRatio, lowerRatio)
-            let upperFrequency = minimumFrequency * pow(frequencyRatio, upperRatio)
-            let lowerBin = max(1, Int(lowerFrequency / sampleRate * Double(fftSize)))
-            let upperBin = min(
-                fftSize / 2,
-                max(lowerBin + 1, Int(ceil(upperFrequency / sampleRate * Double(fftSize))))
-            )
-            guard lowerBin < upperBin else { return 0 }
-
-            let bandMagnitude =
-                magnitudes[(lowerBin - 1)..<(upperBin - 1)].reduce(0, +)
-                / Double(upperBin - lowerBin)
-            return min(1, sqrt(bandMagnitude / peak))
-        }
-    }
-
-    private static func largestPowerOfTwo(atMost value: Int) -> Int {
-        var result = 1
-        while result * 2 <= value {
-            result *= 2
-        }
-        return result
-    }
-
-    private static func applyHannWindow(to samples: inout [Double]) {
-        guard samples.count > 1 else { return }
-        let denominator = Double(samples.count - 1)
-        for index in samples.indices {
-            let phase = Double(index) / denominator
-            samples[index] *= 0.5 * (1 - cos(2 * .pi * phase))
-        }
-    }
-
-    private static func fft(real: inout [Double], imaginary: inout [Double]) {
-        let count = real.count
-        var j = 0
-        for index in 1..<count {
-            var bit = count >> 1
-            while (j & bit) != 0 {
-                j ^= bit
-                bit >>= 1
-            }
-            j ^= bit
-            if index < j {
-                real.swapAt(index, j)
-                imaginary.swapAt(index, j)
-            }
-        }
-
-        var length = 2
-        while length <= count {
-            let angle = -2 * Double.pi / Double(length)
-            let sine = sin(angle)
-            let cosine = cos(angle)
-            var blockStart = 0
-            while blockStart < count {
-                var currentCosine = 1.0
-                var currentSine = 0.0
-                let halfLength = length / 2
-                for offset in 0..<halfLength {
-                    let even = blockStart + offset
-                    let odd = even + halfLength
-                    let transformedReal = currentCosine * real[odd] - currentSine * imaginary[odd]
-                    let transformedImaginary =
-                        currentCosine * imaginary[odd] + currentSine * real[odd]
-                    real[odd] = real[even] - transformedReal
-                    imaginary[odd] = imaginary[even] - transformedImaginary
-                    real[even] += transformedReal
-                    imaginary[even] += transformedImaginary
-
-                    let nextCosine = currentCosine * cosine - currentSine * sine
-                    currentSine = currentCosine * sine + currentSine * cosine
-                    currentCosine = nextCosine
-                }
-                blockStart += length
-            }
-            length *= 2
-        }
-    }
-
-    private func apply(_ newLevels: [Double]) {
-        let retainedWeight = config.smoothness.retainedWeight
+    private func apply(_ newLevels: [Float]) {
+        let retainedWeight = Float(config.smoothness.retainedWeight)
         let incomingWeight = 1 - retainedWeight
-        levels = zip(levels, newLevels).map { current, incoming in
+        let smoothedLevels = zip(levels, newLevels).map { current, incoming in
             current * retainedWeight + incoming * incomingWeight
         }
+        let hasVisibleChange = zip(levels, smoothedLevels).contains { current, updated in
+            abs(current - updated) > 0.000_5
+        }
+        guard hasVisibleChange else { return }
+        levels = smoothedLevels
     }
 
     deinit {
-        controller.onAudioData = nil
-        controller.stopListening()
+        subscription?.cancel()
     }
 }

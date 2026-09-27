@@ -75,6 +75,67 @@ final class AudioVisualizerControllerTests: XCTestCase {
         XCTAssertEqual(source.stopCount, 1)
     }
 
+    func testRingBufferReadsLatestFramesAndDiscardsOlderBacklog() {
+        let ringBuffer = AudioSampleRingBuffer(capacity: 12, channelCount: 2)
+        write(
+            [1, 10, 2, 20, 3, 30, 4, 40],
+            to: ringBuffer
+        )
+
+        XCTAssertEqual(
+            ringBuffer.readLatestFrames(maxFrameCount: 2),
+            [3, 30, 4, 40]
+        )
+        XCTAssertEqual(ringBuffer.readLatestFrames(maxFrameCount: 2), [])
+    }
+
+    func testRingBufferReadsOnlyChannelAlignedFrames() {
+        let ringBuffer = AudioSampleRingBuffer(capacity: 8, channelCount: 2)
+        write([1, 10, 2, 20, 999], to: ringBuffer)
+
+        XCTAssertEqual(ringBuffer.readLatestFrames(maxFrameCount: 1), [2, 20])
+    }
+
+    func testRingBufferCopiesAcrossWrapBoundary() {
+        let ringBuffer = AudioSampleRingBuffer(capacity: 8, channelCount: 2)
+        write([1, 10, 2, 20, 3, 30], to: ringBuffer)
+        XCTAssertEqual(
+            ringBuffer.readLatestFrames(maxFrameCount: 2),
+            [2, 20, 3, 30]
+        )
+
+        write([4, 40, 5, 50, 6, 60], to: ringBuffer)
+
+        XCTAssertEqual(
+            ringBuffer.readLatestFrames(maxFrameCount: 3),
+            [4, 40, 5, 50, 6, 60]
+        )
+    }
+
+    func testRingBufferDropsOldestFramesWhenWritesOverflowCapacity() {
+        let ringBuffer = AudioSampleRingBuffer(capacity: 8, channelCount: 2)
+        write([1, 10, 2, 20, 3, 30], to: ringBuffer)
+        write([4, 40, 5, 50, 6, 60], to: ringBuffer)
+
+        XCTAssertEqual(
+            ringBuffer.readLatestFrames(maxFrameCount: 10),
+            [3, 30, 4, 40, 5, 50, 6, 60]
+        )
+    }
+
+    func testRingBufferKeepsLatestFramesWhenSingleWriteExceedsCapacity() {
+        let ringBuffer = AudioSampleRingBuffer(capacity: 8, channelCount: 2)
+        write(
+            [1, 10, 2, 20, 3, 30, 4, 40, 5, 50, 6, 60],
+            to: ringBuffer
+        )
+
+        XCTAssertEqual(
+            ringBuffer.readLatestFrames(maxFrameCount: 10),
+            [3, 30, 4, 40, 5, 50, 6, 60]
+        )
+    }
+
     func testCapturesCurrentlyPlayingSystemAudio() throws {
         guard
             ProcessInfo.processInfo.environment["KAMIDANA_RUN_AUDIO_CAPTURE_INTEGRATION_TESTS"]
@@ -100,6 +161,12 @@ final class AudioVisualizerControllerTests: XCTestCase {
         defer { controller.stopListening() }
 
         wait(for: [audioExpectation], timeout: 10)
+    }
+
+    private func write(_ samples: [Float], to ringBuffer: AudioSampleRingBuffer) {
+        samples.withUnsafeBufferPointer { buffer in
+            ringBuffer.write(interleavedSamples: buffer)
+        }
     }
 }
 
